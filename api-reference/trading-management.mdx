@@ -510,11 +510,11 @@ Every trade passes through the following statuses as it progresses from submissi
 ### Status Flow
 
 ```text
-pending ──► locked ──► signing ──► settling ──► completed
-                              │                 │
-                              └──► failed       └──► failed
+pending --> locked --> signing --> settling --> completed
+                              |                 |
+                              +--> failed       +--> failed
 
-locked ──► expired  (if 5-minute lock window elapses)
+locked --> expired  (if 5-minute lock window elapses)
 ```
 
 When a trade expires or fails, the escrowed cNGN is automatically released back to your wallet.

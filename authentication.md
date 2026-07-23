@@ -41,7 +41,7 @@ Content-Type: application/json
 
 ### Obtaining API Keys
 
-**If you haven’t received your API key yet,** please contact our team to complete your onboarding process. You will receive an email with detailed steps on how to obtain your `x-api-key`.
+**If you haven't received your API key yet,** please contact our team to complete your onboarding process. You will receive an email with detailed steps on how to obtain your `x-api-key`.
 
 ## Rate Limiting
 

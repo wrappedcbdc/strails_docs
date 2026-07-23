@@ -62,7 +62,7 @@ All API responses include a `response_code` field indicating the result:
 
 ```
 pending -> processing -> completed
-                    ↘ failed
+                    \-> failed
 ```
 
 ---
@@ -87,11 +87,11 @@ pending -> processing -> completed
 
 ```
 requested -> pending -> processing -> funded -> completed
-                            ↓           ↓
+                            v           v
                           failed      failed
-                                        ↓
+                                        v
                           (if autoSwap) -> swap_queued -> swap_processing -> completed
-                                                                 ↓
+                                                                 v
                                                               failed
 ```
 
@@ -125,7 +125,7 @@ requested -> pending -> processing -> funded -> completed
 
 ```
 pending -> processing -> bank_verification -> transfer_pending -> transfer_confirmed -> payout_pending -> completed
-    ↓          ↓               ↓                    ↓                   ↓                   ↓
+    v          v               v                    v                   v                   v
  cancelled   failed          failed               failed              failed              failed
 ```
 
@@ -152,9 +152,9 @@ pending -> processing -> bank_verification -> transfer_pending -> transfer_confi
 
 ```
 pending -> processing -> transferring_cngn -> initiating_payout -> payout_processing -> completed
-    ↓          ↓               ↓                     ↓                   ↓
+    v          v               v                     v                   v
  cancelled   failed          failed                failed              failed
-                                                                         ↓
+                                                                         v
                                                                       reversed
 ```
 
@@ -193,7 +193,7 @@ pending -> processing -> transferring_cngn -> initiating_payout -> payout_proces
 
 ```
 active <-> paused
-   ↓          ↓
+   v          v
  deleted    deleted
 ```
 
@@ -222,7 +222,7 @@ active <-> paused
 
 ```
 pending -> locked -> signing -> settling -> completed
-                        ↓           ↓
+                        v           v
          locked -> expired       failed
          signing -> expired (only after MPC signing completes/fails)
 ```
@@ -289,7 +289,7 @@ Fintech transfers are synchronous and complete immediately. The response indicat
 
 ```
 pending -> confirmed
-    ↘ failed
+    \-> failed
 ```
 
 ---

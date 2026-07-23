@@ -466,7 +466,7 @@ Trades follow a specific status lifecycle:
 
 ```
 pending -> locked -> signing -> settling -> completed
-                          ↘ failed      ↘ failed
+                          \-> failed    \-> failed
          locked -> expired (after 5 minutes)
          signing -> expired (only after MPC signing completes/fails)
 ```

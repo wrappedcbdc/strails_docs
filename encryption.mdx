@@ -37,9 +37,9 @@ To send an encrypted request:
 Your JSON payload
       +
 Strails public key
-      ↓
+      v
 libsodium crypto_box_seal
-      ↓
+      v
 Base64-encoded ciphertext  ->  sent as "payload" in request body
 ```
 
@@ -94,11 +94,11 @@ To decrypt an encrypted response:
 
 ```
 Encrypted base64 string  (from response body)
-      ↓
+      v
 Base64-decode
-      ↓
+      v
 libsodium crypto_box_seal_open  (your public key + your private key)
-      ↓
+      v
 Original JSON payload
 ```
 

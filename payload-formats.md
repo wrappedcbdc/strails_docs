@@ -603,9 +603,9 @@ All amounts are represented in the smallest currency unit (kobo for NGN):
 
 | Display Amount | API Amount | Calculation |
 |----------------|------------|-------------|
-| ₦1.00 | 100 | 1.00 × 100 |
-| ₦50.00 | 5000 | 50.00 × 100 |
-| ₦1,000.00 | 100000 | 1000.00 × 100 |
+| ₦1.00 | 100 | 1.00 x 100 |
+| ₦50.00 | 5000 | 50.00 x 100 |
+| ₦1,000.00 | 100000 | 1000.00 x 100 |
 
 ### Helper Functions
 

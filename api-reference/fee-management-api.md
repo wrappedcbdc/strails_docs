@@ -100,7 +100,7 @@ POST {{BASE_URL}}/feewithdrawal
 | `bankCode`         | string  | Yes   | Bank identifier code (e.g., NIBSS code `058`) |
 | `accountName`      | string  | Yes   | Name of the account holder (e.g., your company name) |
 | `amount`           | number  | Yes   | Amount to withdraw (in the smallest currency unit) |
-| `narration`        | string  | No    | Optional description for the transaction (e.g., “Fee withdrawal for August 2025”) |
+| `narration`        | string  | No    | Optional description for the transaction (e.g., "Fee withdrawal for August 2025") |
 | `metadata`         | object  | No    | Additional info related to the withdrawal |
 
 #### `metadata` Object

@@ -42,11 +42,11 @@ Every API response includes a `response_code` field. The six possible values are
 
     ```
     requested -> pending -> processing -> funded -> completed
-                                  ↓            ↓
+                                  v            v
                                 failed       failed
-                                               ↓ (if autoSwap enabled)
+                                               v (if autoSwap enabled)
                                 swap_queued -> swap_processing -> completed
-                                                      ↓
+                                                      v
                                                    failed
     ```
 
@@ -80,11 +80,11 @@ Every API response includes a `response_code` field. The six possible values are
 
     ```
     pending -> processing -> bank_verification -> transfer_pending
-        ↓          ↓                ↓                    ↓
+        v          v                v                    v
     cancelled    failed           failed               failed
-                                                          ↓
+                                                          v
                                              transfer_confirmed -> payout_pending -> completed
-                                                                         ↓                ↓
+                                                                         v                v
                                                                        failed           failed
     ```
 
@@ -108,7 +108,7 @@ Every API response includes a `response_code` field. The six possible values are
 
     ```
     pending -> locked -> signing -> settling -> completed
-                   ↓         ↓           ↓
+                   v         v           v
                 expired    expired     failed
     ```
 
@@ -299,7 +299,7 @@ Use these values when querying list endpoints with the `type`, `status`, `side`,
 </Note>
 
 <Note>
-  **Token endpoints** (blockchain transfers, swaps, FX trades, asset withdrawals) require amounts in the **smallest unit** with 6 decimal places for cNGN, USDC, and USDT. To send 500 cNGN, pass `500000000` (500 × 10⁶). DAI uses 18 decimals.
+  **Token endpoints** (blockchain transfers, swaps, FX trades, asset withdrawals) require amounts in the **smallest unit** with 6 decimal places for cNGN, USDC, and USDT. To send 500 cNGN, pass `500000000` (500 x 10^6). DAI uses 18 decimals.
 </Note>
 
 ---

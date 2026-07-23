@@ -29,9 +29,9 @@ The FX Settings API allows fintechs to retrieve their FX configuration including
 </Warning>
 
 <Info>
-**MPCVault**: A third-party MPC wallet infrastructure provider and is not affiliated with Strails. To enable wallet functionality on Strails, customers are required to independently create and maintain an account with MPCVault at https://mpcvault.com and shall be subject to MPCVault’s terms and conditions.
+**MPCVault**: A third-party MPC wallet infrastructure provider and is not affiliated with Strails. To enable wallet functionality on Strails, customers are required to independently create and maintain an account with MPCVault at https://mpcvault.com and shall be subject to MPCVault's terms and conditions.
 
-By using MPCVault in connection with Strails, the customer acknowledges and agrees that all interactions with MPCVault are undertaken at the customer’s sole risk. Strails does not control, operate, or assume any responsibility or liability for MPCVault’s services, systems, or security.
+By using MPCVault in connection with Strails, the customer acknowledges and agrees that all interactions with MPCVault are undertaken at the customer's sole risk. Strails does not control, operate, or assume any responsibility or liability for MPCVault's services, systems, or security.
 
 Strails shall not be liable for any losses, liabilities, damages, claims, costs, or expenses arising out of or in connection with the use of MPCVault or any activities conducted on or through the MPCVault platform
 

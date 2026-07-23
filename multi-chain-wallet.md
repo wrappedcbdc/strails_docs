@@ -42,7 +42,7 @@ The Multi-Chain Wallet executes token transfers when you call:
 Token swaps are executed through the Managed Wallet:
 
 - [`/swap`](/api-reference/transactions#user-swap) - Swap tokens on user's smart wallet
-- [`/swaptrigger`](/api-reference/transactions#swap-trigger) - Trigger async swaps (cNGN <-> USDC/USDT)
+- [`/swaptrigger`](/api-reference/transactions#swap-trigger) - Trigger async swaps (between cNGN and USDC/USDT)
 
 ### Cross-Chain Bridging
 For multi-chain operations, the Managed Wallet coordinates:
@@ -54,19 +54,19 @@ For multi-chain operations, the Managed Wallet coordinates:
 ## Security Model
 
 ```
-┌─────────────────────────────────────┐
-│          AWS KMS (HSM)              │
-│  ┌─────────────────────────────┐    │
-│  │   Private Key (never leaves) │    │
-│  └─────────────────────────────┘    │
-│              │                      │
-│              ▼                      │
-│  ┌─────────────────────────────┐    │
-│  │   Sign Transaction Request   │    │
-│  └─────────────────────────────┘    │
-└─────────────────────────────────────┘
-              │
-              ▼
++-------------------------------------+
+|          AWS KMS (HSM)              |
+|  +-----------------------------+    |
+|  |   Private Key (never leaves) |    |
+|  +-----------------------------+    |
+|              |                      |
+|              v                      |
+|  +-----------------------------+    |
+|  |   Sign Transaction Request   |    |
+|  +-----------------------------+    |
++-------------------------------------+
+              |
+              v
      Signed Transaction -> Blockchain
 ```
 

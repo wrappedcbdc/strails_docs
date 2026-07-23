@@ -24,7 +24,7 @@ The Transactions API handles all financial operations including **onramp (fundin
 | [**List Deposits**](#list-deposits) | `/deposits`         | GET    | Retrieve deposit transactions with filters                          |
 | [**List Payouts**](#list-payouts) | `/payouts`         | GET    | Retrieve payout transactions with filters                          |
 | [**List Transactions**](#list-transactions) | `/transactions`         | GET    | Retrieve all transactions (deposits & payouts) with filters                          |
-| [**Swap Trigger**](#swap-trigger)          | `/swaptrigger`        | POST   | Trigger an asynchronous token swap (cNGN <-> USDC/USDT)             |
+| [**Swap Trigger**](#swap-trigger)          | `/swaptrigger`        | POST   | Trigger an asynchronous token swap (between cNGN and USDC/USDT)             |
 | [**User Swap**](#user-swap)                | `/swap`               | POST   | Swap tokens on user's default smart wallet (USDC -> cNGN)          |
 | [**Swap Status**](#swap-status)            | `/swapstatus`         | GET    | Get the status of an asynchronous swap request                    |
 

@@ -100,7 +100,7 @@
   },
   "keyFeatures": [
     "NGN onramp and offramp via Nigerian virtual bank accounts with automatic cNGN minting",
-    "P2P FX orderbook for cNGN <-> USDC/USDT trading between fintechs",
+    "P2P FX orderbook for cNGN/USDC/USDT trading between fintechs",
     "Multi-chain wallet infrastructure (Smart Wallet, MPC Vault, HSM-managed wallet) across Base, Ethereum, BNB Chain, Solana, and Bantu",
     "Auto-swap: automatic conversion of NGN -> cNGN -> USDC/USDT in a single deposit flow",
     "Real-time webhooks with HMAC-SHA256 signature verification for 22 event types",

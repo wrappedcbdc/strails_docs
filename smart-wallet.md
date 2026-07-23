@@ -28,10 +28,10 @@ StRails implements a **minimal smart contract wallet** - not a full ERC-4337 Acc
 
 | ERC-4337 Feature | Description | StRails |
 |------------------|-------------|---------|
-| UserOperations | Meta-transactions bundled off-chain | ❌ Not supported |
-| Bundlers | Off-chain actors that submit transactions | ❌ Not needed |
-| Paymasters | Contracts that sponsor gas fees | ❌ Owner pays gas directly |
-| EntryPoint | Singleton contract for AA validation | ❌ Not used |
+| UserOperations | Meta-transactions bundled off-chain | [X] Not supported |
+| Bundlers | Off-chain actors that submit transactions | [X] Not needed |
+| Paymasters | Contracts that sponsor gas fees | [X] Owner pays gas directly |
+| EntryPoint | Singleton contract for AA validation | [X] Not used |
 
 **Why this design?** Simplicity and lower gas costs. Your EOA signs transactions directly to the wallet contract, avoiding the overhead of the ERC-4337 infrastructure.
 
