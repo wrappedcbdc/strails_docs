@@ -18,7 +18,7 @@ These terms are often confused but refer to different things:
 
 ### What StRails Uses
 
-StRails implements a **minimal smart contract wallet** — not a full ERC-4337 Account Abstraction wallet. Our approach:
+StRails implements a **minimal smart contract wallet** - not a full ERC-4337 Account Abstraction wallet. Our approach:
 
 - **Simple & Gas-Efficient**: Uses EIP-1167 minimal proxy pattern for cheap deployments
 - **Owner-Controlled**: Your EOA directly calls `execute()` on the wallet
@@ -77,7 +77,7 @@ Since your EOA owns the Smart Wallet, you call `execute()` on the wallet contrac
 ### Method 1: Via Block Explorer (No Code Required)
 
 1. Navigate to your wallet contract on [Basescan](https://basescan.org) or [Etherscan](https://etherscan.io)
-2. Go to **Contract** → **Write Contract**
+2. Go to **Contract** -> **Write Contract**
 3. Connect your MetaMask wallet (must be the owner EOA)
 4. Find the `execute` function and fill in:
 

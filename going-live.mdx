@@ -4,7 +4,7 @@ sidebarTitle: "Going Live"
 description: "Complete every item on this checklist before switching your Strails integration to production to avoid security gaps, integration failures, or unexpected fees."
 ---
 
-Before switching from the Strails staging environment to production, work through every section below. Each item represents a real failure mode caught during past integrations — don't skip them.
+Before switching from the Strails staging environment to production, work through every section below. Each item represents a real failure mode caught during past integrations - don't skip them.
 
 ## 1. Credentials & Environment
 
@@ -24,7 +24,7 @@ Before switching from the Strails staging environment to production, work throug
 - [ ] You have generated a **production Ed25519 key pair** separate from any key pair used in staging.
 - [ ] You have registered your **production public key** with Strails by calling [`POST /storepublickey`](/api-reference/management-api#store-public-key). Strails uses this key to encrypt all responses sent back to your integration.
 - [ ] You have received the **production Strails public key** and stored it securely.
-- [ ] You have verified **encryption and decryption round-trips** end to end — encrypt a payload in your production environment and confirm Strails can process it, and vice versa.
+- [ ] You have verified **encryption and decryption round-trips** end to end - encrypt a payload in your production environment and confirm Strails can process it, and vice versa.
 - [ ] Your production services use the **production Ed25519 keys**, not staging keys.
 
 See [Encryption](/encryption) for key generation, `POST /storepublickey` registration, and payload signing details.
@@ -59,18 +59,18 @@ See [HMAC Signatures](/hmac-signatures) and [Webhook Events](/api-reference/webh
 
 Run all of the following flows at least once against the production environment before you open up to real users:
 
-- [ ] **User onboarding:** BVN submission → verification → `user.verified` webhook event received.
-- [ ] **Virtual account creation:** Onramp initiation → account details returned → account expires correctly after 30 minutes if unused.
-- [ ] **Wallet funding (onramp):** NGN deposit received → cNGN minted → `onramp.completed` webhook event received → balance visible on wallet.
-- [ ] **Auto-swap:** Onramp with `autoSwap: true` → cNGN minted → USDC/USDT credited → `swap.completed` webhook event received.
-- [ ] **Withdrawal (offramp):** Offramp initiated → bank transfer processed → `offramp.settled` webhook event received → correct amount credited to bank account.
-- [ ] **FX trading:** Limit order posted → quote fetched → trade executed → `fx.trade.settled` webhook event received → both wallet balances updated correctly.
+- [ ] **User onboarding:** BVN submission -> verification -> `user.verified` webhook event received.
+- [ ] **Virtual account creation:** Onramp initiation -> account details returned -> account expires correctly after 30 minutes if unused.
+- [ ] **Wallet funding (onramp):** NGN deposit received -> cNGN minted -> `onramp.completed` webhook event received -> balance visible on wallet.
+- [ ] **Auto-swap:** Onramp with `autoSwap: true` -> cNGN minted -> USDC/USDT credited -> `swap.completed` webhook event received.
+- [ ] **Withdrawal (offramp):** Offramp initiated -> bank transfer processed -> `offramp.settled` webhook event received -> correct amount credited to bank account.
+- [ ] **FX trading:** Limit order posted -> quote fetched -> trade executed -> `fx.trade.settled` webhook event received -> both wallet balances updated correctly.
 
 ## 8. Monitoring & Support
 
 - [ ] You have **logging** in place that records every Strails API request and response, including `requestId` values, HTTP status codes, and response times.
 - [ ] You have **alerting** configured to notify your on-call team when API error rates exceed a threshold or when critical webhook events stop arriving.
-- [ ] You have a **runbook** documenting how to handle `429 Too Many Requests` responses — at minimum, implement exponential backoff with jitter and document how to request a rate limit increase.
+- [ ] You have a **runbook** documenting how to handle `429 Too Many Requests` responses - at minimum, implement exponential backoff with jitter and document how to request a rate limit increase.
 - [ ] You know how to reach Strails support: [support@strails.io](mailto:support@strails.io).
 
 ---

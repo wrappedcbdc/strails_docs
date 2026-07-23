@@ -4,7 +4,7 @@ sidebarTitle: "User Management"
 description: "Onboard users via BVN verification, track onboarding status, retrieve user details, and manage account activation states for your fintech."
 ---
 
-The User Management API lets you register end-users on Strails using their Bank Verification Number (BVN), track the async KYC process through to completion, fetch full user profiles including wallet addresses and virtual accounts, and control user account status. Because BVN verification is handled by an external identity provider, all onboarding requests are processed asynchronously — you receive a `requestId` immediately and poll or listen for the result.
+The User Management API lets you register end-users on Strails using their Bank Verification Number (BVN), track the async KYC process through to completion, fetch full user profiles including wallet addresses and virtual accounts, and control user account status. Because BVN verification is handled by an external identity provider, all onboarding requests are processed asynchronously - you receive a `requestId` immediately and poll or listen for the result.
 
 ## Endpoints Overview
 
@@ -20,7 +20,7 @@ The User Management API lets you register end-users on Strails using their Bank 
 
 ### POST /onboarduser
 
-Initiates onboarding for a new user by submitting their 11-digit BVN for identity verification. The request is processed asynchronously — use the returned `requestId` to poll `/onboardstatus` or wait for the `user_registration` webhook event.
+Initiates onboarding for a new user by submitting their 11-digit BVN for identity verification. The request is processed asynchronously - use the returned `requestId` to poll `/onboardstatus` or wait for the `user_registration` webhook event.
 
 ```bash
 curl -X POST https://beta.stablesrail.io/v1/onboarduser \
@@ -55,7 +55,7 @@ curl -X POST https://beta.stablesrail.io/v1/onboarduser \
 ```
 
 <Info>
-  Store the `requestId` returned here — you will need it to check onboarding status via `/onboardstatus`.
+  Store the `requestId` returned here - you will need it to check onboarding status via `/onboardstatus`.
 </Info>
 
 #### Error Responses
@@ -211,7 +211,7 @@ curl -X POST https://beta.stablesrail.io/v1/getuserdetails \
 
 ### POST /manageuserstatus
 
-Activates or deactivates a user account. When deactivating, you must supply a `reason` — this is recorded in the audit trail. Deactivated users cannot initiate transactions or receive deposits until reactivated.
+Activates or deactivates a user account. When deactivating, you must supply a `reason` - this is recorded in the audit trail. Deactivated users cannot initiate transactions or receive deposits until reactivated.
 
 ```bash
 curl -X POST https://beta.stablesrail.io/v1/manageuserstatus \

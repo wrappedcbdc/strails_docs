@@ -8,7 +8,7 @@ This section documents endpoints fintechs use to onboard users, verify identity,
 
 ---
 
-## User Management API — Endpoints Overview
+## User Management API - Endpoints Overview
 
 | Section                     | Endpoint                       | Method | Description                                                                                 |
 | --------------------------- | ------------------------------ | ------ | ------------------------------------------------------------------------------------------- |

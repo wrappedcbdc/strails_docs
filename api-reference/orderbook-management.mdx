@@ -12,7 +12,7 @@ All endpoints require fintech API key authentication and IP allowlist verificati
 
 ---
 
-## FX Order Management API — Endpoints Overview
+## FX Order Management API - Endpoints Overview
 
 | Section                                          | Endpoint                 | Method | Description                                                                 |
 | ------------------------------------------------ | ------------------------ | ------ | --------------------------------------------------------------------------- |
@@ -486,10 +486,10 @@ Generate a Firebase custom token for real-time orderbook access. Use this token 
 
 <Warning>
 **Wei Format (6 Decimals):** The following fields are returned in wei format with 6 decimal precision:
-- `price` — e.g., `"1500000"` = 1.5 (divide by 10^6)
-- `minAmount` — e.g., `"500000000"` = 500 tokens
-- `maxAmount` — e.g., `"2000000000"` = 2,000 tokens
-- `availableLiquidity` — e.g., `"95000000000"` = 95,000 tokens
+- `price` - e.g., `"1500000"` = 1.5 (divide by 10^6)
+- `minAmount` - e.g., `"500000000"` = 500 tokens
+- `maxAmount` - e.g., `"2000000000"` = 2,000 tokens
+- `availableLiquidity` - e.g., `"95000000000"` = 95,000 tokens
 
 **Conversion:** To get the human-readable value, divide by `1,000,000` (10^6).
 </Warning>
@@ -556,10 +556,10 @@ Orders follow a specific status lifecycle:
 
 ### Status Transitions
 
-- `active` → `paused` (via update)
-- `paused` → `active` (via update)
-- `active` → `deleted` (via delete)
-- `paused` → `deleted` (via delete)
+- `active` -> `paused` (via update)
+- `paused` -> `active` (via update)
+- `active` -> `deleted` (via delete)
+- `paused` -> `deleted` (via delete)
 
 ---
 
@@ -570,7 +570,7 @@ Orders follow a specific status lifecycle:
 - `availableLiquidity` is queried in real-time from your blockchain wallet
 - For **BUY** orders: liquidity = your cNGN wallet balance
 - For **SELL** orders: liquidity = your stablecoin (USDC/USDT) wallet balance
-- Liquidity shown is informational only — actual liquidity is validated during trade matching
+- Liquidity shown is informational only - actual liquidity is validated during trade matching
 - Ensure your wallet has sufficient balance before creating orders
 - Liquidity can change between order creation and trade execution
 </Info>

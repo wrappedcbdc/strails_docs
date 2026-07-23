@@ -4,7 +4,7 @@ sidebarTitle: "Integration Guide"
 description: "Step-by-step guide to integrating Strails: connect, configure webhooks, onboard users, fund wallets, process withdrawals, and execute FX trades."
 ---
 
-This guide walks you through a complete Strails integration, from your first API call to executing an FX trade. Follow the steps in order — each one builds on the previous.
+This guide walks you through a complete Strails integration, from your first API call to executing an FX trade. Follow the steps in order - each one builds on the previous.
 
 <Info>
   **Before you start, make sure you have:**
@@ -38,7 +38,7 @@ This guide walks you through a complete Strails integration, from your first API
     }
     ```
 
-    If you see your three wallet addresses, your API key is valid and you are connected to the test environment. Save these addresses — you will reference them throughout the integration.
+    If you see your three wallet addresses, your API key is valid and you are connected to the test environment. Save these addresses - you will reference them throughout the integration.
 
     <Warning>
       The header name must be `x-api-key` in lowercase. Headers named `X-API-Key` or `api-key` will return `401 Unauthorized`.
@@ -46,7 +46,7 @@ This guide walks you through a complete Strails integration, from your first API
   </Step>
 
   <Step title="Configure Your Webhook">
-    Register your webhook URL so Strails can notify you when asynchronous operations complete. This is strongly recommended before you proceed — without it you will need to poll every status endpoint manually.
+    Register your webhook URL so Strails can notify you when asynchronous operations complete. This is strongly recommended before you proceed - without it you will need to poll every status endpoint manually.
 
     ```bash
     curl -X POST https://beta.stablesrail.io/v1/setwebhook \
@@ -88,7 +88,7 @@ This guide walks you through a complete Strails integration, from your first API
         return res.status(401).send('Invalid signature');
       }
 
-      // Acknowledge immediately — process asynchronously
+      // Acknowledge immediately - process asynchronously
       res.status(200).send('OK');
 
       const { event, data } = req.body;
@@ -168,9 +168,9 @@ This guide walks you through a complete Strails integration, from your first API
 
     | `autoSwap` | `assetSwap` | `sweepToOfframp` | Outcome |
     |---|---|---|---|
-    | `false` | — | `false` | NGN deposited → cNGN minted to user wallet. No swap. |
-    | `true` | `"USDC"` or `"USDT"` | `false` | NGN deposited → cNGN minted → auto-swapped to `assetSwap` token via Aerodrome DEX. |
-    | `true` | `"USDC"` or `"USDT"` | `true` | NGN deposited → cNGN minted → auto-swapped → USDC/USDT immediately sent to offramp (payout to bank). |
+    | `false` | - | `false` | NGN deposited -> cNGN minted to user wallet. No swap. |
+    | `true` | `"USDC"` or `"USDT"` | `false` | NGN deposited -> cNGN minted -> auto-swapped to `assetSwap` token via Aerodrome DEX. |
+    | `true` | `"USDC"` or `"USDT"` | `true` | NGN deposited -> cNGN minted -> auto-swapped -> USDC/USDT immediately sent to offramp (payout to bank). |
 
     **Initiate the onramp:**
 
@@ -344,7 +344,7 @@ This guide walks you through a complete Strails integration, from your first API
   </Step>
 
   <Step title="Execute an FX Trade">
-    Post an order to the cNGN ↔ USDC/USDT orderbook, get a quote, and execute the trade.
+    Post an order to the cNGN <-> USDC/USDT orderbook, get a quote, and execute the trade.
 
     **Create an orderbook entry:**
 
@@ -409,13 +409,13 @@ This guide walks you through a complete Strails integration, from your first API
 ## Common Integration Patterns
 
 **Simple Wallet Funding**
-Onboard a user → generate a virtual account → user pays NGN → cNGN is minted to their wallet. Use this pattern when your users just need a cNGN balance.
+Onboard a user -> generate a virtual account -> user pays NGN -> cNGN is minted to their wallet. Use this pattern when your users just need a cNGN balance.
 
 **Wallet Funding with Auto-Swap**
-Set `"autoSwap": true` and `"assetSwap": "USDC"` on the onramp request. After the NGN deposit is received, Strails mints cNGN and immediately swaps it to USDC via Aerodrome DEX — no extra API calls required. Use this pattern for products where users want USD-denominated stablecoins.
+Set `"autoSwap": true` and `"assetSwap": "USDC"` on the onramp request. After the NGN deposit is received, Strails mints cNGN and immediately swaps it to USDC via Aerodrome DEX - no extra API calls required. Use this pattern for products where users want USD-denominated stablecoins.
 
 **Fintech Liquidity Management**
-Post a limit order on the FX orderbook → wait for a match → confirm the trade quote → execute. Escrow settles the counterparty automatically. Use this pattern to rebalance your fintech's cNGN and USDC/USDT pools.
+Post a limit order on the FX orderbook -> wait for a match -> confirm the trade quote -> execute. Escrow settles the counterparty automatically. Use this pattern to rebalance your fintech's cNGN and USDC/USDT pools.
 
 ## Testing Tips
 

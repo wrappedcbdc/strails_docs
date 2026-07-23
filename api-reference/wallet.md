@@ -6,13 +6,13 @@ description: "Wallet Management API endpoints for viewing and managing fintech s
 
 The Wallet Management API allows fintechs to manage their wallets:
 
-- **[Smart Wallet](/smart-wallet)** — Contract-based wallet for cNGN, USDC, USDT. Can be fintech or Strails-controlled.
-- **MPC Vault** — Multi-party computation wallet for secure custody of USDC/USDT.
-- **External Wallets** — User-registered wallets for withdrawals and storage.
+- **[Smart Wallet](/smart-wallet)** - Contract-based wallet for cNGN, USDC, USDT. Can be fintech or Strails-controlled.
+- **MPC Vault** - Multi-party computation wallet for secure custody of USDC/USDT.
+- **External Wallets** - User-registered wallets for withdrawals and storage.
 
 ---
 
-## Wallet Management API — Endpoints Overview
+## Wallet Management API - Endpoints Overview
 
 | Section                    | Endpoint                         | Method | Description                                                                                          |
 | -------------------------- | -------------------------------- | ------ | ---------------------------------------------------------------------------------------------------- |
@@ -604,7 +604,7 @@ Content-Type: application/json
 
 | Body field | Required | Default | Description |
 |---|---|---|---|
-| `address` | Yes | — | EVM address |
+| `address` | Yes | - | EVM address |
 | `token` | No | `CNGN` | Token ticker |
 | `networks` | No | all EVM networks | Array of network keys |
 

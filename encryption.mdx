@@ -4,7 +4,7 @@ sidebarTitle: "Encryption"
 description: "Learn how to encrypt Strails API request payloads and decrypt responses using Ed25519 key pairs and libsodium's sealed-box construction."
 ---
 
-Strails supports **Ed25519 payload encryption** using [libsodium](https://libsodium.gitbook.io/doc/)'s sealed-box (`crypto_box_seal`) construction. Encryption is optional on some endpoints, but you should enable it for any production integration that handles PII, wallet addresses, or financial data — an intercepted transport layer will not expose your payload contents.
+Strails supports **Ed25519 payload encryption** using [libsodium](https://libsodium.gitbook.io/doc/)'s sealed-box (`crypto_box_seal`) construction. Encryption is optional on some endpoints, but you should enable it for any production integration that handles PII, wallet addresses, or financial data - an intercepted transport layer will not expose your payload contents.
 
 ## Security Model
 
@@ -13,7 +13,7 @@ Every encrypted exchange involves two key pairs. Both parties generate their own
 | Party | Key pair | Purpose |
 |---|---|---|
 | **Fintech (you)** | Your Ed25519 key pair | Decrypt responses that Strails seals to your public key |
-| **Strails** | Strails Ed25519 key pair | Encrypt requests you send — seal them to Strails' public key |
+| **Strails** | Strails Ed25519 key pair | Encrypt requests you send - seal them to Strails' public key |
 
 Strails gives you its public key during onboarding. You generate your own key pair and register your public key with Strails so it can encrypt responses back to you.
 
@@ -23,7 +23,7 @@ To send an encrypted request:
 
 <Steps>
   <Step title="Build your JSON payload">
-    Construct the request body as documented for the endpoint — a plain JSON object.
+    Construct the request body as documented for the endpoint - a plain JSON object.
   </Step>
   <Step title="Seal the payload">
     Use the Strails Ed25519 public key to seal the payload with libsodium `crypto_box_seal`. This produces an opaque byte array that only Strails can unseal.
@@ -40,7 +40,7 @@ Strails public key
       ↓
 libsodium crypto_box_seal
       ↓
-Base64-encoded ciphertext  →  sent as "payload" in request body
+Base64-encoded ciphertext  ->  sent as "payload" in request body
 ```
 
 ```javascript
@@ -48,7 +48,7 @@ const sodium = require('libsodium-wrappers');
 
 await sodium.ready;
 
-// Strails public key — received during onboarding
+// Strails public key - received during onboarding
 const strailsPublicKey = sodium.from_hex(process.env.STRAILS_PUBLIC_KEY_HEX);
 
 const payload = JSON.stringify({
@@ -177,7 +177,7 @@ A successful registration returns `200 OK`. After this, Strails will seal respon
 ## Best Practices
 
 - **Never expose your private key.** Keep it out of client-side code, logs, environment files committed to source control, and any network call.
-- **Use a dedicated secrets manager.** Store your private key in AWS Secrets Manager, HashiCorp Vault, or an equivalent service — not in a plain `.env` file.
+- **Use a dedicated secrets manager.** Store your private key in AWS Secrets Manager, HashiCorp Vault, or an equivalent service - not in a plain `.env` file.
 - **Rotate keys periodically.** Generate a new key pair on a regular schedule, register the new public key with Strails, and retire the old private key from your secrets manager.
 - **Test encryption in staging first.** Validate your encrypt/decrypt round-trip against `https://beta.stablesrail.io/v1/` before enabling it in production.
 

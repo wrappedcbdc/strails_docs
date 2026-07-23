@@ -121,7 +121,7 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
 </Note>
 
 <Tabs>
-  <Tab title="Mode 1 — Quote (Recommended)">
+  <Tab title="Mode 1 - Quote (Recommended)">
     Execute against a quote you obtained from `POST /fx/quote`. This mode locks in the price shown in the quote and is the safest choice to avoid slippage.
 
     ```bash
@@ -144,7 +144,7 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
     </ParamField>
   </Tab>
 
-  <Tab title="Mode 2 — Direct">
+  <Tab title="Mode 2 - Direct">
     Execute at the best available market price without generating a quote first. The engine matches your order against the orderbook at the moment of execution.
 
     ```bash
@@ -177,7 +177,7 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
     </ParamField>
   </Tab>
 
-  <Tab title="Mode 3 — Targeted">
+  <Tab title="Mode 3 - Targeted">
     Execute against a specific liquidity provider's order using its `orderId`. Use this when you want to trade at an exact LP's price without going through the quote flow.
 
     ```bash

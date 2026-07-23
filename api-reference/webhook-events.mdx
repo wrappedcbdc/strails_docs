@@ -19,7 +19,7 @@ Every event delivered by Strails shares the following top-level fields regardles
 | `fintechId` | string | Your fintech account identifier. |
 | `version` | string | Schema version of the event payload (e.g., `"1.0.0"`). |
 | `userId` | string | Identifier of the user associated with the event, where applicable. Omitted for fintech-level events. |
-| `payload` | object | Event-specific data. Structure varies by event type — see each event section below. |
+| `payload` | object | Event-specific data. Structure varies by event type - see each event section below. |
 
 ## HTTP headers
 
@@ -729,7 +729,7 @@ Fired when the bank payout is submitted to the payment provider after the on-cha
 
 ### `fintech.offramp.completed`
 
-Fired when the entire offramp flow is complete — the on-chain token burn is confirmed and the fiat payout has settled to the destination bank account.
+Fired when the entire offramp flow is complete - the on-chain token burn is confirmed and the fiat payout has settled to the destination bank account.
 
 **Key payload fields:** `amount`, `currency`, `status`, `bankAccount`, `wallet`, `burnDetails.txHash`, `payoutDetails.reference`, `payoutDetails.status`, `completedAt`, `metadata.processingTime`
 
@@ -777,7 +777,7 @@ Fired when the entire offramp flow is complete — the on-chain token burn is co
 
 ### `fintech.offramp.failed`
 
-Fired when an offramp fails at any stage in the pipeline — whether during the on-chain transfer or the bank payout. The `error` object indicates where the failure occurred and its cause.
+Fired when an offramp fails at any stage in the pipeline - whether during the on-chain transfer or the bank payout. The `error` object indicates where the failure occurred and its cause.
 
 **Key payload fields:** `amount`, `currency`, `status`, `bankAccount`, `burnDetails`, `error.message`, `error.code`, `metadata.retryable`, `metadata.attemptNumber`
 

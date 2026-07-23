@@ -4,7 +4,7 @@ sidebarTitle: "Testing"
 description: "Step-by-step sandbox test scenarios for API connection, user onboarding, onramp, offramp, IP allowlist, and FX trading with ready-to-run curl commands."
 ---
 
-The Strails sandbox environment lets you exercise every API endpoint with real request/response cycles without touching live funds. Use your **sandbox API key** (issued during onboarding) and the base URL `https://beta.stablesrail.io/v1/` for all test requests. Sandbox state is isolated from production — you can freely create users, trigger transactions, and inspect webhook payloads without consequence.
+The Strails sandbox environment lets you exercise every API endpoint with real request/response cycles without touching live funds. Use your **sandbox API key** (issued during onboarding) and the base URL `https://beta.stablesrail.io/v1/` for all test requests. Sandbox state is isolated from production - you can freely create users, trigger transactions, and inspect webhook payloads without consequence.
 
 ## Required Headers
 
@@ -55,13 +55,13 @@ curl -X GET "https://beta.stablesrail.io/v1/getfintechwallet" \
 }
 ```
 
-If you receive a `401`, double-check that you are sending `x-api-key` (all lowercase) and that your sandbox key is correct. If you receive a `403`, add your IP to the allowlist — see **Test Scenario 5** below.
+If you receive a `401`, double-check that you are sending `x-api-key` (all lowercase) and that your sandbox key is correct. If you receive a `403`, add your IP to the allowlist - see **Test Scenario 5** below.
 
 ### User Onboarding
 
 Onboard a test user with a BVN, then poll for the onboarding result.
 
-**Step 1 — Submit the onboarding request:**
+**Step 1 - Submit the onboarding request:**
 
 ```bash
 curl -X POST "https://beta.stablesrail.io/v1/onboarduser" \
@@ -91,9 +91,9 @@ curl -X POST "https://beta.stablesrail.io/v1/onboarduser" \
 }
 ```
 
-Save the `userId` — you will need it in every subsequent call.
+Save the `userId` - you will need it in every subsequent call.
 
-**Step 2 — Check onboarding status:**
+**Step 2 - Check onboarding status:**
 
 ```bash
 curl -X POST "https://beta.stablesrail.io/v1/onboardstatus" \
@@ -124,7 +124,7 @@ curl -X POST "https://beta.stablesrail.io/v1/onboardstatus" \
 
 Create a cNGN onramp request, then retrieve the temporary virtual account for the test bank transfer.
 
-**Step 1 — Initiate an onramp:**
+**Step 1 - Initiate an onramp:**
 
 ```bash
 curl -X POST "https://beta.stablesrail.io/v1/cngnonramp" \
@@ -152,7 +152,7 @@ curl -X POST "https://beta.stablesrail.io/v1/cngnonramp" \
 }
 ```
 
-**Step 2 — Retrieve the virtual account:**
+**Step 2 - Retrieve the virtual account:**
 
 ```bash
 curl -X POST "https://beta.stablesrail.io/v1/getvirtualaccount" \
@@ -173,7 +173,7 @@ curl -X POST "https://beta.stablesrail.io/v1/getvirtualaccount" \
   "message": "Virtual account retrieved",
   "data": {
     "accountNumber": "9876543210",
-    "accountName": "Adebayo Ogundimu — Strails",
+    "accountName": "Adebayo Ogundimu - Strails",
     "bankName": "Wema Bank",
     "bankCode": "035",
     "expiresAt": "2023-12-07T11:00:00Z"
@@ -185,13 +185,13 @@ curl -X POST "https://beta.stablesrail.io/v1/getvirtualaccount" \
   Virtual accounts expire after **30 minutes**. Simulate the bank transfer before the `expiresAt` timestamp, or create a new onramp request.
 </Note>
 
-Once the simulated transfer is received, the onramp progresses through `processing` → `funded` → `completed` and you receive a webhook notification.
+Once the simulated transfer is received, the onramp progresses through `processing` -> `funded` -> `completed` and you receive a webhook notification.
 
 ### Process Withdrawal (Offramp)
 
 Burn cNGN and send the equivalent Naira to a bank account.
 
-**Step 1 — Initiate an offramp:**
+**Step 1 - Initiate an offramp:**
 
 ```bash
 curl -X POST "https://beta.stablesrail.io/v1/cngnofframp" \
@@ -221,7 +221,7 @@ curl -X POST "https://beta.stablesrail.io/v1/cngnofframp" \
 }
 ```
 
-**Step 2 — Poll for offramp status:**
+**Step 2 - Poll for offramp status:**
 
 ```bash
 curl -X POST "https://beta.stablesrail.io/v1/cngnofframpstatus" \
@@ -312,9 +312,9 @@ curl -X POST "https://beta.stablesrail.io/v1/manageipallowlist" \
 
 ### FX Quote & Trade
 
-Get a live exchange rate for a cNGN ↔ USDC or cNGN ↔ USDT pair, then execute the trade within the 5-minute quote window.
+Get a live exchange rate for a cNGN <-> USDC or cNGN <-> USDT pair, then execute the trade within the 5-minute quote window.
 
-**Step 1 — Request a quote:**
+**Step 1 - Request a quote:**
 
 ```bash
 curl -X POST "https://beta.stablesrail.io/v1/fx/quote" \
@@ -347,7 +347,7 @@ curl -X POST "https://beta.stablesrail.io/v1/fx/quote" \
 }
 ```
 
-**Step 2 — Execute the trade:**
+**Step 2 - Execute the trade:**
 
 ```bash
 curl -X POST "https://beta.stablesrail.io/v1/fx/trade" \
@@ -377,7 +377,7 @@ curl -X POST "https://beta.stablesrail.io/v1/fx/trade" \
 }
 ```
 
-The trade moves through `locked` → `signing` → `settling` → `completed`. Monitor progress via your configured webhook or by polling the trade status endpoint.
+The trade moves through `locked` -> `signing` -> `settling` -> `completed`. Monitor progress via your configured webhook or by polling the trade status endpoint.
 
 </Steps>
 
@@ -390,7 +390,7 @@ The trade moves through `locked` → `signing` → `settling` → `completed`. M
 To use the collection:
 
 1. Download `postman-collection.json` from the repository.
-2. Open Postman and select **Import → Upload Files**.
+2. Open Postman and select **Import -> Upload Files**.
 3. Create a new Postman environment and add two variables:
 
    | Variable | Value |

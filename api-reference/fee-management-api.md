@@ -8,7 +8,7 @@ This section documents endpoints fintechs use to **configure fee structures**, *
 
 ---
 
-## Fee Management API — Endpoints Overview
+## Fee Management API - Endpoints Overview
 
 | Section                    | Endpoint                       | Method | Description                                                                                     |
 | -------------------------- | ------------------------------ | ------ | ----------------------------------------------------------------------------------------------- |

@@ -57,7 +57,7 @@ If your use case requires higher rate limits, contact our team with details abou
 
 #### Notes
 
-- Rates below were extracted from the functions code (withRateLimit options) and converted to a human-friendly "requests per minute (rpm)" where needed. For endpoints that do not set a per-endpoint limit the service default is used: window = 60,000 ms, maxPerWindow = 30 → 30 rpm.
+- Rates below were extracted from the functions code (withRateLimit options) and converted to a human-friendly "requests per minute (rpm)" where needed. For endpoints that do not set a per-endpoint limit the service default is used: window = 60,000 ms, maxPerWindow = 30 -> 30 rpm.
 - Where the configured window is longer than 60s we show both the configured limit (max requests per window) and the equivalent rpm in the table.
 
 #### User Management & Authentication
@@ -67,7 +67,7 @@ If your use case requires higher rate limits, contact our team with details abou
 | [`/onboarduser`](/api-reference/user-management#onboard-a-new-user-with-bvn-verification) (user registration) | 100 requests / 60,000 ms | 100 rpm |
 | [`/onboardstatus`](/api-reference/user-management#check-the-current-status-of-a-users-onboarding-request) (user status) | 200 requests / 60,000 ms | 200 rpm |
 | [`/getuserdetails`](/api-reference/user-management#retrieve-detailed-information-about-a-user-account) | 100 requests / 60,000 ms | 100 rpm |
-| [`/manageuserstatus`](/api-reference/user-management#activate-or-deactivate-a-user-account) | default → 30 requests / 60,000 ms | 30 rpm |
+| [`/manageuserstatus`](/api-reference/user-management#activate-or-deactivate-a-user-account) | default -> 30 requests / 60,000 ms | 30 rpm |
 | [`/listfintechusers`](/api-reference/user-management#list-all-fintech-users) | 100 requests / 60,000 ms | 100 rpm |
 
 #### Virtual Accounts & Wallet Operations
@@ -75,18 +75,18 @@ If your use case requires higher rate limits, contact our team with details abou
 | Endpoint | Configured limit | Equivalent (rpm) | Notes |
 |---|---:|---:|---|
 | [`/getvirtualaccount`](/api-reference/virtual-accounts#retrieve-a-specific-virtual-account-with-details-about-amounts-and-fees) | 100 requests / 600,000 ms | 10 rpm | configured as 100 requests per 10 minutes |
-| [`/getfintechvirtualaccount`](/api-reference/virtual-accounts#retrieve-the-ngn-virtual-account-assigned-to-your-fintech) | default → 30 requests / 60,000 ms | 30 rpm | fintech onramp account retrieval |
+| [`/getfintechvirtualaccount`](/api-reference/virtual-accounts#retrieve-the-ngn-virtual-account-assigned-to-your-fintech) | default -> 30 requests / 60,000 ms | 30 rpm | fintech onramp account retrieval |
 
 #### Wallet Management
 
 | Endpoint | Configured limit | Equivalent (rpm) |
 |---|---:|---:|
-| [`/getfintechwallet`](/api-reference/wallet#retrieve-the-fintech-smart-wallet-and-all-external-wallets) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/addexternalwallet`](/api-reference/wallet#add-an-external-wallet) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/updateexternalwalletstatus`](/api-reference/wallet#update-external-wallet-status) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/removeexternalwallet`](/api-reference/wallet#remove-an-external-wallet) | default → 30 requests / 60,000 ms | 30 rpm |
+| [`/getfintechwallet`](/api-reference/wallet#retrieve-the-fintech-smart-wallet-and-all-external-wallets) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/addexternalwallet`](/api-reference/wallet#add-an-external-wallet) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/updateexternalwalletstatus`](/api-reference/wallet#update-external-wallet-status) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/removeexternalwallet`](/api-reference/wallet#remove-an-external-wallet) | default -> 30 requests / 60,000 ms | 30 rpm |
 | [`/listuserwallets`](/api-reference/wallet#retrieve-user-wallets) | 100 requests / 60,000 ms | 100 rpm |
-| [`/migrateuserwallets`](/api-reference/wallet#migrate-user-wallets) | default → 30 requests / 60,000 ms | 30 rpm |
+| [`/migrateuserwallets`](/api-reference/wallet#migrate-user-wallets) | default -> 30 requests / 60,000 ms | 30 rpm |
 
 #### Transactions & Asset Management
 
@@ -94,12 +94,12 @@ If your use case requires higher rate limits, contact our team with details abou
 |---|---:|---:|---|
 | [`/cngnonramp`](/api-reference/transactions#user-onramp-user-wallet-funding) | 1000 requests / 600,000 ms | 100 rpm | large batch/funding flows often use 10 minute windows |
 | [`/cngnofframp`](/api-reference/transactions#user-offramp-payout-to-user-bank-account) | 1000 requests / 600,000 ms | 100 rpm |
-| [`/cngnonrampstatus`](/api-reference/transactions#cngn-onramp-status) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/cngnofframpstatus`](/api-reference/transactions#cngn-offramp-status) | default → 30 requests / 60,000 ms | 30 rpm |
+| [`/cngnonrampstatus`](/api-reference/transactions#cngn-onramp-status) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/cngnofframpstatus`](/api-reference/transactions#cngn-offramp-status) | default -> 30 requests / 60,000 ms | 30 rpm |
 | [`/withdrawasset`](/api-reference/transactions#user-token-withdrawal) | 30 requests / 60,000 ms | 30 rpm |
-| [`/fintechtransfer`](/api-reference/transactions#fintech-token-withdrawal) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/initiateofframp`](/api-reference/transactions#fintech-offramping) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/getofframpstatus`](/api-reference/transactions#fintech-offramp-status) | default → 30 requests / 60,000 ms | 30 rpm |
+| [`/fintechtransfer`](/api-reference/transactions#fintech-token-withdrawal) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/initiateofframp`](/api-reference/transactions#fintech-offramping) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/getofframpstatus`](/api-reference/transactions#fintech-offramp-status) | default -> 30 requests / 60,000 ms | 30 rpm |
 | [`/deposits`](/api-reference/transactions#list-deposits) | 100 requests / 60,000 ms | 100 rpm | list deposit transactions |
 | [`/payouts`](/api-reference/transactions#list-payouts) | 100 requests / 60,000 ms | 100 rpm | list payout transactions |
 | [`/transactions`](/api-reference/transactions#list-transactions) | 100 requests / 60,000 ms | 100 rpm | list all transactions |
@@ -124,12 +124,12 @@ The following endpoints allow fintechs to manage Nigerian bank accounts for offr
 
 | Endpoint | Configured limit | Equivalent (rpm) |
 |---|---:|---:|
-| [`/getbankscode`](/api-reference/fiat-payout-management#retrieve-supported-banks-nigeria) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/addbankaccount`](/api-reference/fiat-payout-management#add-a-new-nigerian-bank-account-for-fintech-payout) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/updatebankaccount`](/api-reference/fiat-payout-management#update-bank-account) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/deletebankaccount`](/api-reference/fiat-payout-management#delete-bank-account) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/getbankaccounts`](/api-reference/fiat-payout-management#retrieve-single-bank-account) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/listbankaccounts`](/api-reference/fiat-payout-management#retrieve-all-bank-accounts) | default → 30 requests / 60,000 ms | 30 rpm |
+| [`/getbankscode`](/api-reference/fiat-payout-management#retrieve-supported-banks-nigeria) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/addbankaccount`](/api-reference/fiat-payout-management#add-a-new-nigerian-bank-account-for-fintech-payout) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/updatebankaccount`](/api-reference/fiat-payout-management#update-bank-account) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/deletebankaccount`](/api-reference/fiat-payout-management#delete-bank-account) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/getbankaccounts`](/api-reference/fiat-payout-management#retrieve-single-bank-account) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/listbankaccounts`](/api-reference/fiat-payout-management#retrieve-all-bank-accounts) | default -> 30 requests / 60,000 ms | 30 rpm |
 
 #### FX Orderbook & Trading Management
 
@@ -157,17 +157,17 @@ The following endpoints allow fintechs to create liquidity orders and execute FX
 
 | Endpoint | Configured limit | Equivalent (rpm) |
 |---|---:|---:|
-| [`/fx/mpc/register`](/api-reference/fx-setting#register-mpc-vault) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/fx/settings`](/api-reference/fx-setting#get-fx-settings) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/fx/auto-signing/enable`](/api-reference/fx-setting#enable-auto-signing) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/fx/auto-signing/disable`](/api-reference/fx-setting#disable-auto-signing) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/fx/auto-signing/threshold`](/api-reference/fx-setting#set-auto-signing-threshold) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/fx/auto-signing/status`](/api-reference/fx-setting#get-auto-signing-status) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/fx/auto-signing/stats`](/api-reference/fx-setting#get-auto-signing-stats) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/manageipallowlist`](/api-reference/management-api#manage-ip-addresses-allowed-to-access-your-api) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/regenerateapikey`](/api-reference/management-api#generate-a-new-api-key) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/updateonrampasset`](/api-reference/management-api) | default → 30 requests / 60,000 ms | 30 rpm |
-| [`/autosigning/config`](/api-reference/management-api) | default → 30 requests / 60,000 ms | 30 rpm |
+| [`/fx/mpc/register`](/api-reference/fx-setting#register-mpc-vault) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/fx/settings`](/api-reference/fx-setting#get-fx-settings) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/fx/auto-signing/enable`](/api-reference/fx-setting#enable-auto-signing) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/fx/auto-signing/disable`](/api-reference/fx-setting#disable-auto-signing) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/fx/auto-signing/threshold`](/api-reference/fx-setting#set-auto-signing-threshold) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/fx/auto-signing/status`](/api-reference/fx-setting#get-auto-signing-status) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/fx/auto-signing/stats`](/api-reference/fx-setting#get-auto-signing-stats) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/manageipallowlist`](/api-reference/management-api#manage-ip-addresses-allowed-to-access-your-api) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/regenerateapikey`](/api-reference/management-api#generate-a-new-api-key) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/updateonrampasset`](/api-reference/management-api) | default -> 30 requests / 60,000 ms | 30 rpm |
+| [`/autosigning/config`](/api-reference/management-api) | default -> 30 requests / 60,000 ms | 30 rpm |
 
 #### Webhooks & Third-Party Integration
 

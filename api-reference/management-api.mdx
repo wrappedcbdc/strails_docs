@@ -4,7 +4,7 @@ sidebarTitle: "Management"
 description: "Configure webhooks, manage IP security allowlists, rotate API keys, and control per-user asset preferences for your fintech account."
 ---
 
-Use the Management API to configure the operational settings for your Strails integration — register and toggle webhook endpoints, manage IP allowlist rules that guard your API access, rotate your API key, and set per-user onramp asset preferences. You can also inspect the auto-signing threshold assigned to your fintech for cNGN buying.
+Use the Management API to configure the operational settings for your Strails integration - register and toggle webhook endpoints, manage IP allowlist rules that guard your API access, rotate your API key, and set per-user onramp asset preferences. You can also inspect the auto-signing threshold assigned to your fintech for cNGN buying.
 
 ## Endpoints overview
 
@@ -25,7 +25,7 @@ Use the Management API to configure the operational settings for your Strails in
 Generate a fresh API key for your fintech account.
 
 <Warning>
-  Calling this endpoint **immediately invalidates your existing API key**. Any requests still using the old key will be rejected. Store your new key securely before making further API calls — it will not be shown again.
+  Calling this endpoint **immediately invalidates your existing API key**. Any requests still using the old key will be rejected. Store your new key securely before making further API calls - it will not be shown again.
 </Warning>
 
 ### Request
@@ -39,7 +39,7 @@ curl --request GET \
 ### Response
 
 <ResponseField name="data.apiKey" type="string">
-  Your new API key. Copy and store this value immediately — it is only returned once.
+  Your new API key. Copy and store this value immediately - it is only returned once.
 </ResponseField>
 
 <ResponseField name="data.rotatedAt" type="string">

@@ -4,7 +4,7 @@ sidebarTitle: "HMAC Signatures"
 description: "Learn how to verify that Strails webhook deliveries are authentic using HMAC-SHA256 signatures, timestamps, and timing-safe comparison."
 ---
 
-Every webhook Strails sends is signed with an HMAC-SHA256 signature. Verifying this signature before you act on the payload guarantees that the event originated from Strails and was not tampered with — or replayed — by a third party. Strails passes the signature and all verification metadata in request headers.
+Every webhook Strails sends is signed with an HMAC-SHA256 signature. Verifying this signature before you act on the payload guarantees that the event originated from Strails and was not tampered with - or replayed - by a third party. Strails passes the signature and all verification metadata in request headers.
 
 ## Webhook Headers
 
@@ -29,7 +29,7 @@ Where:
 
 - **`webhook_secret`** is the secret you configured when you registered your webhook URL.
 - **`timestamp`** is the exact value of the `X-Strails-Timestamp` header.
-- **`payload`** is the **raw** request body string — do not parse it to JSON and re-serialize it before computing the digest, because whitespace or key ordering differences will produce a different hash.
+- **`payload`** is the **raw** request body string - do not parse it to JSON and re-serialize it before computing the digest, because whitespace or key ordering differences will produce a different hash.
 
 ## Verifying Webhooks
 
@@ -40,7 +40,7 @@ Where:
 
     /**
      * Returns true if the webhook signature is valid, false otherwise.
-     * Pass the raw body buffer — do not call JSON.parse before this function.
+     * Pass the raw body buffer - do not call JSON.parse before this function.
      */
     function verifyStrailsWebhook(rawBody, headers, webhookSecret) {
       const signature = headers['x-strails-signature'];
@@ -60,7 +60,7 @@ Where:
           Buffer.from(expected,  'hex')
         );
       } catch {
-        // Buffers of different lengths throw — treat as invalid
+        // Buffers of different lengths throw - treat as invalid
         return false;
       }
     }
@@ -79,7 +79,7 @@ Where:
     ) -> bool:
         """
         Returns True if the webhook signature is valid, False otherwise.
-        Pass the raw request body bytes — do not decode/re-encode before calling.
+        Pass the raw request body bytes - do not decode/re-encode before calling.
         """
         expected = hmac.new(
             webhook_secret.encode('utf-8'),
@@ -103,7 +103,7 @@ const crypto  = require('crypto');
 
 const app = express();
 
-// Use express.raw so you receive the body as a Buffer — required for correct HMAC verification
+// Use express.raw so you receive the body as a Buffer - required for correct HMAC verification
 app.post('/webhooks/strails', express.raw({ type: 'application/json' }), async (req, res) => {
   const signature = req.headers['x-strails-signature'];
   const timestamp  = req.headers['x-strails-timestamp'];
@@ -136,7 +136,7 @@ app.post('/webhooks/strails', express.raw({ type: 'application/json' }), async (
     return res.status(401).send('Invalid signature');
   }
 
-  // 4. Enqueue the event for async processing — respond immediately
+  // 4. Enqueue the event for async processing - respond immediately
   const event = JSON.parse(rawBody);
   await queue.add({ eventType: event.eventType, payload: event.payload });
 
@@ -164,7 +164,7 @@ Register your webhook URL and secret by calling `POST /setwebhook`:
 ## Best Practices
 
 - **Use a long, random secret.** Generate at least 32 bytes of cryptographically random data (e.g. `openssl rand -hex 32`) and use that as your webhook secret.
-- **Store the secret in an environment variable.** Load it from `process.env.STRAILS_WEBHOOK_SECRET` or your secrets manager — never hard-code it in source.
+- **Store the secret in an environment variable.** Load it from `process.env.STRAILS_WEBHOOK_SECRET` or your secrets manager - never hard-code it in source.
 - **Always verify before acting.** Process the event payload only after the signature check passes. Treat any verification failure as a potential attack.
 - **Reject stale timestamps.** Discard webhooks where `X-Strails-Timestamp` is more than 5 minutes in the past to prevent replay attacks.
 - **Return `200 OK` quickly and process asynchronously.** Enqueue the event and respond immediately. Long-running handlers risk timeouts that trigger unnecessary retries.

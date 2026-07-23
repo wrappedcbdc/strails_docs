@@ -245,9 +245,9 @@ curl -X POST https://beta.stablesrail.io/v1/getvirtualaccount \
 
 **Payment Flow:**
 1. User pays ₦5,075 to the generated virtual account
-2. System receives deposit → mints cNGN to user's wallet
-3. Auto-swap cNGN → USDC/T via Aerodrome DEX (if `autoSwap: true`)
-4. Display cNGN → USDC/T quote on onramp status
+2. System receives deposit -> mints cNGN to user's wallet
+3. Auto-swap cNGN -> USDC/T via Aerodrome DEX (if `autoSwap: true`)
+4. Display cNGN -> USDC/T quote on onramp status
 5. Execute quote returned
 6. Webhook notification sent on completion
 7. USDC arrives in user's wallet
@@ -406,17 +406,17 @@ curl -X POST https://beta.stablesrail.io/v1/fx/trade \
 
 ### Pattern 1: Simple Wallet Funding
 ```
-User onboarding → Send virtual account → User pays → cNGN minted → Done
+User onboarding -> Send virtual account -> User pays -> cNGN minted -> Done
 ```
 
 ### Pattern 2: Wallet Funding with Auto-Swap
 ```
-User onboarding → Onramp with autoSwap: true → cNGN minted → Auto-swap to USDC → Done
+User onboarding -> Onramp with autoSwap: true -> cNGN minted -> Auto-swap to USDC -> Done
 ```
 
 ### Pattern 3: Fintech Liquidity Management
 ```
-Create FX order → Wait for match → Trade executes → Receive USDC → Escrow settles counter-party
+Create FX order -> Wait for match -> Trade executes -> Receive USDC -> Escrow settles counter-party
 ```
 
 ---

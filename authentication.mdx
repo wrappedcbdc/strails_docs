@@ -43,7 +43,7 @@ curl --request GET \
 ## Obtaining Your API Key
 
 <Info>
-  To get access to the Strails API, email **support@strails.io** to begin your onboarding. The team will reply with your `x-api-key` and step-by-step setup instructions. Once you receive your key, store it immediately as a server-side environment variable — never hard-code it in your application source or commit it to version control.
+  To get access to the Strails API, email **support@strails.io** to begin your onboarding. The team will reply with your `x-api-key` and step-by-step setup instructions. Once you receive your key, store it immediately as a server-side environment variable - never hard-code it in your application source or commit it to version control.
 </Info>
 
 ```bash
@@ -175,13 +175,13 @@ The table below lists the global error codes that apply across all endpoints:
 ## Security Best Practices
 
 1. **Store your API key securely.** Never commit it to version control or embed it in client-side code.
-2. **Use environment variables.** Load your key from `process.env.STRAILS_API_KEY` (Node.js) or equivalent — not from a hard-coded string.
+2. **Use environment variables.** Load your key from `process.env.STRAILS_API_KEY` (Node.js) or equivalent - not from a hard-coded string.
 3. **Rotate your key regularly.** Use the [`/regenerateapikey`](/api-reference/management-api#generate-a-new-api-key) endpoint to issue a new key and revoke the old one on a regular schedule.
 4. **Always use HTTPS.** The Strails API does not accept plain HTTP connections. Every request must go over a secure TLS connection.
 
 ## Registering Your Public Key
 
-Strails supports optional payload encryption for production integrations that handle PII, wallet addresses, or financial data. To opt in, register your Ed25519 public key with Strails using the `/storepublickey` endpoint. Once registered, Strails will use your public key to encrypt all response payloads — only your server can decrypt them.
+Strails supports optional payload encryption for production integrations that handle PII, wallet addresses, or financial data. To opt in, register your Ed25519 public key with Strails using the `/storepublickey` endpoint. Once registered, Strails will use your public key to encrypt all response payloads - only your server can decrypt them.
 
 ```bash
 POST /storepublickey

@@ -12,7 +12,7 @@ All endpoints require fintech API key authentication and IP allowlist verificati
 
 ---
 
-## FX Trading Operations API — Endpoints Overview
+## FX Trading Operations API - Endpoints Overview
 
 | Section                                    | Endpoint              | Method | Description                                                       |
 | ------------------------------------------ | --------------------- | ------ | ----------------------------------------------------------------- |
@@ -120,7 +120,7 @@ POST {{BASE_URL}}/fx/quote
 
 ### Execute Trade
 
-Execute a trade using a quote ID or direct trade parameters. Initiates the FX trade flow: requested → locked → signed → settling → completed.
+Execute a trade using a quote ID or direct trade parameters. Initiates the FX trade flow: requested -> locked -> signed -> settling -> completed.
 
 <Info>
 There are three execution modes:
@@ -465,10 +465,10 @@ Trades follow a specific status lifecycle:
 ### Status Flow
 
 ```
-pending → locked → signing → settling → completed
+pending -> locked -> signing -> settling -> completed
                           ↘ failed      ↘ failed
-         locked → expired (after 5 minutes)
-         signing → expired (only after MPC signing completes/fails)
+         locked -> expired (after 5 minutes)
+         signing -> expired (only after MPC signing completes/fails)
 ```
 
 ---

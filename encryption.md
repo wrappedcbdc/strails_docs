@@ -27,7 +27,7 @@ Strails distributes its public key during onboarding. You generate your own Ed25
 ## Request encryption flow
 
 ```
-Your payload + Strails public key → libsodium box seal → encrypted base64 string → sent in request body
+Your payload + Strails public key -> libsodium box seal -> encrypted base64 string -> sent in request body
 ```
 
 1. Build your JSON payload as documented for the endpoint.
@@ -37,7 +37,7 @@ Your payload + Strails public key → libsodium box seal → encrypted base64 st
 ## Response decryption flow
 
 ```
-Encrypted base64 response + your private key → libsodium box seal open → original JSON payload
+Encrypted base64 response + your private key -> libsodium box seal open -> original JSON payload
 ```
 
 1. Extract the `payload` field from the response body.

@@ -4,7 +4,7 @@ sidebarTitle: "Virtual Accounts"
 description: "Retrieve fintech-level and user-level NGN virtual accounts, with full fee breakdowns and exact deposit amounts for the cNGN onramp flow."
 ---
 
-The Virtual Accounts API provides two endpoints for retrieving Nigerian bank account details used in the cNGN onramp flow. Your fintech has a permanent pooled account for collecting NGN deposits, and each user deposit request is associated with a dedicated virtual account that carries a full fee breakdown — letting your users know exactly how much to send and how much will be credited to their wallet.
+The Virtual Accounts API provides two endpoints for retrieving Nigerian bank account details used in the cNGN onramp flow. Your fintech has a permanent pooled account for collecting NGN deposits, and each user deposit request is associated with a dedicated virtual account that carries a full fee breakdown - letting your users know exactly how much to send and how much will be credited to their wallet.
 
 <Info>
   New to virtual accounts? Read the [Virtual Accounts Guide](/virtual-accounts-guide) for an overview of account types, the deposit lifecycle, BVN validation requirements, and best practices before integrating these endpoints.
@@ -160,7 +160,7 @@ curl -X POST https://beta.stablesrail.io/v1/getvirtualaccount \
 </ResponseField>
 
 <ResponseField name="data.virtualAccount.totalAmountWithFee" type="number">
-  The exact NGN amount the user must send, including all fees. Always use this figure — not `baseAmount` — when presenting the transfer amount to your user.
+  The exact NGN amount the user must send, including all fees. Always use this figure - not `baseAmount` - when presenting the transfer amount to your user.
 </ResponseField>
 
 <ResponseField name="data.virtualAccount.feeBreakdown" type="object">

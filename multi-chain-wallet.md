@@ -11,7 +11,7 @@ The **Multi-Chain Wallet** (also called **Managed Wallet**) is a Strails-control
 
 | Feature | Description |
 |---------|-------------|
-| **Control** | Strails-controlled — StRails manages all transactions |
+| **Control** | Strails-controlled - StRails manages all transactions |
 | **Security** | HSM-backed key management |
 | **Assets** | cNGN, USDC, USDT |
 | **Networks** | Base (primary), Ethereum, BNB Chain, Solana, Bantu |
@@ -22,7 +22,7 @@ The **Multi-Chain Wallet** (also called **Managed Wallet**) is a Strails-control
 The Multi-Chain Wallet acts as the **execution layer** for StRails operations:
 
 ```
-User Request → StRails API → Multi-Chain Wallet → Blockchain
+User Request -> StRails API -> Multi-Chain Wallet -> Blockchain
 ```
 
 1. **You call an API endpoint** (e.g., `/withdrawasset`, `/swap`)
@@ -35,14 +35,14 @@ User Request → StRails API → Multi-Chain Wallet → Blockchain
 ### Token Transfers
 The Multi-Chain Wallet executes token transfers when you call:
 
-- [`/withdrawasset`](/api-reference/transactions#user-token-withdrawal) — Withdraw user tokens to external wallets
-- [`/fintechtransfer`](/api-reference/transactions#fintech-token-withdrawal) — Transfer fintech tokens to registered external wallets
+- [`/withdrawasset`](/api-reference/transactions#user-token-withdrawal) - Withdraw user tokens to external wallets
+- [`/fintechtransfer`](/api-reference/transactions#fintech-token-withdrawal) - Transfer fintech tokens to registered external wallets
 
 ### Swaps
 Token swaps are executed through the Managed Wallet:
 
-- [`/swap`](/api-reference/transactions#user-swap) — Swap tokens on user's smart wallet
-- [`/swaptrigger`](/api-reference/transactions#swap-trigger) — Trigger async swaps (cNGN ↔ USDC/USDT)
+- [`/swap`](/api-reference/transactions#user-swap) - Swap tokens on user's smart wallet
+- [`/swaptrigger`](/api-reference/transactions#swap-trigger) - Trigger async swaps (cNGN <-> USDC/USDT)
 
 ### Cross-Chain Bridging
 For multi-chain operations, the Managed Wallet coordinates:
@@ -67,7 +67,7 @@ For multi-chain operations, the Managed Wallet coordinates:
 └─────────────────────────────────────┘
               │
               ▼
-     Signed Transaction → Blockchain
+     Signed Transaction -> Blockchain
 ```
 
 **Key Security Features:**
@@ -84,7 +84,7 @@ The Multi-Chain Wallet pays gas fees for all system-initiated transactions:
 - **Swaps**: Gas included in swap execution
 - **Bridging**: Gas covered on both source and destination chains
 
-You don't need to maintain native token balances — StRails handles all gas costs.
+You don't need to maintain native token balances - StRails handles all gas costs.
 
 ## Differences from Smart Wallet
 
@@ -98,7 +98,7 @@ You don't need to maintain native token balances — StRails handles all gas cos
 
 ## Related Documentation
 
-- [Smart Wallet](/smart-wallet) — User-facing smart contract wallets
-- [MPC Wallet](/mpc-wallet) — Fintech-controlled custody with MPC signing
-- [Wallet Management API](/api-reference/wallet) — API endpoints for wallet operations
-- [Transactions API](/api-reference/transactions) — Transaction execution endpoints
+- [Smart Wallet](/smart-wallet) - User-facing smart contract wallets
+- [MPC Wallet](/mpc-wallet) - Fintech-controlled custody with MPC signing
+- [Wallet Management API](/api-reference/wallet) - API endpoints for wallet operations
+- [Transactions API](/api-reference/transactions) - Transaction execution endpoints

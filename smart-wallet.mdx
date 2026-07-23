@@ -4,7 +4,7 @@ sidebarTitle: "Smart Wallet"
 description: "Deploy EIP-1167 smart contract wallets on Strails for owner-controlled, programmable token custody across Base and EVM-compatible networks."
 ---
 
-Smart Wallets on Strails are smart contract wallets deployed via a `WalletFactory` that give you or your users direct, owner-controlled custody of tokens. Unlike a traditional externally owned account (EOA), a Smart Wallet is itself a smart contract that executes transactions on the owner's behalf — no bundlers, no paymasters, no ERC-4337 infrastructure required.
+Smart Wallets on Strails are smart contract wallets deployed via a `WalletFactory` that give you or your users direct, owner-controlled custody of tokens. Unlike a traditional externally owned account (EOA), a Smart Wallet is itself a smart contract that executes transactions on the owner's behalf - no bundlers, no paymasters, no ERC-4337 infrastructure required.
 
 Use Smart Wallets when you need transparent on-chain custody for a fintech user, want to self-custody tokens and withdraw them independently, or need a programmable execution layer for cNGN and other stablecoins on Base.
 
@@ -22,9 +22,9 @@ Use Smart Wallets when you need transparent on-chain custody for a fintech user,
 
 Strails deploys Smart Wallets using the **EIP-1167 minimal proxy** (Clones) pattern via the `WalletFactory` contract. Every wallet is a lightweight proxy that forwards calls to a shared implementation contract, reducing deployment gas costs by roughly 90% compared to a full contract deployment.
 
-- **Deterministic addresses** — wallet addresses are derived from a `bytes32` salt so they are predictable before deployment.
-- **Owner-controlled** — your EOA calls `execute()` directly on the wallet contract; no third-party bundler or EntryPoint is involved.
-- **No external dependencies** — Strails does not use UserOperations, paymasters, or the ERC-4337 singleton EntryPoint.
+- **Deterministic addresses** - wallet addresses are derived from a `bytes32` salt so they are predictable before deployment.
+- **Owner-controlled** - your EOA calls `execute()` directly on the wallet contract; no third-party bundler or EntryPoint is involved.
+- **No external dependencies** - Strails does not use UserOperations, paymasters, or the ERC-4337 singleton EntryPoint.
 
 ```solidity
 // Predict the wallet address before deployment
@@ -39,7 +39,7 @@ function createAccount(address _owner, bytes32 _salt) external returns (address 
 | Feature | Strails Smart Wallet | ERC-4337 Account Abstraction |
 |---------|---------------------|------------------------------|
 | Deployment pattern | EIP-1167 minimal proxy | Full contract or proxy |
-| Transaction flow | Owner EOA → `execute()` | UserOperation → Bundler → EntryPoint |
+| Transaction flow | Owner EOA -> `execute()` | UserOperation -> Bundler -> EntryPoint |
 | Gas sponsorship | Owner pays directly in native token | Optional via Paymaster |
 | Bundlers required | No | Yes |
 | EntryPoint contract | Not used | Required |
@@ -61,17 +61,17 @@ Because your EOA owns the Smart Wallet, you withdraw tokens by calling `execute(
 
 <Tabs>
   <Tab title="Block Explorer">
-    Use Basescan's built-in write interface — no code required.
+    Use Basescan's built-in write interface - no code required.
 
     1. Open your wallet contract on [Basescan](https://basescan.org) (or [Etherscan](https://etherscan.io) for Ethereum).
-    2. Go to **Contract** → **Write Contract**.
+    2. Go to **Contract** -> **Write Contract**.
     3. Click **Connect to Web3** and connect the MetaMask wallet that is the owner EOA.
     4. Expand the `execute` function and fill in the three parameters:
 
     | Parameter | Value |
     |-----------|-------|
     | `to` | Token contract address (e.g. cNGN) |
-    | `value` | `0` — you are not sending native tokens |
+    | `value` | `0` - you are not sending native tokens |
     | `data` | ABI-encoded `transfer(address,uint256)` call (see below) |
 
     To build the `data` hex string, run the following snippet locally and paste the output into the `data` field:
@@ -111,7 +111,7 @@ Because your EOA owns the Smart Wallet, you withdraw tokens by calling `execute(
     // Token details
     const tokenAddress = "0xTokenContractAddress"; // e.g. cNGN contract
     const recipient    = "0xRecipientAddress";
-    const amount       = ethers.parseUnits("1000", 6); // 1 000 cNGN — 6 decimals
+    const amount       = ethers.parseUnits("1000", 6); // 1 000 cNGN - 6 decimals
 
     // Encode the ERC-20 transfer call
     const transferData = new ethers.Interface([
@@ -188,10 +188,10 @@ Because your EOA owns the Smart Wallet, you withdraw tokens by calling `execute(
 
 ## Important Notes
 
-- **Gas fees** — the owner EOA pays gas in the native token (ETH on Base and Ethereum). Keep a small ETH balance in the owner wallet for transaction fees.
-- **Token decimals** — cNGN uses 6 decimal places. Always confirm the target token's `decimals()` value before encoding amounts to avoid over- or under-withdrawing.
-- **Ownership** — only the current owner EOA can call `execute()` or `changeOwner()`. Verify ownership on-chain before attempting a withdrawal, especially after any ownership transfer.
-- **Liquidity locks** — if the Smart Wallet has active FX orders on the Strails orderbook, a portion of the balance may be locked as collateral. Treat your available balance as total balance minus any locked amount.
+- **Gas fees** - the owner EOA pays gas in the native token (ETH on Base and Ethereum). Keep a small ETH balance in the owner wallet for transaction fees.
+- **Token decimals** - cNGN uses 6 decimal places. Always confirm the target token's `decimals()` value before encoding amounts to avoid over- or under-withdrawing.
+- **Ownership** - only the current owner EOA can call `execute()` or `changeOwner()`. Verify ownership on-chain before attempting a withdrawal, especially after any ownership transfer.
+- **Liquidity locks** - if the Smart Wallet has active FX orders on the Strails orderbook, a portion of the balance may be locked as collateral. Treat your available balance as total balance minus any locked amount.
 
 ## Related
 

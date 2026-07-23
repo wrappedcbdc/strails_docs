@@ -20,7 +20,7 @@ This keeps API responses fast (~200ms) while complex operations (wallet creation
 Every user gets a dedicated Nigerian bank account that automatically converts deposits to cNGN:
 
 - Bank accounts generated via licensed payment integration
-- Auto-swap option: NGN → cNGN → USDC/USDT in a single flow
+- Auto-swap option: NGN -> cNGN -> USDC/USDT in a single flow
 - Depositor details captured for compliance
 
 See the [Virtual Accounts Guide](/virtual-accounts-guide) for account types and deposit flows.
@@ -39,7 +39,7 @@ Tokens live in smart wallets and managed wallets.
 
 ## FX Orderbook
 
-Fintechs can trade cNGN ↔ USDC/USDT with other fintechs:
+Fintechs can trade cNGN <-> USDC/USDT with other fintechs:
 
 - **Limit orders:** Set your price and wait for counterparties
 - **Market orders:** Execute instantly at best available price
@@ -74,9 +74,9 @@ Amounts are in **Naira** (main currency unit):
 ```
 
 **Examples:**
-- Create virtual account: `"amount": 5000` → User pays ₦5,000
-- Onramp: `"amount": 200` → Costs ₦203 (with fees)
-- Offramp: `"amount": 3000` → User receives ₦3,000 in bank
+- Create virtual account: `"amount": 5000` -> User pays ₦5,000
+- Onramp: `"amount": 200` -> Costs ₦203 (with fees)
+- Offramp: `"amount": 3000` -> User receives ₦3,000 in bank
 
 ### Token Operations (Blockchain Transfers / Balances)
 
@@ -92,10 +92,10 @@ Amounts use the **smallest unit (wei format)** with token decimals:
 **JavaScript conversion (token operations only):**
 
 ```javascript
-// Blockchain response → Display
+// Blockchain response -> Display
 const displayAmount = Number("500000000") / 1e6; // = 500 cNGN
 
-// User input → Blockchain request
+// User input -> Blockchain request
 const rawAmount = String(Math.floor(123.45 * 1e6)); // = "123450000"
 ```
 

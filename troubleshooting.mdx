@@ -41,13 +41,13 @@ Every API response includes a `response_code` field. The six possible values are
     **Lifecycle flow:**
 
     ```
-    requested → pending → processing → funded → completed
-                                ↓           ↓
-                              failed      failed
-                                            ↓ (if autoSwap enabled)
-                             swap_queued → swap_processing → completed
-                                                    ↓
-                                                  failed
+    requested -> pending -> processing -> funded -> completed
+                                  ↓            ↓
+                                failed       failed
+                                               ↓ (if autoSwap enabled)
+                                swap_queued -> swap_processing -> completed
+                                                      ↓
+                                                   failed
     ```
 
     **Virtual account sub-statuses:**
@@ -79,13 +79,13 @@ Every API response includes a `response_code` field. The six possible values are
     **Lifecycle flow:**
 
     ```
-    pending → processing → bank_verification → transfer_pending
-        ↓         ↓               ↓                   ↓
-    cancelled   failed          failed              failed
-                                                       ↓
-                                          transfer_confirmed → payout_pending → completed
-                                                                     ↓               ↓
-                                                                   failed          failed
+    pending -> processing -> bank_verification -> transfer_pending
+        ↓          ↓                ↓                    ↓
+    cancelled    failed           failed               failed
+                                                          ↓
+                                             transfer_confirmed -> payout_pending -> completed
+                                                                         ↓                ↓
+                                                                       failed           failed
     ```
 
   </Accordion>
@@ -107,13 +107,13 @@ Every API response includes a `response_code` field. The six possible values are
     **Lifecycle flow:**
 
     ```
-    pending → locked → signing → settling → completed
-                  ↓        ↓          ↓
-               expired   expired    failed
+    pending -> locked -> signing -> settling -> completed
+                   ↓         ↓           ↓
+                expired    expired     failed
     ```
 
     <Note>
-      A trade can only expire from `locked` or `signing` states. Once the transaction reaches `settling`, it either completes or fails — it cannot expire.
+      A trade can only expire from `locked` or `signing` states. Once the transaction reaches `settling`, it either completes or fails - it cannot expire.
     </Note>
 
   </Accordion>
@@ -204,7 +204,7 @@ These error code strings appear in the `error` field of a failed response and in
     - The `firstName` or `lastName` you submitted does not exactly match the name registered with the BVN. Include middle names if they appear on the BVN record.
     - The BVN belongs to a different phone number than the one submitted.
 
-    Correct the mismatch and submit a fresh `/onboarduser` request. You cannot retry the same onboarding record after a `failed` status — create a new one.
+    Correct the mismatch and submit a fresh `/onboarduser` request. You cannot retry the same onboarding record after a `failed` status - create a new one.
 
   </Accordion>
 

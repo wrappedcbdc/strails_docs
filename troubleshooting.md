@@ -61,7 +61,7 @@ All API responses include a `response_code` field indicating the result:
 ### Transaction Status Lifecycle
 
 ```
-pending → processing → completed
+pending -> processing -> completed
                     ↘ failed
 ```
 
@@ -86,13 +86,13 @@ pending → processing → completed
 ### Onramp Status Flow
 
 ```
-requested → pending → processing → funded → completed
-                          ↓           ↓
-                        failed      failed
-                                      ↓
-                         (if autoSwap) → swap_queued → swap_processing → completed
-                                                              ↓
-                                                           failed
+requested -> pending -> processing -> funded -> completed
+                            ↓           ↓
+                          failed      failed
+                                        ↓
+                          (if autoSwap) -> swap_queued -> swap_processing -> completed
+                                                                 ↓
+                                                              failed
 ```
 
 ### Virtual Account Status
@@ -124,9 +124,9 @@ requested → pending → processing → funded → completed
 ### User Offramp Status Flow
 
 ```
-pending → processing → bank_verification → transfer_pending → transfer_confirmed → payout_pending → completed
-    ↓         ↓              ↓                   ↓                  ↓                  ↓
- cancelled  failed         failed             failed             failed             failed
+pending -> processing -> bank_verification -> transfer_pending -> transfer_confirmed -> payout_pending -> completed
+    ↓          ↓               ↓                    ↓                   ↓                   ↓
+ cancelled   failed          failed               failed              failed              failed
 ```
 
 ---
@@ -151,11 +151,11 @@ pending → processing → bank_verification → transfer_pending → transfer_c
 ### Offramp Status Flow
 
 ```
-pending → processing → transferring_cngn → initiating_payout → payout_processing → completed
-    ↓         ↓              ↓                    ↓                  ↓
- cancelled  failed         failed              failed             failed
-                                                                     ↓
-                                                                  reversed
+pending -> processing -> transferring_cngn -> initiating_payout -> payout_processing -> completed
+    ↓          ↓               ↓                     ↓                   ↓
+ cancelled   failed          failed                failed              failed
+                                                                         ↓
+                                                                      reversed
 ```
 
 ### Offramp Sub-Statuses
@@ -192,15 +192,15 @@ pending → processing → transferring_cngn → initiating_payout → payout_pr
 ### Order Status Transitions
 
 ```
-active ↔ paused
-   ↓        ↓
- deleted  deleted
+active <-> paused
+   ↓          ↓
+ deleted    deleted
 ```
 
-- `active` → `paused` (via update)
-- `paused` → `active` (via update)
-- `active` → `deleted` (via delete)
-- `paused` → `deleted` (via delete)
+- `active` -> `paused` (via update)
+- `paused` -> `active` (via update)
+- `active` -> `deleted` (via delete)
+- `paused` -> `deleted` (via delete)
 
 ---
 
@@ -221,10 +221,10 @@ active ↔ paused
 ### Trade Status Flow
 
 ```
-pending → locked → signing → settling → completed
-                      ↓          ↓
-         locked → expired     failed
-         signing → expired (only after MPC signing completes/fails)
+pending -> locked -> signing -> settling -> completed
+                        ↓           ↓
+         locked -> expired       failed
+         signing -> expired (only after MPC signing completes/fails)
 ```
 
 ---
@@ -288,7 +288,7 @@ Fintech transfers are synchronous and complete immediately. The response indicat
 ### Withdrawal Status Flow
 
 ```
-pending → confirmed
+pending -> confirmed
     ↘ failed
 ```
 

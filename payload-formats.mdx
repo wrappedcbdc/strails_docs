@@ -47,7 +47,7 @@ Every successful response wraps its payload in the same envelope:
 | Field | Type | Description |
 |---|---|---|
 | `status` | string | `"Success"` or `"Error"` |
-| `response_code` | string | Two-digit code — see table below |
+| `response_code` | string | Two-digit code - see table below |
 | `message` | string | Human-readable description of the result |
 | `data` | object | Endpoint-specific payload; `null` on some errors |
 
@@ -118,11 +118,11 @@ GET /gettransactions?limit=50&offset=100
 
 ## Amount Formatting
 
-Strails uses different amount representations depending on whether the operation is fiat-based or token-based. Read this section carefully — using the wrong format is one of the most common integration mistakes.
+Strails uses different amount representations depending on whether the operation is fiat-based or token-based. Read this section carefully - using the wrong format is one of the most common integration mistakes.
 
 ### Fiat Operations
 
-Onramp and offramp endpoints that deal directly with Nigerian Naira accept and return amounts as **plain Naira values** — regular integers or decimals.
+Onramp and offramp endpoints that deal directly with Nigerian Naira accept and return amounts as **plain Naira values** - regular integers or decimals.
 
 ```json
 {
@@ -142,7 +142,7 @@ Blockchain endpoints (transfers, swaps, FX trades, asset withdrawals) require am
 }
 ```
 
-The value `5000000000` means 5,000 cNGN (6 decimals → `5000 × 10^6`).
+The value `5000000000` means 5,000 cNGN (6 decimals -> `5000 × 10^6`).
 
 | Token | Decimals | Example: 1 token in smallest unit |
 |---|---|---|
@@ -187,7 +187,7 @@ Use these functions to convert between display amounts and the values the API ex
     }
 
     // Examples
-    toSmallestUnit(500, 6);        // "500000000"  — 500 cNGN
+    toSmallestUnit(500, 6);        // "500000000"  - 500 cNGN
     fromSmallestUnit(500000000, 6); // 500
     formatNaira(5000);              // "₦5,000.00"
     ```
@@ -209,7 +209,7 @@ Use these functions to convert between display amounts and the values the API ex
         return f"₦{amount:,.2f}"
 
     # Examples
-    to_smallest_unit(500, 6)          # 500000000  — 500 cNGN
+    to_smallest_unit(500, 6)          # 500000000  - 500 cNGN
     from_smallest_unit(500000000, 6)  # Decimal('500')
     format_naira(5000)                # "₦5,000.00"
     ```
@@ -347,7 +347,7 @@ The virtual account format uses `notify`, `notifyType`, and a PascalCase `Data` 
 
 | Field Type | Format | Notes |
 |---|---|---|
-| Fiat amount | Integer or decimal | Naira value — no kobo conversion |
+| Fiat amount | Integer or decimal | Naira value - no kobo conversion |
 | Token amount | Integer string | Smallest unit (wei); use `BigInt` in JS |
 | Percentage | Decimal 0–1 | `0.1` represents 10% |
 

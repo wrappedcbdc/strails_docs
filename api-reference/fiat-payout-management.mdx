@@ -1,10 +1,10 @@
 ---
 title: "Fiat Payout API: Add and Manage Nigerian Bank Accounts"
 sidebarTitle: "Fiat Payouts"
-description: "Register, verify, and manage Nigerian bank accounts used for offramp settlement — including default account selection and NIBSS bank code lookup."
+description: "Register, verify, and manage Nigerian bank accounts used for offramp settlement - including default account selection and NIBSS bank code lookup."
 ---
 
-The Fiat Payout API lets you manage the Nigerian bank accounts that Strails pays out to when you or your end-users perform an offramp. Before you can call [`/initiateofframp`](/api-reference/transactions#fintech-offramp) or [`/cngnofframp`](/api-reference/transactions#user-offramp), you need at least one verified bank account on file. Accounts are automatically validated against live bank records at the time of addition — you cannot add an account whose number does not match the account name at the issuing bank.
+The Fiat Payout API lets you manage the Nigerian bank accounts that Strails pays out to when you or your end-users perform an offramp. Before you can call [`/initiateofframp`](/api-reference/transactions#fintech-offramp) or [`/cngnofframp`](/api-reference/transactions#user-offramp), you need at least one verified bank account on file. Accounts are automatically validated against live bank records at the time of addition - you cannot add an account whose number does not match the account name at the issuing bank.
 
 ## Endpoints Overview
 
@@ -38,8 +38,8 @@ This endpoint requires no request body.
     <ResponseField name="countryCode" type="string">ISO 3166-1 alpha-2 country code (always `NG` for Nigeria).</ResponseField>
     <ResponseField name="banks" type="array">
       Array of bank objects. Each entry contains:
-      - `bank_name` — full registered name of the bank
-      - `bank_code` — NIBSS bank identifier code
+      - `bank_name` - full registered name of the bank
+      - `bank_code` - NIBSS bank identifier code
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -71,7 +71,7 @@ This endpoint requires no request body.
 Adds a Nigerian bank account to your fintech configuration and immediately verifies it against bank records. The account is only activated if the account number is valid and the account name resolves correctly at the bank.
 
 <Info>
-  Accounts are automatically verified against live bank records before activation. Verification is synchronous — the response includes the resolved `verifiedAccountName` and `isValidated` flag.
+  Accounts are automatically verified against live bank records before activation. Verification is synchronous - the response includes the resolved `verifiedAccountName` and `isValidated` flag.
 </Info>
 
 ```bash
@@ -152,7 +152,7 @@ curl --request POST \
 
 `PUT /updatebankaccount`
 
-Updates the label or default status of an existing bank account. You cannot change the account number or bank code — delete the account and add a new one instead.
+Updates the label or default status of an existing bank account. You cannot change the account number or bank code - delete the account and add a new one instead.
 
 ```bash
 curl --request PUT \
@@ -255,17 +255,17 @@ curl --request GET \
   <Expandable title="data fields">
     <ResponseField name="accounts" type="array">
       Array containing the single matched account. Each entry includes:
-      - `accountId` — UUID of the account
-      - `fintechId` — UUID of your fintech
-      - `accountName` — verified account holder name
-      - `accountNumber` — bank account number
-      - `bankName` — full bank name
-      - `bankCode` — NIBSS bank code
-      - `isDefault` — whether this is the default payout account
-      - `isValidated` — whether the account passed bank verification
-      - `validationDetails.validatedAt` — ISO 8601 timestamp of verification
-      - `validationDetails.accountNameMatch` — whether the name matched during verification
-      - `createdAt` and `updatedAt` — ISO 8601 timestamps
+      - `accountId` - UUID of the account
+      - `fintechId` - UUID of your fintech
+      - `accountName` - verified account holder name
+      - `accountNumber` - bank account number
+      - `bankName` - full bank name
+      - `bankCode` - NIBSS bank code
+      - `isDefault` - whether this is the default payout account
+      - `isValidated` - whether the account passed bank verification
+      - `validationDetails.validatedAt` - ISO 8601 timestamp of verification
+      - `validationDetails.accountNameMatch` - whether the name matched during verification
+      - `createdAt` and `updatedAt` - ISO 8601 timestamps
     </ResponseField>
   </Expandable>
 </ResponseField>

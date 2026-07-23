@@ -12,7 +12,7 @@ This section documents endpoints fintechs use to **retrieve and manage virtual a
 
 ---
 
-## Virtual Accounts API — Endpoints Overview
+## Virtual Accounts API - Endpoints Overview
 
 | Section                         | Endpoint                       | Method | Description                                                                                        |
 | ------------------------------- | ------------------------------ | ------ | -------------------------------------------------------------------------------------------------- |

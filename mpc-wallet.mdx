@@ -4,7 +4,7 @@ sidebarTitle: "MPC Wallet"
 description: "Configure your MPC Vault for threshold-signed USDC/USDT custody, enable auto-signing, and integrate with the Strails FX settlement orderbook."
 ---
 
-The **MPC Wallet** — also called the **MPC Vault** — is your fintech's custody wallet for stablecoin settlement on the Strails FX orderbook. It holds USDC and USDT, and authorises transfers through threshold signing so no single private key is ever exposed or used in isolation.
+The **MPC Wallet** - also called the **MPC Vault** - is your fintech's custody wallet for stablecoin settlement on the Strails FX orderbook. It holds USDC and USDT, and authorises transfers through threshold signing so no single private key is ever exposed or used in isolation.
 
 In every FX trade on Strails, the settlement is split across two custody sources:
 
@@ -29,9 +29,9 @@ MPC (Multi-Party Computation) lets a cryptographic signature be produced through
 
 On Strails, this gives you:
 
-- **No single point of key exposure** — no individual party holds a complete key that can unilaterally move funds.
-- **Policy-gated signing** — you can require manual approval for high-value transactions and enable auto-signing for routine trades below a threshold you set.
-- **Auditability** — every signing request is tracked; you can verify which trades were auto-signed and which required manual approval.
+- **No single point of key exposure** - no individual party holds a complete key that can unilaterally move funds.
+- **Policy-gated signing** - you can require manual approval for high-value transactions and enable auto-signing for routine trades below a threshold you set.
+- **Auditability** - every signing request is tracked; you can verify which trades were auto-signed and which required manual approval.
 
 ## FX Settlement Model
 
@@ -114,7 +114,7 @@ All LP-to-LP FX settlements involving a stablecoin transfer require MPC signing 
   <Step title="Verify Configuration">
     Retrieve your complete FX configuration to confirm vault status, auto-signing state, threshold, and signer infrastructure readiness. Use `GET /fx/settings` and check that `mpcConfigStatus` is `active` and `autoSigning.vmStatus` is `running`.
 
-    See [Onchain FX Settings — Get FX Settings](/api-reference/fx-setting#get-fx-settings) for the full response schema.
+    See [Onchain FX Settings - Get FX Settings](/api-reference/fx-setting#get-fx-settings) for the full response schema.
 
     <Warning>
       After Strails admin approval, copy the `natExternalIp` value returned in the `GET /fx/settings` response and add it to **both** of the following whitelists in your MPCVault account:

@@ -8,7 +8,7 @@ The FX Settings API allows fintechs to retrieve their FX configuration including
 
 ---
 
-## FX Settings API — Endpoints Overview
+## FX Settings API - Endpoints Overview
 
 | Section                           | Endpoint                    | Method | Description                                                    |
 | --------------------------------- | --------------------------- | ------ | -------------------------------------------------------------- |
@@ -75,7 +75,7 @@ POST {{BASE_URL}}/fx/mpc/register
 ```
 
 <Warning>
-**Private Key Format**: The `mpcClientSignerPrivateKey` must include newline characters as `\n` escape sequences. Each line of your OpenSSH private key should be separated by `\n`. The example above shows the required format — replace the `<base64-line-X>` placeholders with your actual key content.
+**Private Key Format**: The `mpcClientSignerPrivateKey` must include newline characters as `\n` escape sequences. Each line of your OpenSSH private key should be separated by `\n`. The example above shows the required format - replace the `<base64-line-X>` placeholders with your actual key content.
 </Warning>
 
 ### Parameters

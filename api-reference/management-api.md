@@ -8,7 +8,7 @@ This section documents endpoints fintechs use to **manage webhooks, IP allowlist
 
 ---
 
-## Management & Configuration API — Endpoints Overview
+## Management & Configuration API - Endpoints Overview
 
 | Section                                                      | Endpoint              | Method | Description                                                          |
 | ------------------------------------------------------------ | --------------------- | ------ | -------------------------------------------------------------------- |

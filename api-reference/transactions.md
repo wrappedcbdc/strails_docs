@@ -8,7 +8,7 @@ The Transactions API handles all financial operations including **onramp (fundin
 
 ---
 
-## Transactions API — Endpoints Overview
+## Transactions API - Endpoints Overview
 
 | Section                | Endpoint                       | Method | Description                                                       |
 | ---------------------- | ------------------------------ | ------ | ----------------------------------------------------------------- |
@@ -24,8 +24,8 @@ The Transactions API handles all financial operations including **onramp (fundin
 | [**List Deposits**](#list-deposits) | `/deposits`         | GET    | Retrieve deposit transactions with filters                          |
 | [**List Payouts**](#list-payouts) | `/payouts`         | GET    | Retrieve payout transactions with filters                          |
 | [**List Transactions**](#list-transactions) | `/transactions`         | GET    | Retrieve all transactions (deposits & payouts) with filters                          |
-| [**Swap Trigger**](#swap-trigger)          | `/swaptrigger`        | POST   | Trigger an asynchronous token swap (cNGN ↔ USDC/USDT)             |
-| [**User Swap**](#user-swap)                | `/swap`               | POST   | Swap tokens on user's default smart wallet (USDC → cNGN)          |
+| [**Swap Trigger**](#swap-trigger)          | `/swaptrigger`        | POST   | Trigger an asynchronous token swap (cNGN <-> USDC/USDT)             |
+| [**User Swap**](#user-swap)                | `/swap`               | POST   | Swap tokens on user's default smart wallet (USDC -> cNGN)          |
 | [**Swap Status**](#swap-status)            | `/swapstatus`         | GET    | Get the status of an asynchronous swap request                    |
 
 ---
@@ -79,11 +79,11 @@ POST {{BASE_URL}}/cngnonramp
 
 | `autoSwap` | `sweepToOfframp` | `destinationAssetSwap` | Result |
 |------------|------------------|------------------------|--------|
-| `false`    | `false`          | —                      | cNGN stays in generated wallet |
-| `false`    | `true`           | ignored                | cNGN → user's default wallet |
-| `true`     | `false`          | not set                | cNGN→USDC, stays in generated wallet |
-| `true`     | `false`          | set                    | cNGN→USDC → `destinationAssetSwap` |
-| `true`     | `true`           | ignored                | cNGN→USDC → user's default wallet |
+| `false`    | `false`          | -                      | cNGN stays in generated wallet |
+| `false`    | `true`           | ignored                | cNGN -> user's default wallet |
+| `true`     | `false`          | not set                | cNGN->USDC, stays in generated wallet |
+| `true`     | `false`          | set                    | cNGN->USDC -> `destinationAssetSwap` |
+| `true`     | `true`           | ignored                | cNGN->USDC -> user's default wallet |
 
 > **Note:** When `sweepToOfframp=true`, the destination is automatically resolved to the user's default smart wallet (`verifiedUsers.smartWalletAddress`). You don't need to set `destinationAssetSwap`.
 
@@ -280,7 +280,7 @@ GET {{BASE_URL}}/getfintechvirtualaccount
 
 <Tabs>
 
-<Tab title="Request (Wallet→Bank)">
+<Tab title="Request (Wallet->Bank)">
 
 ```http
 POST {{BASE_URL}}/initiateofframp
@@ -289,7 +289,7 @@ POST {{BASE_URL}}/initiateofframp
 </Tab>
 
 
-<Tab title="Body (Wallet→Bank)">
+<Tab title="Body (Wallet->Bank)">
 
 ```json
 {
@@ -307,7 +307,7 @@ POST {{BASE_URL}}/initiateofframp
 
 </Tab>
 
-<Tab title="Response (Wallet→Bank)">
+<Tab title="Response (Wallet->Bank)">
 
 ```json
 {
@@ -326,7 +326,7 @@ POST {{BASE_URL}}/initiateofframp
 
 </Tab>
 
-<Tab title="Error (Wallet→Bank)">
+<Tab title="Error (Wallet->Bank)">
 
 ```json
 {
@@ -1114,7 +1114,7 @@ POST {{BASE_URL}}/swaptrigger
 
 ### User Swap
 
-Request a token swap on the user's default smart wallet address. Primarily used for USDC → cNGN conversions.
+Request a token swap on the user's default smart wallet address. Primarily used for USDC -> cNGN conversions.
 
 <Tabs>
 

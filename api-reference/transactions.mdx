@@ -1,10 +1,10 @@
 ---
 title: "Transactions API: Onramp, Offramp, Swaps & Transfers"
 sidebarTitle: "Transactions"
-description: "Process all financial flows — fiat-to-token onramps, token-to-fiat offramps, cross-token swaps, and asset transfers — with async requestId tracking."
+description: "Process all financial flows - fiat-to-token onramps, token-to-fiat offramps, cross-token swaps, and asset transfers - with async requestId tracking."
 ---
 
-The Transactions API handles every financial operation in Strails. You can fund user wallets by converting Naira to cNGN (**onramp**), return cNGN back to a Nigerian bank account (**offramp**), swap between cNGN, USDC, and USDT (**swap**), and withdraw assets to external wallets (**transfer**). Most operations are asynchronous — each call returns a `requestId` you can use to poll for the final status or receive a webhook notification.
+The Transactions API handles every financial operation in Strails. You can fund user wallets by converting Naira to cNGN (**onramp**), return cNGN back to a Nigerian bank account (**offramp**), swap between cNGN, USDC, and USDT (**swap**), and withdraw assets to external wallets (**transfer**). Most operations are asynchronous - each call returns a `requestId` you can use to poll for the final status or receive a webhook notification.
 
 ## Endpoints Overview
 
@@ -43,7 +43,7 @@ Creates a temporary Smart Wallet and a bank transfer instruction so your end-use
 </Warning>
 
 <Note>
-  The `amount` field is denominated in **Naira**. For example, `500` means ₦500 — not 500 kobo or 500 token units.
+  The `amount` field is denominated in **Naira**. For example, `500` means ₦500 - not 500 kobo or 500 token units.
 </Note>
 
 ```bash
@@ -93,11 +93,11 @@ curl --request POST \
 
 | `autoSwap` | `sweepToOfframp` | `destinationAssetSwap` | Result |
 |---|---|---|---|
-| `false` | `false` | — | cNGN stays in the generated wallet |
+| `false` | `false` | - | cNGN stays in the generated wallet |
 | `false` | `true` | ignored | cNGN is swept to the user's default Smart Wallet |
-| `true` | `false` | not set | cNGN → `assetSwap`, stays in the generated wallet |
-| `true` | `false` | set | cNGN → `assetSwap` → `destinationAssetSwap` |
-| `true` | `true` | ignored | cNGN → `assetSwap` → user's default Smart Wallet |
+| `true` | `false` | not set | cNGN -> `assetSwap`, stays in the generated wallet |
+| `true` | `false` | set | cNGN -> `assetSwap` -> `destinationAssetSwap` |
+| `true` | `true` | ignored | cNGN -> `assetSwap` -> user's default Smart Wallet |
 
 <ResponseField name="data" type="object">
   <Expandable title="data fields">
@@ -263,7 +263,7 @@ curl --request POST \
 Returns the persistent virtual bank account assigned to your fintech. Any Naira payment received on this account is automatically converted to cNGN and credited to your fintech Smart Wallet.
 
 <Info>
-  Use [`/getfintechwallet`](/api-reference/wallet#retrieve-the-fintech-wallet) to find your Smart Wallet address — that is where minted cNGN is credited after a deposit is confirmed.
+  Use [`/getfintechwallet`](/api-reference/wallet#retrieve-the-fintech-wallet) to find your Smart Wallet address - that is where minted cNGN is credited after a deposit is confirmed.
 </Info>
 
 For full virtual account management (including per-user virtual accounts and fee configuration), see the [Virtual Accounts API](/api-reference/virtual-accounts) page.
@@ -373,7 +373,7 @@ curl --request POST \
 
 `POST /withdrawasset`
 
-Withdraws a token from a user's internal Smart Wallet to an external destination wallet. Supports multi-chain transfers — set the `network` parameter to route the withdrawal through a bridge to a non-Base chain.
+Withdraws a token from a user's internal Smart Wallet to an external destination wallet. Supports multi-chain transfers - set the `network` parameter to route the withdrawal through a bridge to a non-Base chain.
 
 ```bash
 curl --request POST \
@@ -489,7 +489,7 @@ Transfers tokens from your fintech Smart Wallet to a registered external wallet.
 </Info>
 
 <Warning>
-  The `amount` field must be in the **lowest currency unit**. For example, `5000000` = 5.0 cNGN (cNGN uses 6 decimal places). Active orders and escrows reduce the available balance — the API will reject the transfer if the net balance after commitments is insufficient.
+  The `amount` field must be in the **lowest currency unit**. For example, `5000000` = 5.0 cNGN (cNGN uses 6 decimal places). Active orders and escrows reduce the available balance - the API will reject the transfer if the net balance after commitments is insufficient.
 </Warning>
 
 ```bash
@@ -906,7 +906,7 @@ curl --request GET \
 
 `GET /transactions`
 
-Returns a paginated list of all transactions — both deposits and payouts — with a combined summary. Use `direction` to separate inbound from outbound flows.
+Returns a paginated list of all transactions - both deposits and payouts - with a combined summary. Use `direction` to separate inbound from outbound flows.
 
 ```bash
 curl --request GET \
@@ -997,7 +997,7 @@ curl --request GET \
 
 `POST /swaptrigger`
 
-Queues an asynchronous token swap for a specific wallet address. The swap is processed in the background — use [`/swapstatus`](#swap-status) with the returned `requestId` to poll for completion.
+Queues an asynchronous token swap for a specific wallet address. The swap is processed in the background - use [`/swapstatus`](#swap-status) with the returned `requestId` to poll for completion.
 
 ```bash
 curl --request POST \
@@ -1082,7 +1082,7 @@ curl --request POST \
 
 `POST /swap`
 
-Requests a token swap on a user's default Smart Wallet. Primarily used for USDC → cNGN conversions. The swap is processed asynchronously — use [`/swapstatus`](#swap-status) with the returned `requestId` to track completion.
+Requests a token swap on a user's default Smart Wallet. Primarily used for USDC -> cNGN conversions. The swap is processed asynchronously - use [`/swapstatus`](#swap-status) with the returned `requestId` to track completion.
 
 ```bash
 curl --request POST \
