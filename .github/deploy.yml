@@ -1,0 +1,28 @@
+# Mintlify docs CI.
+#
+# Production deploys are handled by the Mintlify GitHub App, not this
+# workflow: install it from https://dashboard.mintlify.com and connect this
+# repository. Once connected, every push to the default branch publishes the
+# site automatically — no token or build step required here.
+#
+# This workflow just validates the docs on pull requests so broken internal
+# links never reach the published site.
+name: Docs CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Install the Mintlify CLI and check for broken internal links.
+      - run: npm install -g mint
+      - run: mint broken-links
