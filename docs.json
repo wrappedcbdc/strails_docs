@@ -1,29 +1,33 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "luma",
-  "name": "Strails",
-  "colors": {
-    "primary": "#5624c7",
-    "light": "#34147c",
-    "dark": "#8b5cec"
-  },
+  "theme": "mint",
+  "name": "Strails API",
+  "description": "API documentation for Strails — stablecoin orchestration, FX orderbook, wallets, and NGN on/off-ramp.",
   "logo": {
-    "light": "https://media.brand.dev/3d524d92-2dd3-4d92-be8e-18c6e5f1e32b.svg",
-    "dark": "https://media.brand.dev/3d524d92-2dd3-4d92-be8e-18c6e5f1e32b.svg"
+    "light": "/images/logo-light.svg",
+    "dark": "/images/logo-dark.svg",
+    "href": "/"
   },
-  "favicon": "https://media.brand.dev/e70962d0-045f-4d91-bb72-18492d5abc1b.png",
+  "favicon": "/images/favicon.svg",
   "icons": {
     "library": "fontawesome"
+  },
+  "colors": {
+    "primary": "#6259F7",
+    "light": "#7B74F8",
+    "dark": "#5048E5"
   },
   "navigation": {
     "tabs": [
       {
         "tab": "Documentation",
+        "icon": "book-open",
         "groups": [
           {
             "group": "Get Started",
+            "icon": "rocket",
             "pages": [
-              "introduction",
+              "index",
               "quickstart",
               "core-concepts",
               "implementation-guide",
@@ -32,24 +36,18 @@
           },
           {
             "group": "Wallets",
+            "icon": "wallet",
             "pages": [
               "smart-wallet",
               "multi-chain-wallet",
-              "mpc-wallet",
-              "virtual-accounts-guide"
-            ]
-          },
-          {
-            "group": "Security",
-            "pages": [
-              "authentication",
-              "encryption",
-              "hmac-signatures"
+              "mpc-wallet"
             ]
           },
           {
             "group": "Guides",
+            "icon": "book",
             "pages": [
+              "virtual-accounts-guide",
               "payload-formats",
               "testing-scenarios",
               "troubleshooting"
@@ -58,26 +56,45 @@
         ]
       },
       {
+        "tab": "Security",
+        "icon": "shield-halved",
+        "groups": [
+          {
+            "group": "Security",
+            "icon": "shield",
+            "pages": [
+              "authentication",
+              "encryption",
+              "hmac-signatures"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API Reference",
+        "icon": "code",
         "groups": [
           {
             "group": "Overview",
+            "icon": "compass",
             "pages": [
               "api-reference/index"
             ]
           },
           {
             "group": "Core APIs",
+            "icon": "microchip",
             "pages": [
               "api-reference/user-management",
               "api-reference/virtual-accounts",
+              "api-reference/fiat-payout-management",
               "api-reference/wallet",
-              "api-reference/transactions",
-              "api-reference/fiat-payout-management"
+              "api-reference/transactions"
             ]
           },
           {
             "group": "FX & Trading",
+            "icon": "arrow-trend-up",
             "pages": [
               "api-reference/fx-setting",
               "api-reference/orderbook-management",
@@ -86,6 +103,7 @@
           },
           {
             "group": "Configuration",
+            "icon": "gears",
             "pages": [
               "api-reference/fee-management-api",
               "api-reference/management-api",
@@ -96,13 +114,9 @@
       },
       {
         "tab": "Changelog",
-        "groups": [
-          {
-            "group": "Releases",
-            "pages": [
-              "changelog"
-            ]
-          }
+        "icon": "clock-rotate-left",
+        "pages": [
+          "changelog"
         ]
       }
     ]

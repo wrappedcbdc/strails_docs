@@ -1,0 +1,2659 @@
+{
+  "info": {
+    "_postman_id": "809da614-ba67-4fd4-a872-d99ba3b87de7",
+    "name": "Stablesramp",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "2106489"
+  },
+  "item": [
+    {
+      "name": "onboard-status",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          },
+          {
+            "key": "x-real-ip",
+            "value": "102.91.103.171",
+            "type": "text",
+            "disabled": true
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"b4ddb85b-c8a3-4fe3-9fcb-3a059ff428bf\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/onboardstatus",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "onboardstatus"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "whitelist-IP",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"action\": \"add\",\n    \"ipAddress\": \"197.210.52.151\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/manageipallowlist",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "manageipallowlist"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "fintech-withdrawalhistory",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseURL}}/getwithdrawalhistory?limit=20&status=completed",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "getwithdrawalhistory"
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "20"
+            },
+            {
+              "key": "status",
+              "value": "completed"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "New request",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "name": "cache-control",
+                "type": "text"
+              },
+              {
+                "key": "Postman-Token",
+                "value": "<calculated when request is sent>",
+                "name": "postman-token",
+                "type": "text"
+              },
+              {
+                "key": "Host",
+                "value": "<calculated when request is sent>",
+                "name": "host",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.39.1",
+                "name": "user-agent",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "name": "accept",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "name": "accept-encoding",
+                "type": "text"
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "name": "connection",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{local}}/getwithdrawalhistory?limit=20&status=completed",
+              "host": [
+                "{{local}}"
+              ],
+              "path": [
+                "getwithdrawalhistory"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "completed"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\n  \"status\": \"00\",\n  \"message\": \"Withdrawal history retrieved successfully\",\n  \"data\": {\n    \"withdrawals\": [\n      {\n        \"withdrawalId\": \"FTW_your_fintech_id_1725444600000\",\n        \"amount\": 50000,\n        \"bankAccountNumber\": \"123456****\",\n        \"bankCode\": \"058\",\n        \"accountName\": \"YOUR COMPANY NAME\",\n        \"narration\": \"Fee withdrawal for August 2025\",\n        \"status\": \"completed\",\n        \"createdAt\": \"2025-09-04T10:30:00.000Z\",\n        \"processedAt\": \"2025-09-04T12:15:00.000Z\",\n        \"failureReason\": null\n      },\n      {\n        \"withdrawalId\": \"FTW_your_fintech_id_1725358200000\",\n        \"amount\": 25000,\n        \"bankAccountNumber\": \"123456****\",\n        \"bankCode\": \"058\",\n        \"accountName\": \"YOUR COMPANY NAME\",\n        \"narration\": \"Fee withdrawal\",\n        \"status\": \"pending\",\n        \"createdAt\": \"2025-09-03T10:30:00.000Z\",\n        \"processedAt\": null,\n        \"failureReason\": null\n      }\n    ],\n    \"pagination\": {\n      \"count\": 2,\n      \"limit\": 20,\n      \"hasMore\": false\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "fintech-requestwithdrawal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "0",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"bankAccountNumber\": \"1234567890\",\n  \"bankCode\": \"058\",\n  \"accountName\": \"YOUR COMPANY NAME\",\n  \"amount\": 50000,\n  \"narration\": \"Fee withdrawal for August 2025\",\n  \"metadata\": {\n    \"reference\": \"FEE_WITHDRAWAL_AUG_2025\",\n    \"notes\": \"Monthly fee withdrawal\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/fintechrequestwithdrawal",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "fintechrequestwithdrawal"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "New request",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "name": "cache-control",
+                "type": "text"
+              },
+              {
+                "key": "Postman-Token",
+                "value": "<calculated when request is sent>",
+                "name": "postman-token",
+                "type": "text"
+              },
+              {
+                "key": "Content-Length",
+                "value": "0",
+                "name": "content-length",
+                "type": "text"
+              },
+              {
+                "key": "Host",
+                "value": "<calculated when request is sent>",
+                "name": "host",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.39.1",
+                "name": "user-agent",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "name": "accept",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "name": "accept-encoding",
+                "type": "text"
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "name": "connection",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankAccountNumber\": \"1234567890\",\n  \"bankCode\": \"058\",\n  \"accountName\": \"YOUR COMPANY NAME\",\n  \"amount\": 50000,\n  \"narration\": \"Fee withdrawal for August 2025\",\n  \"metadata\": {\n    \"reference\": \"FEE_WITHDRAWAL_AUG_2025\",\n    \"notes\": \"Monthly fee withdrawal\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{local}}/fintechrequestwithdrawal",
+              "host": [
+                "{{local}}"
+              ],
+              "path": [
+                "fintechrequestwithdrawal"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\n  \"status\": \"00\",\n  \"message\": \"Withdrawal request submitted successfully\",\n  \"data\": {\n    \"withdrawalId\": \"FTW_your_fintech_id_1725444600000\",\n    \"amount\": 50000,\n    \"status\": \"pending\",\n    \"estimatedProcessingTime\": \"1-3 business days\",\n    \"message\": \"Your withdrawal request has been submitted and will be processed within 1-3 business days\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "accumulated-fintech-fees",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseURL}}/getaccumulatedfees",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "getaccumulatedfees"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "New request",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "name": "cache-control",
+                "type": "text"
+              },
+              {
+                "key": "Postman-Token",
+                "value": "<calculated when request is sent>",
+                "name": "postman-token",
+                "type": "text"
+              },
+              {
+                "key": "Host",
+                "value": "<calculated when request is sent>",
+                "name": "host",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.39.1",
+                "name": "user-agent",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "name": "accept",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "name": "accept-encoding",
+                "type": "text"
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "name": "connection",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{local}}/getaccumulatedfees",
+              "host": [
+                "{{local}}"
+              ],
+              "path": [
+                "getaccumulatedfees"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\n  \"status\": \"00\",\n  \"message\": \"Accumulated fees retrieved successfully\",\n  \"data\": {\n    \"summary\": {\n      \"totalAccumulatedFees\": 125000,\n      \"onrampFees\": 100000,\n      \"offrampFees\": 25000,\n      \"collectedFees\": 120000,\n      \"pendingFees\": 5000,\n      \"transactionCount\": 150,\n      \"pendingWithdrawals\": 20000,\n      \"availableForWithdrawal\": 100000\n    },\n    \"details\": {\n      \"lastUpdated\": \"2025-09-04T10:30:00.000Z\",\n      \"currency\": \"NGN\",\n      \"minimumWithdrawal\": 1000,\n      \"maximumWithdrawal\": 10000000\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "manage-fees",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "name": "content-type",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "<calculated when request is sent>",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"onrampFee\": {\n    \"percentageFee\": 1.5,\n    \"capFee\": 500,\n    \"enabled\": true\n  },\n  \"offrampFee\": {\n    \"percentageFee\": 2.0,\n    \"capFee\": 1000,\n    \"enabled\": true\n  },\n  \"metadata\": {\n    \"description\": \"Updated fee configuration for Q4 2025\",\n    \"notes\": \"Reduced onramp fees, increased offramp fees\",\n    \"lastUpdatedBy\": \"admin@yourfintech.com\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/managefees",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "managefees"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "manage-fees",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "name": "cache-control",
+                "type": "text"
+              },
+              {
+                "key": "Postman-Token",
+                "value": "<calculated when request is sent>",
+                "name": "postman-token",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "name": "content-type",
+                "type": "text"
+              },
+              {
+                "key": "Content-Length",
+                "value": "<calculated when request is sent>",
+                "name": "content-length",
+                "type": "text"
+              },
+              {
+                "key": "Host",
+                "value": "<calculated when request is sent>",
+                "name": "host",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.39.1",
+                "name": "user-agent",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "name": "accept",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "name": "accept-encoding",
+                "type": "text"
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "name": "connection",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"onrampFee\": {\n    \"percentageFee\": 1.5,\n    \"capFee\": 500, // optional field\n    \"enabled\": true\n  },\n  // optional field\n  \"offrampFee\": { \n    \"percentageFee\": 2.0,\n    \"capFee\": 1000,\n    \"enabled\": true\n  },\n  // optional\n  \"metadata\": {\n    \"description\": \"Updated fee configuration for Q4 2025\",\n    \"notes\": \"Reduced onramp fees, increased offramp fees\",\n    \"lastUpdatedBy\": \"admin@yourfintech.com\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{local}}/managefees",
+              "host": [
+                "{{local}}"
+              ],
+              "path": [
+                "managefees"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\n  \"status\": \"00\",\n  \"message\": \"Fee configuration updated successfully\",\n  \"data\": {\n    \"fintechId\": \"your_fintech_id\",\n    \"operation\": \"updated\",\n    \"feeConfiguration\": {\n      \"onrampFee\": {\n        \"percentageFee\": 1.5,\n        \"capFee\": 500,\n        \"enabled\": true\n      },\n      \"metadata\": {\n        \"description\": \"Updated fee configuration for Q4 2025\",\n        \"lastUpdatedBy\": \"your_fintech_id\",\n        \"notes\": \"Reduced onramp fees, increased offramp fees\"\n      }\n    },\n    \"exampleCalculation\": {\n      \"description\": \"Example calculation for NGN 10,000 onramp\",\n      \"userRequestedAmount\": 10000,\n      \"fintechFeeAmount\": 150,\n      \"fintechFeePercentage\": 1.5,\n      \"fintechFeeCapped\": false,\n      \"gatewayFeeAmount\": 150,\n      \"gatewayFeePercentage\": 1.5,\n      \"stablesRailFeeAmount\": 100,\n      \"stablesRailFeePercentage\": 1.0,\n      \"totalFeeAmount\": 400,\n      \"finalAmount\": 10400,\n      \"amountToWallet\": 10000\n    },\n    \"timestamp\": \"2025-09-04T10:30:00.000Z\",\n    \"version\": \"1.0.0\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "store-public-key",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "0",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          },
+          {
+            "key": "x-real-ip",
+            "value": "127.0.0.1",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"encrypted\":true,\n    \"data\":\"c6c32091cd73acbb113d539038d9dc9149779288a58e8b176caed393f02b233d351c3a8640f9228f7f32dbe63ac2410f9163bb0c021b6d677398a6b126fdfaf197cb3f578fe1c507b76a75c7061ccb8c5fa9937fbb5835b5400d64ca\",\n    \"iv\":\"34917cb29de6080146d47e22e37239ca\"\n    }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/storepublickey",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "storepublickey"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-fees",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseURL}}/getfees",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "getfees"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "New request",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "name": "cache-control",
+                "type": "text"
+              },
+              {
+                "key": "Postman-Token",
+                "value": "<calculated when request is sent>",
+                "name": "postman-token",
+                "type": "text"
+              },
+              {
+                "key": "Host",
+                "value": "<calculated when request is sent>",
+                "name": "host",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.39.1",
+                "name": "user-agent",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "name": "accept",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "name": "accept-encoding",
+                "type": "text"
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "name": "connection",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{local}}/getfees",
+              "host": [
+                "{{local}}"
+              ],
+              "path": [
+                "getfees"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\n  \"status\": \"00\",\n  \"message\": \"Fee configuration retrieved successfully\",\n  \"data\": {\n    \"fintechId\": \"your_fintech_id\",\n    \"hasConfiguration\": true,\n    \"feeConfiguration\": {\n      \"onrampFee\": {\n        \"percentageFee\": 1.5,\n        \"capFee\": 500,\n        \"enabled\": true\n      },\n      \"metadata\": {\n        \"description\": \"Onramp fee configuration\",\n        \"lastUpdatedBy\": \"your_fintech_id\"\n      }\n    },\n    \"exampleCalculation\": {\n      \"description\": \"Example calculation for NGN 50,000 onramp\",\n      \"userRequestedAmount\": 50000,\n      \"fintechFeeAmount\": 500,\n      \"fintechFeePercentage\": 1.5,\n      \"gatewayFeeAmount\": 750,\n      \"totalFeeAmount\": 1250,\n      \"finalAmount\": 51250,\n      \"amountToWallet\": 50000\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "onboard-user",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          },
+          {
+            "key": "x-real-ip",
+            "value": "102.91.4.17",
+            "type": "text",
+            "disabled": true
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"bvn\": \"22205741973\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/onboarduser",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "onboarduser"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "cngn-offramp",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "name": "content-type",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "<calculated when request is sent>",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"95795169a648f46475a4c57xxxxxxxxxf53f36818ef145128\",\n  \"amount\": 20,\n  \"accountNumber\": \"2018843677\",\n  \"bankCode\": \"000004\",\n  \"ticker\": \"CNGN\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/cngnofframp",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "cngnofframp"
+          ],
+          "query": [
+            {
+              "key": "",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "cngn-offramp",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "",
+                "type": "text"
+              },
+              {
+                "key": "x-real-ip",
+                "value": "",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"6376eea9b91a9cb4bd5dab096383b19e2437f59e31e9911952b2abed598de696\",\n  \"amount\": 20,\n  \"accountNumber\": \"2018843677\",\n  \"bankCode\": \"000004\",\n  \"ticker\": \"CNGN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{dev}}/cngnofframp",
+              "host": [
+                "{{dev}}"
+              ],
+              "path": [
+                "cngnofframp"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\"status\":\"Success\",\"response_code\":\"00\",\"message\":\"Vault return executed successfully. Payout in progress.\",\"data\":{\"transactionHash\":\"0x246c1e47f77930c298b64d11c3e5f1be599ec094ddbed62fb19fd5839127df2a\",\"smartWalletAddress\":\"0x4034F783eA49eD8cc355318a64e66b4615DED571\",\"requestId\":\"9a8f80fc-6b73-4133-bc77-3addc64339bc\",\"executedAt\":\"2025-08-14T21:38:33.982Z\",\"gasUsed\":\"86698\",\"effectiveGasPrice\":\"7422360\",\"blockNumber\":\"34209083\",\"duration\":30177,\"userId\":\"6376eea9b91a9cb4bd5dab096383b19e2437f59e31e9911952b2abed598de696\",\"amount\":\"20\",\"tokenAddress\":\"0x46C85152bFe9f96829aA94755D9f915F9B10EF5F\",\"tokenSymbol\":\"CNGN\",\"verifiedAccountDetails\":{\"accountNumber\":\"2018843677\",\"bankCode\":\"000004\",\"accountHolderName\":\"OKAFORMBAH CHARLES NNAMA\",\"verificationTimestamp\":\"2025-08-14T21:38:51.124Z\"}}}"
+        }
+      ]
+    },
+    {
+      "name": "get-cngn-request-status",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "name": "content-type",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "<calculated when request is sent>",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"walletAddress\": \"0x751fC31f52d4f5f8dA71321a1D65251F0AEFa919\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/cngnrampstatus",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "cngnrampstatus"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-user-details",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "name": "content-type",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "<calculated when request is sent>",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"userId\": \"95795169a648f46475a4c57xxxxxxxxxf53f36818ef145128\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/getuserdetails",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "getuserdetails"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "get-user-details",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "name": "cache-control",
+                "type": "text"
+              },
+              {
+                "key": "Postman-Token",
+                "value": "<calculated when request is sent>",
+                "name": "postman-token",
+                "type": "text"
+              },
+              {
+                "key": "Host",
+                "value": "<calculated when request is sent>",
+                "name": "host",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.39.1",
+                "name": "user-agent",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "name": "accept",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "name": "accept-encoding",
+                "type": "text"
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "name": "connection",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "xxxxxxxxxxxxxxxxxxxxx",
+                "type": "text"
+              },
+              {
+                "key": "x-real-ip",
+                "value": "",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": \"USER_ID\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{dev}}/getuserdetails",
+              "host": [
+                "{{dev}}"
+              ],
+              "path": [
+                "getuserdetails"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\"status\":\"Success\",\"response_code\":\"00\",\"message\":\"User details retrieved successfully\",\"data\":{\"userId\":\"77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933\",\"personalDetails\":{\"firstName\":\"CHARLES\",\"middleName\":\" NNAMA \",\"lastName\":\"OKAFORMBAH \"},\"virtualAccountDetails\":[{\"accountNumber\":\"9191610296\",\"accountName\":\"Alphgeek Technologies/CHARLES OKAFORMBAH \",\"createdAt\":\"2025-07-28T14:45:34\",\"status\":\"active\"}]}}"
+        }
+      ]
+    },
+    {
+      "name": "verify-otp",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          },
+          {
+            "key": "x-real-ip",
+            "value": "102.91.103.171",
+            "type": "text",
+            "disabled": true
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"code\": \"284897\", \n    \"sessionId\": \"67394778-1728-4676-9db8-fb5422ef23e2\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/verifyotp",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "verifyotp"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-user-wallets",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "name": "content-type",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "<calculated when request is sent>",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"userId\": \"95795169a648f46475a4c57xxxxxxxxxf53f36818ef145128\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/listuserwallets",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "listuserwallets"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "get-user-wallets",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "name": "cache-control",
+                "type": "text"
+              },
+              {
+                "key": "Postman-Token",
+                "value": "<calculated when request is sent>",
+                "name": "postman-token",
+                "type": "text"
+              },
+              {
+                "key": "Host",
+                "value": "<calculated when request is sent>",
+                "name": "host",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.39.1",
+                "name": "user-agent",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "name": "accept",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "name": "accept-encoding",
+                "type": "text"
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "name": "connection",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "xxxxxxxxxxxxxxxxxxxxx",
+                "type": "text"
+              },
+              {
+                "key": "x-real-ip",
+                "value": "127.0.0.1",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": \"6376eea9b91a9cb4bd5dab096383b19e2437f59e31e9911952b2abed598de696\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{dev}}/listuserwallets?x-api-key=",
+              "host": [
+                "{{dev}}"
+              ],
+              "path": [
+                "listuserwallets"
+              ],
+              "query": [
+                {
+                  "key": "x-api-key",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\"status\":\"Success\",\"response_code\":\"00\",\"message\":\"User wallets retrieved successfully\",\"data\":{\"wallets\":[{\"walletAddress\":\"0x1FA5CAba3AddFa1eA27726bD35AcFB6d0BF2356c\",\"status\":\"funded\",\"createdAt\":{\"_seconds\":1754871300,\"_nanoseconds\":176000000},\"owner\":\"0xe2e46764557985cBDec6F5e4A3452A71645Ba15b\"},{\"walletAddress\":\"0x071299ED28339eb173D99A9144D857C31513FEbE\",\"status\":\"funded\",\"createdAt\":{\"_seconds\":1754821433,\"_nanoseconds\":164000000},\"owner\":\"0xe2e46764557985cBDec6F5e4A3452A71645Ba15b\"}],\"count\":2,\"userId\":\"6376eea9b91a9cb4bd5dab096383b19e2437f59e31e9911952b2abed598de696\",\"version\":\"1.0.0\"}}"
+        }
+      ]
+    },
+    {
+      "name": "regenerate-api-ke",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseURL}}/regenerateapikey",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "regenerateapikey"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "regenerate-api-key",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "name": "cache-control",
+                "type": "text"
+              },
+              {
+                "key": "Postman-Token",
+                "value": "<calculated when request is sent>",
+                "name": "postman-token",
+                "type": "text"
+              },
+              {
+                "key": "Host",
+                "value": "<calculated when request is sent>",
+                "name": "host",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.39.1",
+                "name": "user-agent",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "name": "accept",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "name": "accept-encoding",
+                "type": "text"
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "name": "connection",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "xxxxxxxxxxxxxxxxxxxxx",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{dev}}/regenerateapikey",
+              "host": [
+                "{{dev}}"
+              ],
+              "path": [
+                "regenerateapikey"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\n    \"status\": \"Success\",\n    \"response_code\": \"00\",\n    \"message\": \"API key regenerated successfully\",\n    \"data\": {\n        \"apiKey\": \"xxxxxxxxxxxxxxxxxxxxx\",\n        \"rotatedAt\": \"2025-08-08T16:29:52.979Z\"\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "cngn-onramp",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"owner\": \"0xe2e46764557985cBDec6F5e4A3452A71645Ba15b\", \n    \"amount\": 50,\n    \"assetSwap\": \"USDC\",\n    \"autoSwap\": false,\n    \"userId\":\"95795169a648f46475a4c57xxxxxxxxxf53f36818ef145128\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/cngnonramp",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "cngnonramp"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-nigeria-bank-codes",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseURL}}/getbankscode",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "getbankscode"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "get-nigeria-bank-codes",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "name": "cache-control",
+                "type": "text"
+              },
+              {
+                "key": "Postman-Token",
+                "value": "<calculated when request is sent>",
+                "name": "postman-token",
+                "type": "text"
+              },
+              {
+                "key": "Host",
+                "value": "<calculated when request is sent>",
+                "name": "host",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.39.1",
+                "name": "user-agent",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "name": "accept",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "name": "accept-encoding",
+                "type": "text"
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "name": "connection",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "xxxxxxxxxxxxxxxxxxxxx",
+                "type": "text"
+              },
+              {
+                "key": "x-real-ip",
+                "value": "127.0.0.1",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{dev}}/getbankscode",
+              "host": [
+                "{{dev}}"
+              ],
+              "path": [
+                "getbankscode"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\"status\":\"Success\",\"response_code\":\"00\",\"message\":\"Banks retrieved successfully\",\"data\":{\"operationId\":\"7602b29c-2b29-4c27-90b7-1cebb38ab2fd\",\"requestId\":\"bf29923e-89d3-4cf4-8aea-9fc7862c99ea\",\"countryCode\":\"NG\",\"totalCount\":262,\"banks\":[{\"name\":\"AB MICROFINANCE BANK\",\"code\":\"090270\"},{\"name\":\"HACKMAN MICROFINANCE BANK\",\"code\":\"090147\"},{\"name\":\"HAGGAI MORTGAGE BANK\",\"code\":\"070017\"},{\"name\":\"ABBEY MORTGAGE BANK\",\"code\":\"070010\"},{\"name\":\"HALA MFB\",\"code\":\"090291\"},{\"name\":\"ABOVE ONLY MICROFINANCE BANK\",\"code\":\"090260\"},{\"name\":\"HASAL MFB\",\"code\":\"090121\"}]}"
+        }
+      ]
+    },
+    {
+      "name": "get-virtual-account",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n   \"requestId\":\"fae021e0-1c57-4471-88c0-5749ced3073d\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/getvirtualaccount",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "getvirtualaccount"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "withdraw-asset",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "name": "content-type",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "<calculated when request is sent>",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "xxxxxxxxxxxxxxxxxxxxx",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"95795169a648f46475a4c57xxxxxxxxxf53f36818ef145128\",           // Fintech's user identifier\n  \"internalWallet\": \"0xF7150dAF6c09eb51142A2734DecdF2Dd50FdF703\", // From list of wallet attached to the user ID\n  \"destinationWallet\": \"0xc5422E03B8250917023501E4697c738E7427b540\", // Ethereum address to send tokens\n  \"amount\": 20,            // Amount in decimal format (e.g., 100.50)\n  \"ticker\": \"CNGN\"            // Token symbol (optional, defaults to \"CNGN\")\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/withdrawasset",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "withdrawasset"
+          ],
+          "query": [
+            {
+              "key": "",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "manual-status-recovery",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseURL}}/manualstatusrecovery?uuid=05ff3db6-23f0-4c37-ba20-db78d5f47bd2",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "manualstatusrecovery"
+          ],
+          "query": [
+            {
+              "key": "uuid",
+              "value": "05ff3db6-23f0-4c37-ba20-db78d5f47bd2"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "recover-timed-out-trxn",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "name": "content-type",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "<calculated when request is sent>",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"signingRequestUuid\": \"4a530608-403a-4062-b852-48d24c2f0c3e\",\n    \"options\": {\n      \"resumePolling\": true,\n      \"updateWalletBalance\": true\n    }\n  }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/manualstatusrecovery",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "manualstatusrecovery"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "batch-recovery-mutiple-trxn",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "0",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"batch\": true,\n    \"signingRequestUuids\": [\"uuid1\", \"uuid2\", \"uuid3\"],\n    \"options\": {\"resumePolling\": true}\n  }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/manualstatusrecovery",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "manualstatusrecovery"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-cngn-offramp-status",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "d78800eb391583c8011fd08d3a4c5a9af83c5a7994f8ab700e2bcf6fc0c580b9",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"requestId\":\"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/cngnofframpstatus",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "cngnofframpstatus"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-platform-publickey",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "9862bb7364fd6294c19148afdf367a759d1b104429dabd4096b20c381010b7e6",
+            "type": "text"
+          },
+          {
+            "key": "x-real-ip",
+            "value": "127.0.0.1",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseURL}}/getplatformpublickey",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "getplatformpublickey"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "set-webhook",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "0",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"webhookUrl\":\"\", \n    \"secret\":\"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/setwebhook",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "setwebhook"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-webhook",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseURL}}/getwebhook",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "getwebhook"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "verify-withdrawal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache",
+            "name": "cache-control",
+            "type": "text"
+          },
+          {
+            "key": "Postman-Token",
+            "value": "<calculated when request is sent>",
+            "name": "postman-token",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "name": "content-type",
+            "type": "text"
+          },
+          {
+            "key": "Content-Length",
+            "value": "<calculated when request is sent>",
+            "name": "content-length",
+            "type": "text"
+          },
+          {
+            "key": "Host",
+            "value": "<calculated when request is sent>",
+            "name": "host",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "PostmanRuntime/7.39.1",
+            "name": "user-agent",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "name": "accept",
+            "type": "text"
+          },
+          {
+            "key": "Accept-Encoding",
+            "value": "gzip, deflate, br",
+            "name": "accept-encoding",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "keep-alive",
+            "name": "connection",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "d78800eb391583c8011fd08d3a4c5a9af83c5a7994f8ab700e2bcf6fc0c580b9",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"transactionReference\": \"BSC_WITHDRAWAL_REF_123456\",\n    \"network\": \"bsc\"\n  }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL}}/verifywithdrawal",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "verifywithdrawal"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseURL",
+      "value": "https://beta.stablesrail.io/v1"
+    }
+  ]
+}

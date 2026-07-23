@@ -1,45 +1,45 @@
 ---
-title: "Strails API Changelog: Endpoints & Documentation Updates"
-sidebarTitle: "Changelog"
-description: "A running record of new Strails API endpoints, breaking changes, and documentation updates — ordered from most recent to oldest."
+title: "Changelog"
+description: "Notable changes and additions to the Strails API and documentation"
 ---
 
-Use this changelog to track new capabilities, breaking changes, and documentation improvements to the Strails platform. Each entry is dated and categorised so you can quickly find what changed and when.
+Track new endpoints, breaking changes, and improvements to the Strails API and documentation.
+
+<Update label="2026-07-23" description="Documentation">
+  **Navigation & layout conformance**
+
+  - Restructured top navigation into **Documentation**, **Security**, **API Reference**, and **Changelog**.
+  - Consolidated the Security tab into a single sidebar group containing Authentication, Encryption, and HMAC Signatures.
+  - Added `title` and `sidebarTitle` frontmatter across documentation and API-reference pages for consistent page and sidebar labels, and removed duplicated in-page H1 headings.
+  - Removed invalid `iconType` properties from `docs.json` tabs.
+
+  **Fixes**
+
+  - Fixed broken cross-page anchors in Authentication (orderbook, fee-management, and offramp rate-limit links), Transactions, and MPC Wallet pages.
+  - Replaced absolute `docs.strails.co` links with relative links in the MPC Wallet setup flow.
+  - Corrected the SLIP-0044 reference link in Multi-Chain Wallet.
+  - Standardized the support contact to [support@strails.io](mailto:support@strails.io) across all pages.
+  - Added the missing Management & Configuration card to the API Reference overview.
+  - Standardized response envelope examples in Wallet Management API to use `status`, `response_code`, `message`, and `data`.
+  - Removed redundant `/v1` prefix from balance endpoints (`/balance/multi`, `/balance/address`, `/balance/user/:userId`).
+  - Fixed async processing status example in Core Concepts from `processing` to `requested`.
+  - Removed duplicate `api-reference/orderbook-management.md` file; canonical file is now `orderbook-management.mdx`.
+</Update>
+
+<Update label="2026-07-20" description="API">
+  - Added fintech system wallet balance endpoints:
+    - `GET /balance/multi`
+    - `POST /balance/address`
+    - `GET /balance/user/:userId`
+</Update>
+
+<Update label="Earlier releases">
+  - FX orderbook and trading endpoints.
+  - MPC vault registration and auto-signing configuration.
+  - Fintech fee management and withdrawal APIs.
+  - Virtual account deposits and fiat payout flows.
+</Update>
 
 ---
 
-## 2026-07-23
-
-### Documentation
-
-- Restructured top-level navigation into four tabs: **Documentation**, **Security**, **API Reference**, and **Changelog**, making it easier to navigate between conceptual guides and reference material.
-- Added icons to all left-sidebar navigation groups and individual pages for faster visual scanning.
-- Added `title` frontmatter across all documentation and API reference pages so sidebar labels are explicit and consistent everywhere.
-- Standardised response envelope examples throughout the Wallet Management API to always use the four shared fields: `status`, `response_code`, `message`, and `data`.
-- Removed the redundant `/v1` prefix from balance endpoints — the canonical paths are now `/balance/multi`, `/balance/address`, and `/balance/user/:userId`.
-- Fixed the async processing status example in Core Concepts: the correct initial status is `requested`, not `processing`.
-- Removed the duplicate `api-reference/orderbook-management.md` file; the single canonical reference is now `orderbook-management.mdx`.
-
----
-
-## 2026-07-20
-
-### API
-
-- Added three fintech system wallet balance endpoints:
-  - `GET /balance/multi` — retrieve balances for multiple assets in a single call.
-  - `POST /balance/address` — look up the balance for a specific wallet address.
-  - `GET /balance/user/:userId` — fetch the token balance for an individual user's smart wallet.
-
----
-
-## Earlier releases
-
-- **FX orderbook and trading endpoints** — full suite of limit order, market order, and order management endpoints for the cNGN/FX trading engine.
-- **MPC vault registration and auto-signing** — endpoints for registering MPC vault keys and configuring auto-signing thresholds for cNGN buying.
-- **Fintech fee management and withdrawal APIs** — fee configuration, accumulated fee queries, and fee withdrawal flow.
-- **Virtual account deposits and fiat payout flows** — permanent and checkout virtual account creation, deposit processing, BVN verification, and offramp payout pipeline.
-
----
-
-Have a feature request or spotted a documentation issue? Reach out at [support@strails.io](mailto:support@strails.io).
+Have a feature request or found a documentation issue? Contact us at [support@strails.io](mailto:support@strails.io).

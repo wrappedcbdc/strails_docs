@@ -1,563 +1,587 @@
 ---
-title: "FX Orderbook API: Create Limit Orders & Query Liquidity"
-sidebarTitle: "Orderbook"
-description: "Create, update, and delete cNGN limit orders to provide liquidity, query the public orderbook, and stream live updates via Firebase."
+title: "FX Order Management API"
+sidebarTitle: "Orderbook Management"
+description: "REST API endpoints for managing orderbook orders. Allows fintechs to create liquidity by placing buy/sell orders that other fintechs can trade against."
 ---
 
-Create limit orders to provide liquidity for cNGN ↔ USDC/USDT FX trading on the Strails orderbook. As a liquidity provider, you set the price and the minimum and maximum cNGN amounts you are willing to trade. Other fintechs execute trades against your orders, and your wallet balance is validated in real time during matching. You can also query the public orderbook, retrieve aggregated market statistics, and obtain a Firebase token for streaming live order updates.
+This section documents endpoints fintechs use to **create, update, delete, and view orderbook orders** for FX trading.
 
----
-
-## Endpoints Overview
-
-| Endpoint                  | Method | Description                                                      |
-| ------------------------- | ------ | ---------------------------------------------------------------- |
-| `/fx/limit-order`         | POST   | Create a new limit order to provide liquidity                    |
-| `/fx/limit-order/update`  | PUT    | Update price, amounts, or status of an existing order            |
-| `/fx/limit-order/delete`  | DELETE | Permanently delete a limit order from the orderbook             |
-| `/fx/limit-orders`        | GET    | List your fintech's orders with optional filters and pagination  |
-| `/fx/orderbook`           | GET    | View the public orderbook for a trading pair                    |
-| `/fx/orderbook/stats`     | GET    | Retrieve aggregated statistics for a trading pair               |
-| `/fx/orderbook-token`     | GET    | Generate a Firebase token for real-time orderbook streaming     |
+<Info>
+All endpoints require fintech API key authentication and IP allowlist verification.
+</Info>
 
 ---
 
-## Create Limit Order
+## FX Order Management API — Endpoints Overview
 
-Create a new limit order on the orderbook to provide liquidity. Your wallet must hold sufficient balance to back the order: cNGN for buy orders, USDC or USDT for sell orders. Available liquidity is checked against your on-chain wallet balance at query time.
+| Section                                          | Endpoint                 | Method | Description                                                                 |
+| ------------------------------------------------ | ------------------------ | ------ | --------------------------------------------------------------------------- |
+| [**Create Limit Order**](#create-limit-order)    | `/fx/limit-order`        | POST   | Create a new limit order to provide liquidity                               |
+| [**Update Limit Order**](#update-limit-order)    | `/fx/limit-order/update` | PUT    | Update an existing limit order                                              |
+| [**Delete Limit Order**](#delete-limit-order)    | `/fx/limit-order/delete` | DELETE | Delete a limit order permanently                                            |
+| [**List My Limit Orders**](#list-my-limit-orders)| `/fx/limit-orders`       | GET    | Get list of your fintech's limit orders with optional filters               |
+| [**Get Orderbook**](#get-orderbook)              | `/fx/orderbook`          | GET    | Get public orderbook view for a trading pair                                |
+| [**Get Orderbook Stats**](#get-orderbook-stats)  | `/fx/orderbook/stats`    | GET    | Get aggregated statistics for a trading pair                                |
+| [**Get Orderbook Token**](#get-orderbook-token)  | `/fx/orderbook-token`    | GET    | Generate a Firebase token for real-time orderbook access                    |
 
-<Note>
-  All amount fields (`minAmount`, `maxAmount`) are expressed in the token's smallest unit with 6 decimal places. For example, `500000000` represents 500 cNGN (500 × 10⁶). Divide any amount field by 1,000,000 to get the human-readable value.
-</Note>
+---
 
-<Note>
-  Active orders lock your wallet balance for the full `maxAmount`. Make sure your wallet holds at least that much before creating the order.
-</Note>
+### Create Limit Order
+
+Create a new limit order to provide liquidity. Your blockchain wallet must have sufficient balance for the order.
+
+<Info>
+Available liquidity is automatically queried from your wallet:
+- For **BUY** orders: you need cNGN in your wallet
+- For **SELL** orders: you need the stablecoin (USDC/USDT) in your wallet
+</Info>
 
 <Tabs>
-  <Tab title="Request">
-    ```bash
-    curl --request POST \
-      --url https://api.strails.io/fx/limit-order \
-      --header "Authorization: Bearer <API_KEY>" \
-      --header "Content-Type: application/json" \
-      --data '{
-        "orderType": "sell",
-        "baseCurrency": "cNGN",
-        "quoteCurrency": "USDC",
-        "price": "1350000",
-        "minAmount": "500000000",
-        "maxAmount": "2000000000"
-      }'
-    ```
 
-    <ParamField body="orderType" type="string" required>
-      Direction of the order. Use `"sell"` to sell cNGN in exchange for USDC/USDT, or `"buy"` to buy cNGN using USDC/USDT.
-    </ParamField>
+<Tab title="Request (Create Limit Order)">
 
-    <ParamField body="baseCurrency" type="string" required>
-      The base currency of the trading pair. Must be `"cNGN"`.
-    </ParamField>
+```http
+POST {{BASE_URL}}/fx/limit-order
+```
 
-    <ParamField body="quoteCurrency" type="string" required>
-      The quote currency of the trading pair. Accepted values: `"USDC"` or `"USDT"`.
-    </ParamField>
+</Tab>
 
-    <ParamField body="price" type="string" required>
-      The rate expressed in cNGN smallest units per one unit of the quote currency. For example, `"1350000"` means 1.35 cNGN per 1 USDC (after dividing by 10⁶).
-    </ParamField>
+<Tab title="Body (Create Limit Order)">
 
-    <ParamField body="minAmount" type="string" required>
-      Minimum cNGN amount (in smallest units, 6 decimals) that a counterparty can trade against this order. Must be greater than `0` and no larger than `maxAmount`.
-    </ParamField>
+```json
+{
+  "pair": "CNGN-USDC",
+  "side": "buy",
+  "price": "1600.50",
+  "spread": 0.5,
+  "minAmount": "1000",
+  "maxAmount": "100000"
+}
+```
 
-    <ParamField body="maxAmount" type="string" required>
-      Maximum cNGN amount (in smallest units, 6 decimals) that a counterparty can trade against this order. Must be at least `minAmount`.
-    </ParamField>
-  </Tab>
+### Parameters
 
-  <Tab title="Response">
-    ```json
-    {
-      "status": "Success",
-      "response_code": "00",
-      "message": "Limit order created successfully",
-      "data": {
+| Parameter   | Type   | Required | Description                                                                 |
+|-------------|--------|----------|-----------------------------------------------------------------------------|
+| `pair`      | string | Yes   | Trading pair in format `CNGN-TOKEN` (`CNGN-USDT` or `CNGN-USDC`)            |
+| `side`      | string | Yes   | Order side: `buy` to buy tokens with cNGN, `sell` to sell tokens for cNGN  |
+| `price`     | string | Yes   | Price in cNGN per token (e.g., `1600.50` represents 1600.50 cNGN for 1 USDC) |
+| `spread`    | number | Yes   | Spread percentage (e.g., `0.5` represents 0.5%). Minimum: 0.1%              |
+| `minAmount` | string | Yes   | Minimum trade amount in cNGN. Must be greater than 0 and at most maxAmount  |
+| `maxAmount` | string | Yes   | Maximum trade amount in cNGN. Must be at least minAmount                    |
+
+</Tab>
+
+<Tab title="Response (Create Limit Order)">
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Limit order created successfully",
+  "data": {
+    "orderId": "order_abc123",
+    "fintechId": "fintech_xyz789",
+    "pair": "CNGN-USDC",
+    "side": "buy",
+    "price": "1600.50",
+    "spread": 0.5,
+    "minAmount": "1000.00",
+    "maxAmount": "100000.00",
+    "availableLiquidity": "95000.00",
+    "status": "active",
+    "createdAt": "2026-04-04T10:30:00.000Z",
+    "updatedAt": "2026-04-04T10:30:00.000Z",
+    "version": "1.0.0"
+  }
+}
+```
+
+</Tab>
+
+<Tab title="Error (Create Limit Order)">
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "minAmount must be less than or equal to maxAmount"
+}
+```
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Spread must be at least 0.1%"
+}
+```
+
+```json
+{
+  "status": "Error",
+  "response_code": "05",
+  "message": "Insufficient liquidity",
+  "error": "Wallet has insufficient balance for this order"
+}
+```
+
+</Tab>
+
+</Tabs>
+
+---
+
+### Update Limit Order
+
+Update an existing limit order. You can update price, spread, amounts, or status. At least one field must be provided.
+
+<Info>
+You can only update your own orders. Cannot update deleted orders.
+</Info>
+
+<Tabs>
+
+<Tab title="Request (Update Limit Order)">
+
+```http
+PUT {{BASE_URL}}/fx/limit-order/update
+```
+
+</Tab>
+
+<Tab title="Body (Update Limit Order)">
+
+```json
+{
+  "orderId": "unique_order_id",
+  "price": "1605.00",
+  "spread": 0.6,
+  "minAmount": "2000",
+  "maxAmount": "150000",
+  "status": "active"
+}
+```
+
+### Body Parameters
+
+| Parameter   | Type   | Required | Description                                           |
+|-------------|--------|----------|-------------------------------------------------------|
+| `orderId` | string | Yes   | Order ID to update    |
+| `price`     | string | No    | New price in cNGN per token                           |
+| `spread`    | number | No    | New spread percentage                                 |
+| `minAmount` | string | No    | New minimum trade amount                              |
+| `maxAmount` | string | No    | New maximum trade amount                              |
+| `status`    | string | No    | New order status (`active` or `paused`)               |
+
+</Tab>
+
+<Tab title="Response (Update Limit Order)">
+
+```json
+{
+    "status": "Success",
+    "response_code": "00",
+    "message": "Order updated successfully",
+    "data": {
+        "order": {
+            "orderId": "order_31bb01a2-d20f-416f-8581-aeec687ac8e2",
+            "fintechId": "fintech_id",
+            "pair": "CNGN-USDC",
+            "side": "sell",
+            "availableLiquidity": "0",
+            "status": "active",
+            "createdAt": "2026-04-29T08:08:10.579Z",
+            "minAmount": "1300000000",
+            "price": "1350000000",
+            "maxAmount": "2000000000",
+            "spread": 0.6,
+            "updatedAt": "2026-04-29T16:31:13.345Z"
+        },
+        "version": "1.0.0"
+    }
+}
+```
+
+</Tab>
+
+<Tab title="Error (Update Limit Order)">
+
+```json
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "Order not found",
+  "error": "No order found with the provided orderId or you don't have access to it"
+}
+```
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Cannot update a deleted order"
+}
+```
+
+</Tab>
+
+</Tabs>
+
+---
+
+### Delete Limit Order
+
+Delete a limit order. This permanently removes the order from the orderbook.
+
+<Tabs>
+
+<Tab title="Request (Delete Limit Order)">
+
+```http
+DELETE {{BASE_URL}}/fx/limit-order/delete
+```
+
+</Tab>
+
+<Tab title="Body (Delete Limit Order)">
+
+```json
+{
+  "orderId": "unique_order_id"
+}
+```
+
+### Body Parameters
+
+| Parameter | Type   | Required | Description           |
+|-----------|--------|----------|-----------------------|
+| `orderId` | string | Yes   | Order ID to delete    |
+
+</Tab>
+
+<Tab title="Response (Delete Limit Order)">
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Order deleted successfully",
+  "data": {
+    "orderId": "order_abc123",
+    "version": "1.0.0"
+  }
+}
+```
+
+</Tab>
+
+<Tab title="Error (Delete Limit Order)">
+
+```json
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "Order not found",
+  "error": "No order found with the provided orderId or you don't have access to it"
+}
+```
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Order is already deleted"
+}
+```
+
+</Tab>
+
+</Tabs>
+
+---
+
+### List My Limit Orders
+
+Get list of your fintech's limit orders with optional filters. Returns orders with real-time liquidity information.
+
+<Tabs>
+
+<Tab title="Request (List My Limit Orders)">
+
+```http
+GET {{BASE_URL}}/fx/limit-orders?pair=CNGN-USDC&status=active&limit=50
+```
+
+### Query Parameters
+
+| Parameter | Type   | Required | Description                                                   |
+|-----------|--------|----------|---------------------------------------------------------------|
+| `pair`    | string | No    | Filter by trading pair (`CNGN-USDT` or `CNGN-USDC`)           |
+| `status`  | string | No    | Filter by order status (`active`, `paused`, or `deleted`)     |
+| `limit`   | number | No    | Maximum number of orders to return (default: 50, max: 100)    |
+
+</Tab>
+
+<Tab title="Response (List My Limit Orders)">
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Orders retrieved successfully",
+  "data": {
+    "orders": [
+      {
         "orderId": "order_abc123",
         "fintechId": "fintech_xyz789",
         "pair": "CNGN-USDC",
-        "side": "sell",
-        "price": "1350000",
-        "minAmount": "500000000",
-        "maxAmount": "2000000000",
-        "availableLiquidity": "2000000000",
+        "side": "buy",
+        "price": "1600.50",
+        "spread": 0.5,
+        "minAmount": "1000.00",
+        "maxAmount": "100000.00",
+        "availableLiquidity": "95000.00",
         "status": "active",
-        "createdAt": "2026-05-01T10:30:00.000Z",
-        "updatedAt": "2026-05-01T10:30:00.000Z",
-        "version": "1.0.0"
+        "createdAt": "2026-04-04T10:30:00.000Z",
+        "updatedAt": "2026-04-04T10:30:00.000Z"
       }
-    }
-    ```
+    ],
+    "count": 5,
+    "note": "availableLiquidity is informational only and reflects wallet balance at query time.",
+    "version": "1.0.0"
+  }
+}
+```
 
-    <ResponseField name="data.orderId" type="string">
-      Unique identifier for the newly created order. Use this in update, delete, and targeted trade requests.
-    </ResponseField>
+</Tab>
 
-    <ResponseField name="data.pair" type="string">
-      Trading pair derived from `baseCurrency` and `quoteCurrency` (e.g., `CNGN-USDC`).
-    </ResponseField>
-
-    <ResponseField name="data.status" type="string">
-      Initial order status. Always `"active"` on successful creation.
-    </ResponseField>
-
-    <ResponseField name="data.availableLiquidity" type="string">
-      Your wallet balance at the time of creation, in smallest units (6 decimals). Informational only — actual liquidity is re-validated during trade matching.
-    </ResponseField>
-
-    <ResponseField name="data.createdAt" type="string">
-      ISO 8601 UTC timestamp of order creation.
-    </ResponseField>
-  </Tab>
 </Tabs>
 
 ---
 
-## Update Limit Order
+### Get Orderbook
 
-Update the price, amounts, or status of an existing limit order. You can submit any combination of fields; at least one field is required. You can only update your own orders, and deleted orders cannot be updated.
+Get public orderbook view for a trading pair. Shows all active buy and sell orders from all fintechs with real-time liquidity.
 
 <Tabs>
-  <Tab title="Request">
-    ```bash
-    curl --request PUT \
-      --url https://api.strails.io/fx/limit-order/update \
-      --header "Authorization: Bearer <API_KEY>" \
-      --header "Content-Type: application/json" \
-      --data '{
+
+<Tab title="Request (Get Orderbook)">
+
+```http
+GET {{BASE_URL}}/fx/orderbook?pair=CNGN-USDC&limit=20
+```
+
+### Query Parameters
+
+| Parameter | Type   | Required | Description                                                   |
+|-----------|--------|----------|---------------------------------------------------------------|
+| `pair`    | string | Yes   | Trading pair to query (`CNGN-USDT` or `CNGN-USDC`)            |
+| `limit`   | number | No    | Maximum number of orders per side (default: 20, max: 100)     |
+
+</Tab>
+
+<Tab title="Response (Get Orderbook)">
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Orderbook retrieved successfully",
+  "data": {
+    "pair": "CNGN-USDC",
+    "buyOrders": [
+      {
         "orderId": "order_abc123",
-        "price": "1360000",
-        "minAmount": "500000000",
-        "maxAmount": "3000000000"
-      }'
-    ```
-
-    <ParamField body="orderId" type="string" required>
-      The ID of the order you want to update.
-    </ParamField>
-
-    <ParamField body="price" type="string">
-      New price in cNGN smallest units per quote currency unit.
-    </ParamField>
-
-    <ParamField body="minAmount" type="string">
-      New minimum trade amount in cNGN smallest units (6 decimals).
-    </ParamField>
-
-    <ParamField body="maxAmount" type="string">
-      New maximum trade amount in cNGN smallest units (6 decimals).
-    </ParamField>
-
-    <ParamField body="status" type="string">
-      New order status. Accepted values: `"active"` or `"paused"`. Use `"paused"` to temporarily remove an order from matching without deleting it.
-    </ParamField>
-  </Tab>
-
-  <Tab title="Response">
-    ```json
-    {
-      "status": "Success",
-      "response_code": "00",
-      "message": "Order updated successfully",
-      "data": {
-        "order": {
-          "orderId": "order_abc123",
-          "fintechId": "fintech_xyz789",
-          "pair": "CNGN-USDC",
-          "side": "sell",
-          "price": "1360000",
-          "minAmount": "500000000",
-          "maxAmount": "3000000000",
-          "availableLiquidity": "3000000000",
-          "status": "active",
-          "createdAt": "2026-05-01T10:30:00.000Z",
-          "updatedAt": "2026-05-01T11:15:00.000Z"
-        },
-        "version": "1.0.0"
+        "price": "1600.50",
+        "spread": 0.5,
+        "minAmount": "1000.00",
+        "maxAmount": "100000.00",
+        "availableLiquidity": "95000.00",
+        "status": "active",
+        "updatedAt": "2026-04-29T16:31:13.345Z"
       }
-    }
-    ```
+    ],
+    "sellOrders": [
+      {
+        "orderId": "order_def456",
+        "price": "1610.00",
+        "spread": 0.6,
+        "minAmount": "2000.00",
+        "maxAmount": "150000.00",
+        "availableLiquidity": "140000.00",
+        "status": "active"
+      }
+    ],
+    "version": "1.0.0",
+    "note": "availableLiquidity is informational only and reflects wallet balance at query time. Actual available liquidity may change before trade execution and is validated in real-time during matching."
+  }
+}
+```
 
-    <ResponseField name="data.order.orderId" type="string">
-      The updated order's unique identifier.
-    </ResponseField>
+</Tab>
 
-    <ResponseField name="data.order.price" type="string">
-      The new price in cNGN smallest units.
-    </ResponseField>
-
-    <ResponseField name="data.order.status" type="string">
-      The current order status after the update.
-    </ResponseField>
-
-    <ResponseField name="data.order.updatedAt" type="string">
-      ISO 8601 UTC timestamp of the last update.
-    </ResponseField>
-  </Tab>
 </Tabs>
 
 ---
 
-## Delete Limit Order
+### Get Orderbook Stats
 
-Permanently remove a limit order from the orderbook. Deletion is irreversible. In-flight trades that have already been matched against this order before deletion continue to settle normally.
-
-<Tabs>
-  <Tab title="Request">
-    ```bash
-    curl --request DELETE \
-      --url https://api.strails.io/fx/limit-order/delete \
-      --header "Authorization: Bearer <API_KEY>" \
-      --header "Content-Type: application/json" \
-      --data '{
-        "orderId": "order_abc123"
-      }'
-    ```
-
-    <ParamField body="orderId" type="string" required>
-      The ID of the order to permanently delete.
-    </ParamField>
-  </Tab>
-
-  <Tab title="Response">
-    ```json
-    {
-      "status": "Success",
-      "response_code": "00",
-      "message": "Order deleted successfully",
-      "data": {
-        "orderId": "order_abc123",
-        "version": "1.0.0"
-      }
-    }
-    ```
-
-    <ResponseField name="data.orderId" type="string">
-      The ID of the order that was deleted.
-    </ResponseField>
-  </Tab>
-</Tabs>
-
----
-
-## List My Limit Orders
-
-List your fintech's limit orders with optional filters. Results include real-time `availableLiquidity` drawn from your on-chain wallet at query time. Pagination is cursor-based using `startAfter`.
+Get aggregated statistics for a trading pair including total liquidity and best prices.
 
 <Tabs>
-  <Tab title="Request">
-    ```bash
-    curl --request GET \
-      --url "https://api.strails.io/fx/limit-orders?status=active&pair=CNGN-USDC&limit=50" \
-      --header "Authorization: Bearer <API_KEY>"
-    ```
 
-    <ParamField query="status" type="string">
-      Filter by order status. Accepted values: `"active"`, `"paused"`, or `"deleted"`.
-    </ParamField>
+<Tab title="Request (Orderbook Stats)">
 
-    <ParamField query="pair" type="string">
-      Filter by trading pair. Accepted values: `"CNGN-USDC"` or `"CNGN-USDT"`.
-    </ParamField>
+```http
+GET {{BASE_URL}}/fx/orderbook/stats?pair=CNGN-USDC
+```
 
-    <ParamField query="limit" type="number">
-      Maximum number of orders to return. Defaults to `50`; maximum is `100`.
-    </ParamField>
+### Query Parameters
 
-    <ParamField query="startAfter" type="string">
-      The `orderId` of the last order in the previous page. Pass this value to retrieve the next page of results.
-    </ParamField>
-  </Tab>
+| Parameter | Type   | Required | Description                                        |
+|-----------|--------|----------|----------------------------------------------------|
+| `pair`    | string | Yes   | Trading pair to query (`CNGN-USDT` or `CNGN-USDC`) |
 
-  <Tab title="Response">
-    ```json
-    {
-      "status": "Success",
-      "response_code": "00",
-      "message": "Orders retrieved successfully",
-      "data": {
-        "orders": [
-          {
-            "orderId": "order_abc123",
-            "fintechId": "fintech_xyz789",
-            "pair": "CNGN-USDC",
-            "side": "sell",
-            "price": "1350000",
-            "minAmount": "500000000",
-            "maxAmount": "2000000000",
-            "availableLiquidity": "2000000000",
-            "status": "active",
-            "createdAt": "2026-05-01T10:30:00.000Z",
-            "updatedAt": "2026-05-01T10:30:00.000Z"
-          }
-        ],
-        "count": 1,
-        "note": "availableLiquidity is informational only and reflects wallet balance at query time.",
-        "version": "1.0.0"
-      }
-    }
-    ```
+</Tab>
 
-    <ResponseField name="data.orders" type="array">
-      Array of your limit order objects matching the supplied filters.
-    </ResponseField>
+<Tab title="Response (Orderbook Stats)">
 
-    <ResponseField name="data.count" type="number">
-      Total number of orders returned in this page.
-    </ResponseField>
-  </Tab>
-</Tabs>
-
----
-
-## Get Orderbook
-
-Retrieve the public orderbook for a trading pair. All active buy and sell orders from every fintech on the platform are included, along with their real-time liquidity. Use this endpoint to assess market depth before placing or adjusting your own orders.
-
-<Note>
-  `availableLiquidity` values are informational only and reflect each provider's wallet balance at the moment you query the orderbook. Actual liquidity is re-validated in real time during trade matching and may differ from what is shown here.
-</Note>
-
-<Tabs>
-  <Tab title="Request">
-    ```bash
-    curl --request GET \
-      --url "https://api.strails.io/fx/orderbook?pair=CNGN-USDC" \
-      --header "Authorization: Bearer <API_KEY>"
-    ```
-
-    <ParamField query="pair" type="string" required>
-      The trading pair to query. Accepted values: `"CNGN-USDC"` or `"CNGN-USDT"`.
-    </ParamField>
-  </Tab>
-
-  <Tab title="Response">
-    ```json
-    {
-      "status": "Success",
-      "response_code": "00",
-      "message": "Orderbook retrieved successfully",
-      "data": {
-        "pair": "CNGN-USDC",
-        "buyOrders": [
-          {
-            "orderId": "order_buy001",
-            "price": "1320000",
-            "minAmount": "1000000000",
-            "maxAmount": "5000000000",
-            "availableLiquidity": "4800000000",
-            "status": "active",
-            "updatedAt": "2026-05-01T09:00:00.000Z"
-          }
-        ],
-        "sellOrders": [
-          {
-            "orderId": "order_abc123",
-            "price": "1350000",
-            "minAmount": "500000000",
-            "maxAmount": "2000000000",
-            "availableLiquidity": "2000000000",
-            "status": "active",
-            "updatedAt": "2026-05-01T10:30:00.000Z"
-          }
-        ],
-        "version": "1.0.0"
-      }
-    }
-    ```
-
-    <ResponseField name="data.buyOrders" type="array">
-      All active buy orders, sorted by price descending (best bid first).
-    </ResponseField>
-
-    <ResponseField name="data.sellOrders" type="array">
-      All active sell orders, sorted by price ascending (best ask first).
-    </ResponseField>
-  </Tab>
-</Tabs>
-
----
-
-## Get Orderbook Stats
-
-Retrieve aggregated statistics for a trading pair, including best bid and ask prices, the spread between them, and total 24-hour volume. Use these figures to benchmark your own order pricing.
-
-<Tabs>
-  <Tab title="Request">
-    ```bash
-    curl --request GET \
-      --url "https://api.strails.io/fx/orderbook/stats?pair=CNGN-USDC" \
-      --header "Authorization: Bearer <API_KEY>"
-    ```
-
-    <ParamField query="pair" type="string" required>
-      The trading pair to query. Accepted values: `"CNGN-USDC"` or `"CNGN-USDT"`.
-    </ParamField>
-  </Tab>
-
-  <Tab title="Response">
-    ```json
-    {
-      "status": "Success",
-      "response_code": "00",
-      "message": "Orderbook statistics retrieved successfully",
-      "data": {
+```json
+{
+    "status": "Success",
+    "response_code": "00",
+    "message": "Orderbook statistics retrieved successfully",
+    "data": {
         "pair": "CNGN-USDC",
         "stats": {
-          "pair": "CNGN-USDC",
-          "totalActiveOrders": 8,
-          "buyOrderCount": 2,
-          "sellOrderCount": 6,
-          "totalBuyLiquidity": "80494652",
-          "totalSellLiquidity": "8179999000",
-          "bestBidPrice": "1320000",
-          "bestAskPrice": "1350000",
-          "spreadPercentage": 2.27
+            "pair": "CNGN-USDC",
+            "totalActiveOrders": 8,
+            "buyOrderCount": 2,
+            "sellOrderCount": 6,
+            "totalBuyLiquidity": "80.494652",
+            "totalSellLiquidity": "8179.999",
+            "bestBidPrice": "1400",
+            "bestAskPrice": "700.5",
+            "spreadPercentage": -49.96
         },
         "version": "1.0.0"
-      }
     }
-    ```
+}
+```
 
-    <ResponseField name="data.stats.totalActiveOrders" type="number">
-      Total number of active orders across both sides of the book.
-    </ResponseField>
+</Tab>
 
-    <ResponseField name="data.stats.buyOrderCount" type="number">
-      Number of active buy orders.
-    </ResponseField>
-
-    <ResponseField name="data.stats.sellOrderCount" type="number">
-      Number of active sell orders.
-    </ResponseField>
-
-    <ResponseField name="data.stats.totalBuyLiquidity" type="string">
-      Aggregate available buy-side liquidity in cNGN smallest units (6 decimals).
-    </ResponseField>
-
-    <ResponseField name="data.stats.totalSellLiquidity" type="string">
-      Aggregate available sell-side liquidity in cNGN smallest units (6 decimals).
-    </ResponseField>
-
-    <ResponseField name="data.stats.bestBidPrice" type="string">
-      Highest active buy order price in cNGN smallest units.
-    </ResponseField>
-
-    <ResponseField name="data.stats.bestAskPrice" type="string">
-      Lowest active sell order price in cNGN smallest units.
-    </ResponseField>
-
-    <ResponseField name="data.stats.spreadPercentage" type="number">
-      Percentage difference between the best ask and best bid prices.
-    </ResponseField>
-  </Tab>
 </Tabs>
 
 ---
 
-## Get Orderbook Token
+### Get Orderbook Token
 
-Generate a short-lived Firebase custom authentication token for real-time orderbook streaming. Pass the returned token to Firebase `signInWithCustomToken()` to subscribe to live order updates via Firebase Realtime Database.
+Generate a Firebase custom token for real-time orderbook access. Use this token to subscribe to live orderbook updates via Firebase Realtime Database.
 
 <Warning>
-  All numeric fields in the Firebase real-time stream use the same 6-decimal smallest-unit format as the REST API. Divide any `price`, `minAmount`, `maxAmount`, or `availableLiquidity` value by 1,000,000 to obtain the human-readable figure. For example, `"1500000"` → 1.5 cNGN per USDC.
+**Wei Format (6 Decimals):** The following fields are returned in wei format with 6 decimal precision:
+- `price` — e.g., `"1500000"` = 1.5 (divide by 10^6)
+- `minAmount` — e.g., `"500000000"` = 500 tokens
+- `maxAmount` — e.g., `"2000000000"` = 2,000 tokens
+- `availableLiquidity` — e.g., `"95000000000"` = 95,000 tokens
+
+**Conversion:** To get the human-readable value, divide by `1,000,000` (10^6).
 </Warning>
 
 <Tabs>
-  <Tab title="Request">
-    ```bash
-    curl --request GET \
-      --url https://api.strails.io/fx/orderbook-token \
-      --header "Authorization: Bearer <API_KEY>"
-    ```
-  </Tab>
 
-  <Tab title="Response">
-    ```json
-    {
-      "responseCode": "00",
-      "responseMessage": "Token generated successfully",
-      "data": {
-        "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
-        "expiresIn": 3600,
-        "expiresAt": "2026-05-01T11:30:00.000Z",
-        "tradingPairs": ["CNGN-USDC", "CNGN-USDT"],
-        "firebaseConfig": {
-          "projectId": "strails-prod",
-          "databaseURL": "strails-prod"
-        },
-        "usage": "Use this token with Firebase signInWithCustomToken() for real-time orderbook access"
-      }
-    }
-    ```
+<Tab title="Request (Orderbook Token)">
 
-    <ResponseField name="data.token" type="string">
-      Firebase custom token. Pass this to `firebase.auth().signInWithCustomToken(token)` in your client.
-    </ResponseField>
+```http
+GET {{BASE_URL}}/fx/orderbook-token
+```
 
-    <ResponseField name="data.expiresIn" type="number">
-      Token validity in seconds (default: 3600).
-    </ResponseField>
+</Tab>
 
-    <ResponseField name="data.expiresAt" type="string">
-      ISO 8601 UTC timestamp at which the token expires. Refresh before this time to maintain a live connection.
-    </ResponseField>
+<Tab title="Response (Orderbook Token)">
 
-    <ResponseField name="data.tradingPairs" type="array">
-      All currently active FX trading pairs. Use these exact strings when subscribing to orderbook nodes in Firebase.
-    </ResponseField>
+```json
+{
+  "responseCode": "00",
+  "responseMessage": "Token generated successfully",
+  "data": {
+    "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expiresIn": 3600,
+    "tradingPairs": ["CNGN-USDC", "CNGN-USDT", "CNGN-DAI"],
+    "firebaseConfig": {
+      "projectId": "Strails-prod",
+      "databaseURL": "Strails-prod"
+    },
+    "usage": "Use this token with Firebase signInWithCustomToken() for real-time orderbook access"
+  }
+}
+```
 
-    <ResponseField name="data.firebaseConfig.projectId" type="string">
-      Firebase project ID to use when initialising the Firebase SDK.
-    </ResponseField>
+**Response Fields:**
 
-    <ResponseField name="data.firebaseConfig.databaseURL" type="string">
-      Firebase Realtime Database identifier for the Strails orderbook.
-    </ResponseField>
-  </Tab>
+| Field                         | Type   | Description                                                    |
+| ----------------------------- | ------ | -------------------------------------------------------------- |
+| `token`                       | string | Firebase custom token for authentication                       |
+| `expiresIn`                   | number | Token validity in seconds (default: 3600)                      |
+| `tradingPairs`                | array  | List of active FX trading pairs                                |
+| `firebaseConfig.projectId`    | string | Firebase project ID for connection                             |
+| `firebaseConfig.databaseURL`  | string | Firebase database identifier                                   |
+| `usage`                       | string | Instructions for using the token                               |
+
+<Info>
+**Trading Pairs:** The `tradingPairs` array contains all currently active FX-enabled pairs. Use these exact strings when querying the orderbook to avoid typos.
+</Info>
+
+</Tab>
+
 </Tabs>
 
 ---
 
-## Order Status Lifecycle
+### Order Status Lifecycle
 
-Limit orders transition through the following statuses:
+Orders follow a specific status lifecycle:
 
-| Status    | Description                                                                |
-| --------- | -------------------------------------------------------------------------- |
-| `active`  | The order is live on the orderbook and eligible for trade matching.        |
-| `paused`  | The order is temporarily suspended and will not be matched until resumed.  |
-| `deleted` | The order has been permanently removed from the orderbook.                 |
+| Status    | Description                                          |
+|-----------|------------------------------------------------------|
+| `active`  | Order is active and can be matched with trades       |
+| `paused`  | Order is temporarily paused and won't be matched     |
+| `deleted` | Order is permanently deleted                         |
 
 ### Status Transitions
 
-```text
-active  ──► paused   (PUT /fx/limit-order/update with status: "paused")
-paused  ──► active   (PUT /fx/limit-order/update with status: "active")
-active  ──► deleted  (DELETE /fx/limit-order/delete)
-paused  ──► deleted  (DELETE /fx/limit-order/delete)
-```
-
-Use `"paused"` instead of deleting orders you intend to reactivate later. Pausing preserves the order ID and configuration.
+- `active` → `paused` (via update)
+- `paused` → `active` (via update)
+- `active` → `deleted` (via delete)
+- `paused` → `deleted` (via delete)
 
 ---
 
-## Additional Notes
+### Liquidity Notes
 
-<Note>
-  **Self-trading prevention is built in.** You cannot execute a trade against your own limit orders. Any trade request that would result in self-matching is automatically rejected with a `SELF_TRADE_NOT_ALLOWED` error.
-</Note>
+<Info>
+**Important information about liquidity:**
+- `availableLiquidity` is queried in real-time from your blockchain wallet
+- For **BUY** orders: liquidity = your cNGN wallet balance
+- For **SELL** orders: liquidity = your stablecoin (USDC/USDT) wallet balance
+- Liquidity shown is informational only — actual liquidity is validated during trade matching
+- Ensure your wallet has sufficient balance before creating orders
+- Liquidity can change between order creation and trade execution
+</Info>
 
-<Note>
-  **Active orders lock wallet balance.** While an order is `active`, the amount up to `maxAmount` is considered reserved in your wallet. If your wallet balance drops below the `minAmount` for an active order, that order becomes ineligible for matching until you top up your wallet or lower the `maxAmount`.
-</Note>
+---
+
+### Best Practices
+
+- Monitor your wallet balance regularly
+- Update or pause orders if liquidity becomes insufficient
+- Use appropriate spreads to account for market volatility
+- Set reasonable min/max amounts based on your liquidity
+- Use the `paused` status instead of deleting orders you may reactivate
+- Query orderbook stats before creating orders to understand market conditions
