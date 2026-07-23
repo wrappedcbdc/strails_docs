@@ -1,0 +1,229 @@
+---
+title: "Virtual Accounts API: NGN Bank Account Management & Fees"
+sidebarTitle: "Virtual Accounts"
+description: "Retrieve fintech-level and user-level NGN virtual accounts, with full fee breakdowns and exact deposit amounts for the cNGN onramp flow."
+---
+
+The Virtual Accounts API provides two endpoints for retrieving Nigerian bank account details used in the cNGN onramp flow. Your fintech has a permanent pooled account for collecting NGN deposits, and each user deposit request is associated with a dedicated virtual account that carries a full fee breakdown — letting your users know exactly how much to send and how much will be credited to their wallet.
+
+<Info>
+  New to virtual accounts? Read the [Virtual Accounts Guide](/virtual-accounts-guide) for an overview of account types, the deposit lifecycle, BVN validation requirements, and best practices before integrating these endpoints.
+</Info>
+
+## Endpoints Overview
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/getfintechvirtualaccount` | GET | Retrieve the NGN virtual account(s) assigned to your fintech at onboarding. |
+| `/getvirtualaccount` | POST | Retrieve a specific user deposit virtual account including amounts and fee breakdown. |
+
+---
+
+### GET /getfintechvirtualaccount
+
+Returns the NGN virtual account(s) created for your fintech during the Strails onboarding process. This is the pooled account your users direct NGN deposits to before conversion into cNGN. Display this account information to your users in your onramp UI.
+
+```bash
+curl -X GET https://beta.stablesrail.io/v1/getfintechvirtualaccount \
+  -H "x-api-key: YOUR_SECRET_API_KEY"
+```
+
+This endpoint requires no request body.
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Virtual account retrieved successfully",
+  "data": {
+    "virtualAccounts": [
+      {
+        "accountNumber": "1234567890",
+        "accountName": "Example Fintech Ltd",
+        "bankName": "ALP Bank",
+        "provider": "nutmeg",
+        "status": "active",
+        "createdAt": "2026-01-04T05:26:39.804Z"
+      }
+    ]
+  }
+}
+```
+
+<ResponseField name="data.virtualAccounts" type="array">
+  An array of virtual account objects assigned to your fintech. Most fintechs have one account, but multiple accounts may be present if you have been assigned accounts across more than one banking provider.
+</ResponseField>
+
+<ResponseField name="data.virtualAccounts[].accountNumber" type="string">
+  The 10-digit NUBAN account number users send NGN deposits to.
+</ResponseField>
+
+<ResponseField name="data.virtualAccounts[].accountName" type="string">
+  The account name as registered with the bank. Display this to users alongside the account number for payment confirmation.
+</ResponseField>
+
+<ResponseField name="data.virtualAccounts[].bankName" type="string">
+  The name of the Nigerian bank or microfinance institution holding the virtual account.
+</ResponseField>
+
+<ResponseField name="data.virtualAccounts[].provider" type="string">
+  The virtual account infrastructure provider (e.g. `"nutmeg"`, `"redbiller"`, `"novac"`).
+</ResponseField>
+
+<ResponseField name="data.virtualAccounts[].status" type="string">
+  Current account status. `"active"` means the account can receive deposits.
+</ResponseField>
+
+<ResponseField name="data.virtualAccounts[].createdAt" type="string">
+  ISO 8601 timestamp indicating when the virtual account was provisioned.
+</ResponseField>
+
+---
+
+### POST /getvirtualaccount
+
+Retrieves a specific user-level virtual account using the `requestId` generated when the deposit request was created. The response includes the exact amounts your user must transfer, a full fee breakdown, and the destination wallet address that will receive the equivalent cNGN.
+
+```bash
+curl -X POST https://beta.stablesrail.io/v1/getvirtualaccount \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "requestId": "a9f706ad-6861-4669-904a-5d4e0d9963c3"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="requestId" type="string" required>
+  The unique identifier of the deposit request whose virtual account details you want to retrieve. This is returned when a user initiates a deposit or onramp request.
+</ParamField>
+
+<Warning>
+  Virtual accounts for individual deposit requests expire **30 minutes** after creation. If your user does not complete the NGN transfer within this window, the account will be marked as expired and you will need to create a new deposit request. Do not instruct users to send funds to an expired account.
+</Warning>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Virtual account retrieved successfully. Virtual account amount is before gateway fee. User must pay total amount including all fees.",
+  "data": {
+    "requestId": "a1b2c3d4-5678-90ab-cdef-111213141516",
+    "virtualAccount": {
+      "accountNumber": "0123456789",
+      "bankName": "Example Bank",
+      "accountName": "Company Name/John Doe Smith",
+      "amount": 528.84,
+      "createdAt": "2026-06-09T08:33:17.614Z",
+      "baseAmount": 520,
+      "feeAmount": 8.84,
+      "totalAmountWithFee": 528.84,
+      "feeBreakdown": {
+        "userRequestedAmount": 520,
+        "fintechFeeAmount": 0,
+        "fintechFeePercentage": 0,
+        "fintechFeeCapped": false,
+        "strailsFeeAmount": 8.84,
+        "strailsFeePercentage": 1.7,
+        "strailsFeeCapped": false,
+        "totalFeeAmount": 8.84,
+        "finalAmount": 528.84,
+        "amountToWallet": 520
+      }
+    },
+    "status": "created",
+    "walletAddress": "0xAbC123dEf456GhI789jKl012MnO345pQrS678tUv",
+    "version": "1.0.0"
+  }
+}
+```
+
+<ResponseField name="data.requestId" type="string">
+  The unique identifier for this deposit request, matching the `requestId` you submitted.
+</ResponseField>
+
+<ResponseField name="data.virtualAccount.accountNumber" type="string">
+  The 10-digit NUBAN account number the user must send NGN to for this specific deposit.
+</ResponseField>
+
+<ResponseField name="data.virtualAccount.bankName" type="string">
+  The bank where the virtual account is held.
+</ResponseField>
+
+<ResponseField name="data.virtualAccount.accountName" type="string">
+  The account name displayed during bank transfers, typically in the format `"Fintech Name/User Full Name"`.
+</ResponseField>
+
+<ResponseField name="data.virtualAccount.totalAmountWithFee" type="number">
+  The exact NGN amount the user must send, including all fees. Always use this figure — not `baseAmount` — when presenting the transfer amount to your user.
+</ResponseField>
+
+<ResponseField name="data.virtualAccount.feeBreakdown" type="object">
+  A detailed breakdown of how the total amount was calculated, including fintech and Strails fee components.
+
+  <Expandable title="feeBreakdown fields">
+    <ResponseField name="userRequestedAmount" type="number">
+      The NGN amount the user originally requested to deposit, before any fees are applied.
+    </ResponseField>
+    <ResponseField name="fintechFeeAmount" type="number">
+      The flat NGN fee amount charged by your fintech for this transaction. `0` if your fintech has not configured a fee.
+    </ResponseField>
+    <ResponseField name="fintechFeePercentage" type="number">
+      The percentage rate used to calculate the fintech fee. `0` if no fintech fee is configured.
+    </ResponseField>
+    <ResponseField name="fintechFeeCapped" type="boolean">
+      `true` if your fintech's fee is subject to a maximum cap. `false` if the fee scales without a ceiling.
+    </ResponseField>
+    <ResponseField name="strailsFeeAmount" type="number">
+      The flat NGN fee amount charged by Strails for processing the deposit.
+    </ResponseField>
+    <ResponseField name="strailsFeePercentage" type="number">
+      The percentage rate used to calculate the Strails fee (e.g. `1.7` represents 1.7%).
+    </ResponseField>
+    <ResponseField name="strailsFeeCapped" type="boolean">
+      `true` if the Strails fee is subject to a maximum cap. `false` if the fee scales without a ceiling.
+    </ResponseField>
+    <ResponseField name="totalFeeAmount" type="number">
+      The combined fee amount: `fintechFeeAmount + strailsFeeAmount`.
+    </ResponseField>
+    <ResponseField name="finalAmount" type="number">
+      The total NGN the user must transfer: `userRequestedAmount + totalFeeAmount`. Equivalent to `totalAmountWithFee`.
+    </ResponseField>
+    <ResponseField name="amountToWallet" type="number">
+      The cNGN amount that will be credited to the user's wallet after fees are deducted. Equivalent to `userRequestedAmount`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  Current status of the deposit request. `"created"` means the account is active and awaiting the user's transfer.
+</ResponseField>
+
+<ResponseField name="data.walletAddress" type="string">
+  The EVM wallet address that will receive the cNGN equivalent once the NGN deposit is confirmed.
+</ResponseField>
+
+#### Error Responses
+
+```json
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "Virtual account not found",
+  "error": "No virtual account found with the provided requestId"
+}
+```
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Virtual account expired",
+  "error": "This virtual account has expired (30 min timeout)"
+}
+```

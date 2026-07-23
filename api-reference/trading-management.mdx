@@ -1,0 +1,547 @@
+---
+title: "FX Trading API: Execute cNGN Trades & Track Status"
+sidebarTitle: "Trading"
+description: "Execute cNGN to USDC/USDT trades via quote-based, direct market, or targeted mode with escrow-based settlement and real-time status tracking."
+---
+
+Execute trades against the Strails FX orderbook using one of three execution modes: quote-based (recommended for price certainty), direct market (best available price), or targeted (against a specific liquidity provider's order). All trades settle through an on-chain escrow: your cNGN is locked at the time of matching and released to the counterparty only after the blockchain transaction confirms. Use the status endpoints to track each trade through its full lifecycle.
+
+---
+
+## Endpoints Overview
+
+| Endpoint              | Method | Description                                                        |
+| --------------------- | ------ | ------------------------------------------------------------------ |
+| `/fx/quote`           | POST   | Generate a price quote matched against current orderbook liquidity |
+| `/fx/trade`           | POST   | Execute a trade using quote ID, direct params, or a targeted order |
+| `/fx/market-order`    | POST   | Submit an immediate market order at the current best price         |
+| `/fx/trades/status`   | GET    | Retrieve the current status and details of a single trade          |
+| `/fx/trades`          | GET    | List your fintech's trades with optional filters and pagination     |
+
+---
+
+## Get Quote
+
+Generate a price quote by matching your requested cNGN amount against live orderbook liquidity. The response includes the matched order(s), the resulting stablecoin amount you will receive, and a `quoteId` you can pass directly to `POST /fx/trade`. The quote is valid for five minutes.
+
+<Note>
+  Quotes expire exactly five minutes after generation. If you pass an expired `quoteId` to `POST /fx/trade`, the request is rejected. Generate a fresh quote and retry.
+</Note>
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request POST \
+      --url https://api.strails.io/fx/quote \
+      --header "Authorization: Bearer <API_KEY>" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "pair": "CNGN-USDC",
+        "side": "sell",
+        "cngnAmount": "50000"
+      }'
+    ```
+
+    <ParamField body="pair" type="string" required>
+      Trading pair in the format `CNGN-TOKEN`. Accepted values: `"CNGN-USDC"` or `"CNGN-USDT"`.
+    </ParamField>
+
+    <ParamField body="side" type="string" required>
+      Trade direction. Use `"sell"` to exchange cNGN for the quote currency, or `"buy"` to acquire cNGN by spending the quote currency.
+    </ParamField>
+
+    <ParamField body="cngnAmount" type="string" required>
+      The cNGN amount to trade, expressed as a human-readable decimal (e.g., `"50000"` means 50,000 cNGN). Minimum is 1,000 cNGN.
+    </ParamField>
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "Quote generated successfully",
+      "data": {
+        "quote": {
+          "quoteId": "quote_7f3a9d2c-8e41-4b29-9a1c-5d8e7f2b3a9c",
+          "pair": "CNGN-USDC",
+          "side": "sell",
+          "cngnAmount": "50000",
+          "usdcAmount": "37.04",
+          "price": "1350.00",
+          "matchedOrders": [
+            {
+              "orderId": "order_abc123",
+              "price": "1350.00",
+              "cngnAmount": "50000",
+              "usdcAmount": "37.04"
+            }
+          ],
+          "expiresAt": "2026-05-01T10:35:00.000Z"
+        },
+        "version": "1.0.0"
+      }
+    }
+    ```
+
+    <ResponseField name="data.quote.quoteId" type="string">
+      Unique quote identifier. Pass this to `POST /fx/trade` to execute at the quoted price.
+    </ResponseField>
+
+    <ResponseField name="data.quote.cngnAmount" type="string">
+      The cNGN amount this quote is priced for.
+    </ResponseField>
+
+    <ResponseField name="data.quote.usdcAmount" type="string">
+      The stablecoin amount you will receive (or spend) if you execute this quote. Field name is dynamic based on the pair: `usdcAmount` or `usdtAmount`.
+    </ResponseField>
+
+    <ResponseField name="data.quote.price" type="string">
+      The effective exchange rate used for this quote (cNGN per stablecoin unit, human-readable).
+    </ResponseField>
+
+    <ResponseField name="data.quote.matchedOrders" type="array">
+      The orderbook orders matched to fill this quote. Each entry shows the contributing order's price and amounts.
+    </ResponseField>
+
+    <ResponseField name="data.quote.expiresAt" type="string">
+      ISO 8601 UTC timestamp after which this quote can no longer be executed.
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## Execute Trade
+
+Execute an FX trade. Choose from three execution modes depending on how much price certainty and targeting you need.
+
+<Note>
+  Before calling this endpoint, ensure the cNGN you intend to trade is held in your Fintech Smart Wallet. You can retrieve your smart wallet address from `GET /getfintechwallet`.
+</Note>
+
+<Tabs>
+  <Tab title="Mode 1 — Quote (Recommended)">
+    Execute against a quote you obtained from `POST /fx/quote`. This mode locks in the price shown in the quote and is the safest choice to avoid slippage.
+
+    ```bash
+    curl --request POST \
+      --url https://api.strails.io/fx/trade \
+      --header "Authorization: Bearer <API_KEY>" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "quoteId": "quote_7f3a9d2c-8e41-4b29-9a1c-5d8e7f2b3a9c",
+        "idempotencyKey": "trade_20260501_001"
+      }'
+    ```
+
+    <ParamField body="quoteId" type="string" required>
+      The `quoteId` returned by `POST /fx/quote`. The quote must not be expired (valid for 5 minutes).
+    </ParamField>
+
+    <ParamField body="idempotencyKey" type="string">
+      An optional client-generated key to prevent duplicate trade submissions. If you retry a request with the same key and the original trade was accepted, the original trade is returned instead of creating a new one.
+    </ParamField>
+  </Tab>
+
+  <Tab title="Mode 2 — Direct">
+    Execute at the best available market price without generating a quote first. The engine matches your order against the orderbook at the moment of execution.
+
+    ```bash
+    curl --request POST \
+      --url https://api.strails.io/fx/trade \
+      --header "Authorization: Bearer <API_KEY>" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "pair": "CNGN-USDC",
+        "side": "sell",
+        "cngnAmount": "50000",
+        "destinationWalletAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+      }'
+    ```
+
+    <ParamField body="pair" type="string" required>
+      Trading pair. Accepted values: `"CNGN-USDC"` or `"CNGN-USDT"`.
+    </ParamField>
+
+    <ParamField body="side" type="string" required>
+      Trade direction: `"sell"` to exchange cNGN for the quote currency, or `"buy"` to acquire cNGN.
+    </ParamField>
+
+    <ParamField body="cngnAmount" type="string" required>
+      cNGN amount in human-readable format (e.g., `"50000"` = 50,000 cNGN).
+    </ParamField>
+
+    <ParamField body="destinationWalletAddress" type="string">
+      On-chain wallet address to receive the traded tokens. Defaults to your registered fintech wallet if omitted.
+    </ParamField>
+  </Tab>
+
+  <Tab title="Mode 3 — Targeted">
+    Execute against a specific liquidity provider's order using its `orderId`. Use this when you want to trade at an exact LP's price without going through the quote flow.
+
+    ```bash
+    curl --request POST \
+      --url https://api.strails.io/fx/trade \
+      --header "Authorization: Bearer <API_KEY>" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "orderId": "order_abc123",
+        "cngnAmount": "25000"
+      }'
+    ```
+
+    <ParamField body="orderId" type="string" required>
+      The `orderId` of the specific limit order you want to trade against. Retrieve available orders from `GET /fx/orderbook`.
+    </ParamField>
+
+    <ParamField body="cngnAmount" type="string" required>
+      cNGN amount to trade against this specific order, in human-readable format. Must fall within the order's `minAmount` and `maxAmount`.
+    </ParamField>
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "Trade executed successfully",
+      "data": {
+        "trade": {
+          "tradeId": "trade_abc123",
+          "orderId": "order_abc123",
+          "pair": "CNGN-USDC",
+          "side": "sell",
+          "cngnAmount": "50000",
+          "usdcAmount": "37.04",
+          "price": "1350.00",
+          "strailsFeePercentage": 20,
+          "status": "pending",
+          "lockId": "lock_xyz789",
+          "expiresAt": "2026-05-01T10:35:00.000Z",
+          "createdAt": "2026-05-01T10:30:00.000Z"
+        },
+        "version": "1.0.0"
+      }
+    }
+    ```
+
+    <ResponseField name="data.trade.tradeId" type="string">
+      Unique trade identifier. Use this with `GET /fx/trades/status` to track settlement progress.
+    </ResponseField>
+
+    <ResponseField name="data.trade.orderId" type="string">
+      The matched limit order ID. Only present when using Mode 3 (targeted execution).
+    </ResponseField>
+
+    <ResponseField name="data.trade.status" type="string">
+      Initial trade status. Always `"pending"` immediately after submission.
+    </ResponseField>
+
+    <ResponseField name="data.trade.lockId" type="string">
+      Identifier for the escrow lock placed on your cNGN during settlement.
+    </ResponseField>
+
+    <ResponseField name="data.trade.expiresAt" type="string">
+      ISO 8601 UTC timestamp. If the trade has not progressed to `settling` by this time, it moves to `expired` and the locked funds are released.
+    </ResponseField>
+
+    <ResponseField name="data.trade.strailsFeePercentage" type="number">
+      The Strails platform fee percentage applied to this trade.
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## Create Market Order
+
+Submit an immediate market order that executes at the current best available price from the orderbook. Market orders skip the quote step and settle based on your auto-signing configuration.
+
+<Note>
+  Market orders execute against the best available limit order at the time of submission. If orderbook liquidity changes between your request and matching, the final fill price may differ slightly from what you observed in the orderbook stats. Use `POST /fx/quote` followed by `POST /fx/trade` (Mode 1) if exact price certainty is required.
+</Note>
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request POST \
+      --url https://api.strails.io/fx/market-order \
+      --header "Authorization: Bearer <API_KEY>" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "pair": "CNGN-USDC",
+        "side": "sell",
+        "cngnAmount": "50000",
+        "destinationWalletAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        "idempotencyKey": "market_20260501_001"
+      }'
+    ```
+
+    <ParamField body="pair" type="string" required>
+      Trading pair. Accepted values: `"CNGN-USDC"` or `"CNGN-USDT"`.
+    </ParamField>
+
+    <ParamField body="side" type="string" required>
+      Trade direction: `"sell"` to exchange cNGN for the quote currency, or `"buy"` to acquire cNGN.
+    </ParamField>
+
+    <ParamField body="cngnAmount" type="string" required>
+      Amount of cNGN to trade, in human-readable format (e.g., `"50000"` = 50,000 cNGN). Your wallet must hold at least this amount.
+    </ParamField>
+
+    <ParamField body="destinationWalletAddress" type="string">
+      On-chain address to receive the output tokens. Defaults to your registered fintech wallet if omitted.
+    </ParamField>
+
+    <ParamField body="idempotencyKey" type="string">
+      Client-generated unique key to prevent duplicate order execution on retry.
+    </ParamField>
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "responseCode": "00",
+      "responseMessage": "Market order executed successfully",
+      "data": {
+        "trade": {
+          "tradeId": "trade_xyz789",
+          "pair": "CNGN-USDC",
+          "side": "sell",
+          "cngnAmount": "50000.00",
+          "usdcAmount": "37.04",
+          "averagePrice": "1350.00",
+          "status": "pending",
+          "expiresAt": "2026-05-01T10:35:00.000Z",
+          "createdAt": "2026-05-01T10:30:00.000Z"
+        },
+        "version": "1.0.0",
+        "note": "Market order executes at current best price. Settlement proceeds automatically based on your auto-signing configuration."
+      }
+    }
+    ```
+
+    <ResponseField name="data.trade.tradeId" type="string">
+      Unique trade identifier. Poll `GET /fx/trades/status` with this ID to track settlement.
+    </ResponseField>
+
+    <ResponseField name="data.trade.averagePrice" type="string">
+      The effective exchange rate at which the market order was filled.
+    </ResponseField>
+
+    <ResponseField name="data.trade.status" type="string">
+      Initial trade status. Always `"pending"` immediately after submission.
+    </ResponseField>
+
+    <ResponseField name="data.trade.expiresAt" type="string">
+      ISO 8601 UTC timestamp after which an un-settled trade transitions to `"expired"`.
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## Get Trade Status
+
+Retrieve the full details and current status of a single trade. Poll this endpoint to track a trade from `pending` through to `completed` or `failed`.
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request GET \
+      --url "https://api.strails.io/fx/trades/status?tradeId=trade_abc123" \
+      --header "Authorization: Bearer <API_KEY>"
+    ```
+
+    <ParamField query="tradeId" type="string" required>
+      The `tradeId` returned when the trade was created.
+    </ParamField>
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "Trade status retrieved successfully",
+      "data": {
+        "trade": {
+          "tradeId": "trade_abc123",
+          "pair": "CNGN-USDC",
+          "side": "sell",
+          "cngnAmount": "50000",
+          "usdcAmount": "37.04",
+          "price": "1350.00",
+          "fintechNetAmount": "29.63",
+          "status": "completed",
+          "lockId": "lock_xyz789",
+          "createdAt": "2026-05-01T10:30:00.000Z",
+          "priceLockExpiresAt": "2026-05-01T10:35:00.000Z",
+          "errorMessage": null,
+          "failedAt": null
+        },
+        "version": "1.0.0"
+      }
+    }
+    ```
+
+    <ResponseField name="data.trade.tradeId" type="string">
+      Unique trade identifier.
+    </ResponseField>
+
+    <ResponseField name="data.trade.status" type="string">
+      Current trade status. See the [Trade Status Lifecycle](#trade-status-lifecycle) section for all possible values.
+    </ResponseField>
+
+    <ResponseField name="data.trade.cngnAmount" type="string">
+      cNGN amount involved in the trade, human-readable.
+    </ResponseField>
+
+    <ResponseField name="data.trade.usdcAmount" type="string">
+      Stablecoin amount involved in the trade. Field name is dynamic based on the pair (`usdcAmount` or `usdtAmount`).
+    </ResponseField>
+
+    <ResponseField name="data.trade.fintechNetAmount" type="string">
+      The net stablecoin amount credited to your fintech after Strails fees are deducted.
+    </ResponseField>
+
+    <ResponseField name="data.trade.priceLockExpiresAt" type="string">
+      Timestamp after which the escrow lock expires if the trade has not settled.
+    </ResponseField>
+
+    <ResponseField name="data.trade.errorMessage" type="string">
+      Human-readable description of the failure reason. `null` for non-failed trades.
+    </ResponseField>
+
+    <ResponseField name="data.trade.failedAt" type="string">
+      ISO 8601 UTC timestamp of failure. `null` for non-failed trades.
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## List Trades
+
+List your fintech's FX trades with optional filters. Results are paginated using a cursor-based approach with `startAfter`.
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request GET \
+      --url "https://api.strails.io/fx/trades?status=completed&limit=50" \
+      --header "Authorization: Bearer <API_KEY>"
+    ```
+
+    <ParamField query="pair" type="string">
+      Filter by trading pair. Accepted values: `"CNGN-USDC"` or `"CNGN-USDT"`.
+    </ParamField>
+
+    <ParamField query="side" type="string">
+      Filter by trade direction. Accepted values: `"buy"` or `"sell"`. Case-insensitive.
+    </ParamField>
+
+    <ParamField query="status" type="string">
+      Filter by trade status. Case-insensitive. See the [Trade Status Lifecycle](#trade-status-lifecycle) section for all accepted values.
+    </ParamField>
+
+    <ParamField query="limit" type="number">
+      Maximum number of trades to return. Defaults to `50`; maximum is `100`.
+    </ParamField>
+
+    <ParamField query="startAfter" type="string">
+      The `tradeId` of the last trade in the previous page. Pass this value to fetch the next page of results.
+    </ParamField>
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "Trades retrieved successfully",
+      "data": {
+        "trades": [
+          {
+            "tradeId": "trade_abc123",
+            "pair": "CNGN-USDC",
+            "side": "sell",
+            "cngnAmount": "50000",
+            "usdcAmount": "37.04",
+            "price": "1350.00",
+            "fintechNetAmount": "29.63",
+            "status": "completed",
+            "createdAt": "2026-05-01T10:30:00.000Z"
+          }
+        ],
+        "count": 1,
+        "version": "1.0.0"
+      }
+    }
+    ```
+
+    <ResponseField name="data.trades" type="array">
+      Array of trade objects matching the applied filters, ordered by `createdAt` descending.
+    </ResponseField>
+
+    <ResponseField name="data.count" type="number">
+      Number of trades returned in this page.
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## Trade Status Lifecycle
+
+Every trade passes through the following statuses as it progresses from submission to final settlement:
+
+| Status      | Description                                                                     |
+| ----------- | ------------------------------------------------------------------------------- |
+| `pending`   | Trade submitted and parameters are being validated.                             |
+| `locked`    | cNGN locked in escrow. A 5-minute countdown begins at this point.              |
+| `signing`   | Awaiting MPC Vault signature to authorise the blockchain transaction.           |
+| `settling`  | Signed transaction submitted to the blockchain; awaiting on-chain confirmation. |
+| `completed` | Settlement confirmed. Tokens transferred to all parties.                        |
+| `failed`    | Trade failed at the `signing` or `settling` stage. Check `errorMessage`.       |
+| `expired`   | The 5-minute escrow lock elapsed before the trade reached `settling`.           |
+
+### Status Flow
+
+```text
+pending ──► locked ──► signing ──► settling ──► completed
+                              │                 │
+                              └──► failed       └──► failed
+
+locked ──► expired  (if 5-minute lock window elapses)
+```
+
+When a trade expires or fails, the escrowed cNGN is automatically released back to your wallet.
+
+---
+
+## Common Errors
+
+| Code | Error                  | Description                                                   |
+| ---- | ---------------------- | ------------------------------------------------------------- |
+| `01` | `VALIDATION_ERROR`     | One or more request fields failed validation.                 |
+| `01` | `INVALID_QUOTE`        | The `quoteId` has expired or does not exist.                  |
+| `02` | `NO_LIQUIDITY`         | Insufficient liquidity in the orderbook for the requested amount. |
+| `02` | `NOT_FOUND`            | The requested trade or order was not found, or you do not have access. |
+| `03` | `AUTHENTICATION_FAILED`| The API key is invalid or missing from the request.           |
+| `03` | `IP_BLOCKED`           | The request originated from an IP address not on your allowlist. |
+| `04` | `RATE_LIMIT_EXCEEDED`  | You have exceeded the allowed request rate. Back off and retry. |
+| `05` | `INTERNAL_ERROR`       | An unexpected server-side error occurred. Contact support if it persists. |
+
+---
+
+## Additional Notes
+
+<Note>
+  All cNGN and stablecoin amounts in request bodies use human-readable decimal notation (e.g., `"50000"` = 50,000 cNGN). All amounts in orderbook fields (`price`, `minAmount`, `maxAmount`, `availableLiquidity`) use the smallest unit with 6 decimal places. Divide those values by 1,000,000 to convert to human-readable form.
+</Note>
+
+<Note>
+  Quotes and trade locks both expire after exactly five minutes. Structure your integration to execute the trade immediately after generating a quote, and to poll `GET /fx/trades/status` for settlement confirmation rather than relying on synchronous responses.
+</Note>

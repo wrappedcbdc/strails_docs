@@ -1,0 +1,45 @@
+---
+title: "Strails API Changelog: Endpoints & Documentation Updates"
+sidebarTitle: "Changelog"
+description: "A running record of new Strails API endpoints, breaking changes, and documentation updates — ordered from most recent to oldest."
+---
+
+Use this changelog to track new capabilities, breaking changes, and documentation improvements to the Strails platform. Each entry is dated and categorised so you can quickly find what changed and when.
+
+---
+
+## 2026-07-23
+
+### Documentation
+
+- Restructured top-level navigation into four tabs: **Documentation**, **Security**, **API Reference**, and **Changelog**, making it easier to navigate between conceptual guides and reference material.
+- Added icons to all left-sidebar navigation groups and individual pages for faster visual scanning.
+- Added `title` frontmatter across all documentation and API reference pages so sidebar labels are explicit and consistent everywhere.
+- Standardised response envelope examples throughout the Wallet Management API to always use the four shared fields: `status`, `response_code`, `message`, and `data`.
+- Removed the redundant `/v1` prefix from balance endpoints — the canonical paths are now `/balance/multi`, `/balance/address`, and `/balance/user/:userId`.
+- Fixed the async processing status example in Core Concepts: the correct initial status is `requested`, not `processing`.
+- Removed the duplicate `api-reference/orderbook-management.md` file; the single canonical reference is now `orderbook-management.mdx`.
+
+---
+
+## 2026-07-20
+
+### API
+
+- Added three fintech system wallet balance endpoints:
+  - `GET /balance/multi` — retrieve balances for multiple assets in a single call.
+  - `POST /balance/address` — look up the balance for a specific wallet address.
+  - `GET /balance/user/:userId` — fetch the token balance for an individual user's smart wallet.
+
+---
+
+## Earlier releases
+
+- **FX orderbook and trading endpoints** — full suite of limit order, market order, and order management endpoints for the cNGN/FX trading engine.
+- **MPC vault registration and auto-signing** — endpoints for registering MPC vault keys and configuring auto-signing thresholds for cNGN buying.
+- **Fintech fee management and withdrawal APIs** — fee configuration, accumulated fee queries, and fee withdrawal flow.
+- **Virtual account deposits and fiat payout flows** — permanent and checkout virtual account creation, deposit processing, BVN verification, and offramp payout pipeline.
+
+---
+
+Have a feature request or spotted a documentation issue? Reach out at [support@strails.io](mailto:support@strails.io).

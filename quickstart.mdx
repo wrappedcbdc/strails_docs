@@ -1,0 +1,136 @@
+---
+title: "Get Started with the Strails API"
+sidebarTitle: "Quickstart"
+description: "Make your first Strails API call in minutes. Choose the integration path that fits your product — fintech partner or direct user-facing app."
+---
+
+Get up and running with the Strails API in a few minutes. Choose the integration path that matches your use case — whether you're embedding Strails into a fintech platform or building a consumer-facing wallet app.
+
+<Info>
+  **Need an API key?** Contact [support@strails.io](mailto:support@strails.io) to start onboarding and receive your credentials. You will need your API key before making any requests.
+</Info>
+
+## Base URL
+
+All requests during integration and testing go to the staging environment:
+
+```
+https://beta.stablesrail.io/v1/
+```
+
+Use this base URL for every example in this guide. When you are ready to go live, switch to the production URL described in the [Going Live](/going-live) checklist.
+
+## Integration Paths
+
+<Tabs>
+  <Tab title="Fintech Partner">
+    Use this path if you are a payment processor, exchange, or fintech platform embedding Strails into your services. You get access to virtual accounts, the FX orderbook, custom fee structures, and multi-wallet liquidity management.
+
+    ### Test your API connection
+
+    Retrieve your fintech wallet to confirm your API key is working:
+
+    ```bash
+    curl -X GET https://beta.stablesrail.io/v1/getfintechwallet \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json"
+    ```
+
+    A successful response returns your three wallet addresses:
+
+    ```json
+    {
+      "status": "success",
+      "response_code": "00",
+      "message": "Fintech wallet retrieved successfully",
+      "data": {
+        "smartWallet": "0x1234...abcd",
+        "mpcVault": "0x5678...efgh",
+        "managedWallet": "0xabcd...1234"
+      }
+    }
+    ```
+
+    If you see your wallet addresses, your key is valid and you are connected to the test environment.
+
+    <Warning>
+      The header name must be `x-api-key` in lowercase. Headers named `X-API-Key` or `api-key` will be rejected with a `401` response.
+    </Warning>
+
+    ### What to do next
+
+    <CardGroup cols={2}>
+      <Card title="Implementation Guide" icon="book-open" href="/implementation-guide">
+        Full fintech walkthrough: webhooks, user onboarding, wallet funding, FX trading, and withdrawals.
+      </Card>
+      <Card title="Core Concepts" icon="lightbulb" href="/core-concepts">
+        Learn how async processing, wallet types, and the FX orderbook work before you build.
+      </Card>
+    </CardGroup>
+  </Tab>
+
+  <Tab title="Direct User">
+    Use this path if you are building a wallet app, DeFi interface, or any consumer-facing product that manages stablecoin balances on behalf of individual users.
+
+    ### Onboard your first user
+
+    Register a user with BVN verification:
+
+    ```bash
+    curl -X POST https://beta.stablesrail.io/v1/onboarduser \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "bvn": "12345678901",
+        "userId": "user_uniqueID",
+        "email": "user@example.com",
+        "phoneNumber": "+2348012345678"
+      }'
+    ```
+
+    A successful response acknowledges the request and returns a `requestId` to track verification:
+
+    ```json
+    {
+      "status": "success",
+      "response_code": "00",
+      "message": "User onboarding initiated",
+      "data": {
+        "userId": "user_uniqueID",
+        "status": "pending_verification",
+        "requestId": "req_xyz789"
+      }
+    }
+    ```
+
+    BVN verification typically completes within 2–5 seconds. Poll `GET /onboardstatus?userId=user_uniqueID` or listen for the `user.verified` webhook event to confirm.
+
+    ### What to do next
+
+    <CardGroup cols={2}>
+      <Card title="Implementation Guide" icon="book-open" href="/implementation-guide">
+        Full user walkthrough: webhook setup, onboarding, wallet funding, and withdrawals.
+      </Card>
+      <Card title="Core Concepts" icon="lightbulb" href="/core-concepts">
+        Understand async processing, virtual accounts, and amount formats before you build.
+      </Card>
+    </CardGroup>
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Core Concepts" icon="lightbulb" href="/core-concepts">
+    Async processing, wallet types, amount formats, webhooks, and response codes.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    API keys, required headers, rate limits, and security best practices.
+  </Card>
+  <Card title="Implementation Guide" icon="book-open" href="/implementation-guide">
+    Detailed end-to-end integration walkthrough from connection test to FX trading.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/index">
+    Complete endpoint documentation with every request and response schema.
+  </Card>
+</CardGroup>

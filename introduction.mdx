@@ -1,0 +1,65 @@
+---
+title: "Strails API: Stablecoin Orchestration for Nigerian Fintechs"
+sidebarTitle: "Introduction"
+description: "Strails is a stablecoin orchestration and orderbook engine. Learn how to integrate cNGN, USDC, and USDT on-ramp, off-ramp, FX trading, and multi-chain wallets."
+---
+
+Strails is a stablecoin orchestration and orderbook engine designed for Nigerian fintechs. It lets you mint, transfer, and exchange **cNGN, USDC, and USDT** on multiple chains, accept NGN deposits through virtual bank accounts, pay out to Nigerian bank accounts, and trade on a peer-to-peer FX orderbook — all through a single REST API. This documentation covers everything you need to go from your first API call to a production-ready integration.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Make your first API call in minutes and verify your credentials against the test environment.
+  </Card>
+  <Card title="Core Concepts" icon="lightbulb" href="/core-concepts">
+    Understand async processing, wallet types, amount formats, and response codes before you build.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/index">
+    Complete endpoint documentation with request and response schemas for every operation.
+  </Card>
+  <Card title="Implementation Guide" icon="book-open" href="/implementation-guide">
+    End-to-end walkthrough covering webhooks, onboarding, funding, withdrawals, and FX trading.
+  </Card>
+</CardGroup>
+
+## What You Can Build
+
+<CardGroup cols={2}>
+  <Card title="Fintech Partner Integration" icon="building" href="/quickstart#fintech-partner-integration">
+    White-label cNGN into your payment services. Access virtual accounts, the FX orderbook, custom fee structures, and multi-wallet liquidity management.
+  </Card>
+  <Card title="Direct User Integration" icon="user" href="/quickstart#direct-user-integration">
+    Onboard individual users with BVN verification, fund wallets via NGN bank transfer, auto-swap to USDC/USDT, and process withdrawals to any Nigerian bank account.
+  </Card>
+  <Card title="P2P Exchange" icon="arrows-left-right">
+    Post limit or market orders on the cNGN ↔ USDC/USDT orderbook and trade with other fintechs using escrow-based, self-trading-safe settlement.
+  </Card>
+  <Card title="Wallet Apps" icon="wallet">
+    Deploy multi-chain wallets across Base, Ethereum, Polygon, BNB Chain, AssetChain, Stellar/Bantu, and Solana. Give users a single wallet that holds cNGN, USDC, and USDT.
+  </Card>
+  <Card title="Payout Systems" icon="money-bill-transfer">
+    Convert cNGN back to Naira and send directly to any Nigerian bank account. Automate bulk payouts with the offramp API and track each transfer in real time.
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<CardGroup cols={3}>
+  <Card title="Multi-Chain Support" icon="link">
+    Deploy wallets on Base, EVM chains (Ethereum, Polygon, BNB Chain, AssetChain), Stellar/Bantu, and Solana from one integration.
+  </Card>
+  <Card title="Enterprise Security" icon="shield-check">
+    Protect every request with MPC vault signing, Ed25519 payload encryption, IP allowlisting, and HMAC-verified webhook signatures.
+  </Card>
+  <Card title="FX Orderbook" icon="chart-line">
+    Place limit or market orders to trade cNGN against USDC/USDT with other fintechs. Escrow settlement and a 5-minute price lock guarantee fair execution.
+  </Card>
+  <Card title="Auto-Swap" icon="arrows-rotate">
+    Route a single NGN deposit through onramp → cNGN mint → USDC/USDT swap automatically, with no extra API calls required from your users.
+  </Card>
+  <Card title="Virtual Accounts" icon="building-columns">
+    Generate permanent or transaction-scoped Nigerian bank accounts that automatically convert incoming NGN deposits to cNGN.
+  </Card>
+  <Card title="Async-First Design" icon="bolt">
+    Every blockchain operation returns a `requestId` in ~200ms. Track status via webhooks or polling — your users never wait on-chain confirmation.
+  </Card>
+</CardGroup>

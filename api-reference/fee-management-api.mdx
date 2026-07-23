@@ -1,0 +1,703 @@
+---
+title: "Fee Management API: Configure, Track & Withdraw Fees"
+sidebarTitle: "Fee Management"
+description: "Configure onramp and offramp fee structures, monitor accumulated fee balances, and withdraw earned fees to your linked bank account."
+---
+
+Use the Fee Management API to configure the fee structures applied to your users' onramp and offramp transactions, monitor accumulated fee balances broken down by transaction type, and withdraw earned fees directly to a bank account of your choice.
+
+## Endpoints overview
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/getwithdrawalhistory` | GET | Retrieve paginated history of all fintech fee withdrawals |
+| `/feewithdrawal` | POST | Request withdrawal of accumulated fees to a bank account |
+| `/getaccumulatedfees` | GET | Get a summary of accumulated fees and available withdrawal balance |
+| `/managefees` | PUT | Configure onramp and offramp fee percentages, caps, and toggles |
+| `/getfees` | GET | Retrieve the current fee configuration and example calculations |
+| `/fees/strails/preview` | POST | Preview the Strails platform fee for a given amount and transaction type |
+| `/verifywithdrawal` | POST | Check the status or outcome of a previously submitted withdrawal |
+
+---
+
+## GET /getwithdrawalhistory
+
+Retrieve a paginated list of all fee withdrawal requests for your fintech account. Filter by status to isolate completed, pending, or failed withdrawals.
+
+<Note>
+  This endpoint supports query parameters for pagination and filtering by `status`. Use `limit` to control page size and `status` to filter by a specific withdrawal outcome.
+</Note>
+
+### Query parameters
+
+<ParamField query="limit" type="number">
+  Maximum number of records to return per page. Defaults to `20`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter withdrawals by status. Accepted values: `pending`, `completed`, `failed`.
+</ParamField>
+
+### Request
+
+```bash
+curl --request GET \
+  --url "{{BASE_URL}}/getwithdrawalhistory?limit=20&status=completed" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response
+
+<ResponseField name="status" type="string">
+  High-level result of the request. `"Success"` on success.
+</ResponseField>
+
+<ResponseField name="response_code" type="string">
+  Machine-readable status code. `"00"` indicates success.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable description of the result.
+</ResponseField>
+
+<ResponseField name="data.withdrawals" type="array">
+  Array of withdrawal records matching the query.
+
+  <Expandable title="Withdrawal object fields">
+    <ResponseField name="withdrawalId" type="string">
+      Unique identifier for the withdrawal transaction.
+    </ResponseField>
+    <ResponseField name="amount" type="number">
+      Withdrawal amount in the smallest currency unit (kobo).
+    </ResponseField>
+    <ResponseField name="bankAccountNumber" type="string">
+      Destination bank account number (partially masked in responses).
+    </ResponseField>
+    <ResponseField name="bankCode" type="string">
+      NIBSS bank code for the destination bank.
+    </ResponseField>
+    <ResponseField name="accountName" type="string">
+      Name of the destination account holder.
+    </ResponseField>
+    <ResponseField name="narration" type="string">
+      Description provided at the time of the withdrawal request.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Current status of the withdrawal: `pending`, `completed`, or `failed`.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp when the withdrawal was submitted.
+    </ResponseField>
+    <ResponseField name="processedAt" type="string">
+      ISO 8601 timestamp when the withdrawal was settled. `null` if not yet processed.
+    </ResponseField>
+    <ResponseField name="failureReason" type="string">
+      Human-readable reason for failure. `null` if the withdrawal succeeded.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.pagination" type="object">
+  Pagination metadata for the result set.
+
+  <Expandable title="Pagination fields">
+    <ResponseField name="count" type="number">
+      Number of records returned in this page.
+    </ResponseField>
+    <ResponseField name="limit" type="number">
+      The limit applied to this request.
+    </ResponseField>
+    <ResponseField name="hasMore" type="boolean">
+      `true` if additional pages exist beyond this result.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Withdrawal history retrieved successfully",
+  "data": {
+    "withdrawals": [
+      {
+        "withdrawalId": "FTW_your_fintech_id_1725444600000",
+        "amount": 50000,
+        "bankAccountNumber": "123456****",
+        "bankCode": "058",
+        "accountName": "YOUR COMPANY NAME",
+        "narration": "Fee withdrawal for August 2025",
+        "status": "completed",
+        "createdAt": "2025-09-04T10:30:00.000Z",
+        "processedAt": "2025-09-04T12:15:00.000Z",
+        "failureReason": null
+      }
+    ],
+    "pagination": {
+      "count": 1,
+      "limit": 20,
+      "hasMore": false
+    }
+  }
+}
+```
+
+---
+
+## POST /feewithdrawal
+
+Submit a request to withdraw accumulated fees to a destination bank account. Withdrawals are processed within 1–3 business days.
+
+### Body parameters
+
+<ParamField body="bankAccountNumber" type="string" required>
+  Destination bank account number.
+</ParamField>
+
+<ParamField body="bankCode" type="string" required>
+  NIBSS bank identifier code for the destination bank (e.g., `"058"` for GTBank).
+</ParamField>
+
+<ParamField body="accountName" type="string" required>
+  Full name of the account holder at the destination bank.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to withdraw, expressed in the smallest currency unit (kobo). Must not exceed your available balance or fall below the minimum withdrawal threshold.
+</ParamField>
+
+<ParamField body="narration" type="string">
+  Optional description for this withdrawal (e.g., `"Fee withdrawal for August 2025"`).
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional additional data to attach to the withdrawal.
+
+  <Expandable title="metadata fields">
+    <ParamField body="reference" type="string">
+      Your own unique reference ID for this transaction.
+    </ParamField>
+    <ParamField body="notes" type="string">
+      Free-text notes or comments about the withdrawal.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Request
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/feewithdrawal" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "bankAccountNumber": "1234567890",
+    "bankCode": "058",
+    "accountName": "YOUR COMPANY NAME",
+    "amount": 50000,
+    "narration": "Fee withdrawal for August 2025",
+    "metadata": {
+      "reference": "FEE_WITHDRAWAL_AUG_2025",
+      "notes": "Monthly fee withdrawal"
+    }
+  }'
+```
+
+### Response
+
+<ResponseField name="data.withdrawalId" type="string">
+  Unique identifier assigned to this withdrawal. Use it with `/verifywithdrawal` to poll the outcome.
+</ResponseField>
+
+<ResponseField name="data.amount" type="number">
+  The withdrawal amount that was submitted.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  Initial status of the withdrawal. Always `"pending"` on successful submission.
+</ResponseField>
+
+<ResponseField name="data.estimatedProcessingTime" type="string">
+  Estimated time for the withdrawal to settle to the destination bank account.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Withdrawal request submitted successfully",
+  "data": {
+    "withdrawalId": "FTW_your_fintech_id_1725444600000",
+    "amount": 50000,
+    "status": "pending",
+    "estimatedProcessingTime": "1-3 business days"
+  }
+}
+```
+
+### Error responses
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Amount exceeds available balance"
+}
+```
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Amount is below minimum withdrawal threshold"
+}
+```
+
+---
+
+## GET /getaccumulatedfees
+
+Retrieve a real-time summary of your accumulated fees, broken down by transaction direction (onramp vs offramp), collection status, and withdrawal availability.
+
+### Request
+
+```bash
+curl --request GET \
+  --url "{{BASE_URL}}/getaccumulatedfees" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response
+
+<ResponseField name="data.summary.totalAccumulatedFees" type="number">
+  Total fees earned across all transactions since account creation.
+</ResponseField>
+
+<ResponseField name="data.summary.onrampFees" type="number">
+  Fees earned specifically from onramp (fiat-to-crypto) transactions.
+</ResponseField>
+
+<ResponseField name="data.summary.offrampFees" type="number">
+  Fees earned specifically from offramp (crypto-to-fiat) transactions.
+</ResponseField>
+
+<ResponseField name="data.summary.collectedFees" type="number">
+  Fees that have been fully collected and settled.
+</ResponseField>
+
+<ResponseField name="data.summary.pendingFees" type="number">
+  Fees that are accrued but not yet finalized.
+</ResponseField>
+
+<ResponseField name="data.summary.transactionCount" type="number">
+  Total number of fee-generating transactions.
+</ResponseField>
+
+<ResponseField name="data.summary.pendingWithdrawals" type="number">
+  Total amount currently locked in pending withdrawal requests.
+</ResponseField>
+
+<ResponseField name="data.summary.availableForWithdrawal" type="number">
+  Net balance you can withdraw right now (collected fees minus pending withdrawals).
+</ResponseField>
+
+<ResponseField name="data.details" type="object">
+  Additional account-level configuration details.
+
+  <Expandable title="details fields">
+    <ResponseField name="currency" type="string">
+      Currency in which fees are denominated (e.g., `"NGN"`).
+    </ResponseField>
+    <ResponseField name="minimumWithdrawal" type="number">
+      Minimum amount required to submit a withdrawal request.
+    </ResponseField>
+    <ResponseField name="maximumWithdrawal" type="number">
+      Maximum amount allowed per withdrawal request.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Accumulated fees retrieved successfully",
+  "data": {
+    "summary": {
+      "totalAccumulatedFees": 125000,
+      "onrampFees": 100000,
+      "offrampFees": 25000,
+      "collectedFees": 120000,
+      "pendingFees": 5000,
+      "transactionCount": 150,
+      "pendingWithdrawals": 20000,
+      "availableForWithdrawal": 100000
+    },
+    "details": {
+      "lastUpdated": "2025-09-04T10:30:00.000Z",
+      "currency": "NGN",
+      "minimumWithdrawal": 1000,
+      "maximumWithdrawal": 10000000
+    }
+  }
+}
+```
+
+---
+
+## PUT /managefees
+
+Configure the fee structure applied to your users' transactions. You can set an independent percentage fee and cap for onramp and offramp directions, and enable or disable each independently.
+
+<Note>
+  Both `onrampFee` and `offrampFee` are optional in a single request — omit whichever object you do not want to update. Fields within an included object are required.
+</Note>
+
+### Body parameters
+
+<ParamField body="onrampFee" type="object">
+  Fee configuration for onramp (fiat-to-cNGN) transactions.
+
+  <Expandable title="onrampFee fields">
+    <ParamField body="percentageFee" type="number" required>
+      Fee percentage to charge on each onramp transaction (e.g., `1.5` for 1.5%).
+    </ParamField>
+    <ParamField body="capFee" type="number" required>
+      Maximum fee amount in kobo that can be charged regardless of transaction size.
+    </ParamField>
+    <ParamField body="enabled" type="boolean" required>
+      Set to `true` to activate this fee or `false` to waive it entirely.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="offrampFee" type="object">
+  Fee configuration for offramp (cNGN-to-fiat) transactions.
+
+  <Expandable title="offrampFee fields">
+    <ParamField body="percentageFee" type="number" required>
+      Fee percentage to charge on each offramp transaction (e.g., `2.0` for 2%).
+    </ParamField>
+    <ParamField body="capFee" type="number" required>
+      Maximum fee amount in kobo that can be charged regardless of transaction size.
+    </ParamField>
+    <ParamField body="enabled" type="boolean" required>
+      Set to `true` to activate this fee or `false` to waive it entirely.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional notes to attach to this configuration change for your own audit trail.
+
+  <Expandable title="metadata fields">
+    <ParamField body="description" type="string">
+      Short description of why the fee configuration is being updated.
+    </ParamField>
+    <ParamField body="notes" type="string">
+      Additional context or rationale for the change.
+    </ParamField>
+    <ParamField body="lastUpdatedBy" type="string">
+      Email or identifier of the administrator making this change.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Request
+
+```bash
+curl --request PUT \
+  --url "{{BASE_URL}}/managefees" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "onrampFee": {
+      "percentageFee": 1.5,
+      "capFee": 500,
+      "enabled": true
+    },
+    "offrampFee": {
+      "percentageFee": 2.0,
+      "capFee": 1000,
+      "enabled": true
+    },
+    "metadata": {
+      "description": "Updated fee configuration for Q4 2025",
+      "notes": "Reduced onramp fees, increased offramp fees",
+      "lastUpdatedBy": "admin@yourfintech.com"
+    }
+  }'
+```
+
+### Response
+
+<ResponseField name="data.fintechId" type="string">
+  Your fintech account identifier.
+</ResponseField>
+
+<ResponseField name="data.operation" type="string">
+  Confirmation of the operation performed. Typically `"updated"`.
+</ResponseField>
+
+<ResponseField name="data.feeConfiguration" type="object">
+  The full fee configuration as it now stands after the update.
+</ResponseField>
+
+<ResponseField name="data.exampleCalculation" type="object">
+  An illustrative fee calculation based on a typical transaction amount, useful for sanity-checking your configuration.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Fee configuration updated successfully",
+  "data": {
+    "fintechId": "your_fintech_id",
+    "operation": "updated",
+    "feeConfiguration": {
+      "onrampFee": { "percentageFee": 1.5, "capFee": 500, "enabled": true },
+      "offrampFee": { "percentageFee": 2.0, "capFee": 1000, "enabled": true }
+    },
+    "exampleCalculation": {
+      "onramp": { "amount": 10000, "fee": 150, "capped": false },
+      "offramp": { "amount": 10000, "fee": 200, "capped": false }
+    }
+  }
+}
+```
+
+---
+
+## GET /getfees
+
+Retrieve your current fee configuration including any active onramp and offramp settings, configuration timestamps, and a schema version indicator.
+
+### Request
+
+```bash
+curl --request GET \
+  --url "{{BASE_URL}}/getfees" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response
+
+<ResponseField name="data.fintechId" type="string">
+  Your fintech account identifier.
+</ResponseField>
+
+<ResponseField name="data.hasConfiguration" type="boolean">
+  `true` if a fee configuration has been set. `false` if you are using platform defaults.
+</ResponseField>
+
+<ResponseField name="data.feeConfiguration" type="object">
+  The full active fee configuration object including onramp and offramp settings and any attached metadata.
+</ResponseField>
+
+<ResponseField name="data.timestamps.createdAt" type="string">
+  ISO 8601 timestamp when your fee configuration was first created.
+</ResponseField>
+
+<ResponseField name="data.timestamps.updatedAt" type="string">
+  ISO 8601 timestamp when your fee configuration was last modified.
+</ResponseField>
+
+<ResponseField name="data.version" type="string">
+  Schema version of the fee configuration object.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Fee configuration retrieved successfully",
+  "data": {
+    "fintechId": "your_fintech_id",
+    "hasConfiguration": true,
+    "feeConfiguration": {
+      "onrampFee": {
+        "percentageFee": 1.5,
+        "capFee": 500,
+        "enabled": true
+      },
+      "metadata": {
+        "description": "Onramp fee configuration",
+        "lastUpdatedBy": "your_fintech_id"
+      }
+    },
+    "timestamps": {
+      "createdAt": "2025-09-10T11:02:11.539Z",
+      "updatedAt": "2026-04-29T05:47:38.653Z"
+    },
+    "version": "1.0.0"
+  }
+}
+```
+
+---
+
+## POST /fees/strails/preview
+
+Calculate the Strails platform fee that will be applied to a transaction before you confirm it. This is separate from the fintech-configured fee returned by `/getfees`.
+
+<Info>
+  Use this endpoint to show users a transparent fee breakdown before they confirm a transaction. The Strails platform fee is applied on top of any fintech fee you have configured.
+</Info>
+
+### Body parameters
+
+<ParamField body="amount" type="number" required>
+  Transaction amount in the smallest currency unit (kobo) to calculate the fee for.
+</ParamField>
+
+<ParamField body="transactionType" type="string" required>
+  Direction of the transaction. Accepted values: `"onramp"` or `"offramp"`.
+</ParamField>
+
+### Request
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/fees/strails/preview" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "amount": 150000,
+    "transactionType": "offramp"
+  }'
+```
+
+### Response
+
+<ResponseField name="data.input.amount" type="number">
+  The input amount you provided.
+</ResponseField>
+
+<ResponseField name="data.input.transactionType" type="string">
+  The transaction type (`"onramp"` or `"offramp"`) you provided.
+</ResponseField>
+
+<ResponseField name="data.input.fintechId" type="string">
+  Your authenticated fintech ID.
+</ResponseField>
+
+<ResponseField name="data.result.feePercentage" type="number">
+  The percentage rate applied to calculate this fee.
+</ResponseField>
+
+<ResponseField name="data.result.calculatedFee" type="number">
+  The fee derived from the percentage calculation before any cap is applied.
+</ResponseField>
+
+<ResponseField name="data.result.fixedFee" type="number">
+  Any flat fixed-fee component added on top of the percentage fee.
+</ResponseField>
+
+<ResponseField name="data.result.finalFee" type="number">
+  The total fee that will be charged, after applying any cap.
+</ResponseField>
+
+<ResponseField name="data.result.wasCapped" type="boolean">
+  `true` if the calculated fee exceeded the cap and was reduced.
+</ResponseField>
+
+<ResponseField name="data.result.appliedCap" type="number">
+  The cap value that was enforced. `null` if no cap was applied.
+</ResponseField>
+
+<ResponseField name="data.result.tierUsed" type="object">
+  The amount tier that matched the input and determined the fee rate.
+</ResponseField>
+
+<ResponseField name="data.result.usedFintechOverride" type="boolean">
+  `true` if a fintech-specific fee override was applied instead of the default platform rate.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Strails fee calculated",
+  "data": {
+    "input": {
+      "amount": 150000,
+      "transactionType": "offramp",
+      "fintechId": "fintech-123"
+    },
+    "result": {
+      "amount": 150000,
+      "feePercentage": 0.4,
+      "calculatedFee": 600,
+      "fixedFee": 0,
+      "finalFee": 600,
+      "wasCapped": false,
+      "appliedCap": null,
+      "tierUsed": {
+        "minAmount": 100000,
+        "maxAmount": 500000
+      },
+      "transactionType": "offramp",
+      "usedFintechOverride": false
+    }
+  }
+}
+```
+
+---
+
+## POST /verifywithdrawal
+
+Check the current status of a fee withdrawal by its ID. Use this to confirm whether a pending withdrawal has been processed or to retrieve the reason for a failure.
+
+### Body parameters
+
+<ParamField body="transactionReference" type="string" required>
+  The `withdrawalId` returned when you submitted the withdrawal via `/feewithdrawal`.
+</ParamField>
+
+### Request
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/verifywithdrawal" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "transactionReference": "FTW_your_fintech_id_1725444600000"
+  }'
+```
+
+### Response
+
+<ResponseField name="data.withdrawalId" type="string">
+  The withdrawal identifier you queried.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  Current status of the withdrawal: `pending`, `completed`, or `failed`.
+</ResponseField>
+
+<ResponseField name="data.processedAt" type="string">
+  ISO 8601 timestamp when the withdrawal settled. `null` if still pending.
+</ResponseField>
+
+<ResponseField name="data.failureReason" type="string">
+  Human-readable explanation if the withdrawal failed. `null` on success.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Withdrawal status retrieved",
+  "data": {
+    "withdrawalId": "FTW_your_fintech_id_1725444600000",
+    "status": "completed",
+    "processedAt": "2025-09-04T12:15:00.000Z",
+    "failureReason": null
+  }
+}
+```

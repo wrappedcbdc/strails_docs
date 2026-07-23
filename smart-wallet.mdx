@@ -1,0 +1,211 @@
+---
+title: "Smart Wallets: Programmable Token Custody on Strails"
+sidebarTitle: "Smart Wallet"
+description: "Deploy EIP-1167 smart contract wallets on Strails for owner-controlled, programmable token custody across Base and EVM-compatible networks."
+---
+
+Smart Wallets on Strails are smart contract wallets deployed via a `WalletFactory` that give you or your users direct, owner-controlled custody of tokens. Unlike a traditional externally owned account (EOA), a Smart Wallet is itself a smart contract that executes transactions on the owner's behalf — no bundlers, no paymasters, no ERC-4337 infrastructure required.
+
+Use Smart Wallets when you need transparent on-chain custody for a fintech user, want to self-custody tokens and withdraw them independently, or need a programmable execution layer for cNGN and other stablecoins on Base.
+
+## Overview
+
+| Feature | Description |
+|---------|-------------|
+| **Control** | Fintech or Strails-controlled via owner EOA |
+| **Security** | On-chain nonce replay protection; single initialisation per wallet |
+| **Assets** | cNGN, USDC, USDT and any ERC-20 token |
+| **Networks** | Base (primary), Ethereum and other EVM-compatible chains |
+| **Purpose** | User-facing programmable token custody and FX settlement (cNGN leg) |
+
+## How Smart Wallets Work
+
+Strails deploys Smart Wallets using the **EIP-1167 minimal proxy** (Clones) pattern via the `WalletFactory` contract. Every wallet is a lightweight proxy that forwards calls to a shared implementation contract, reducing deployment gas costs by roughly 90% compared to a full contract deployment.
+
+- **Deterministic addresses** — wallet addresses are derived from a `bytes32` salt so they are predictable before deployment.
+- **Owner-controlled** — your EOA calls `execute()` directly on the wallet contract; no third-party bundler or EntryPoint is involved.
+- **No external dependencies** — Strails does not use UserOperations, paymasters, or the ERC-4337 singleton EntryPoint.
+
+```solidity
+// Predict the wallet address before deployment
+function getAddress(bytes32 _salt) external view returns (address);
+
+// Deploy a new wallet for an owner
+function createAccount(address _owner, bytes32 _salt) external returns (address wallet);
+```
+
+## Smart Wallet vs ERC-4337
+
+| Feature | Strails Smart Wallet | ERC-4337 Account Abstraction |
+|---------|---------------------|------------------------------|
+| Deployment pattern | EIP-1167 minimal proxy | Full contract or proxy |
+| Transaction flow | Owner EOA → `execute()` | UserOperation → Bundler → EntryPoint |
+| Gas sponsorship | Owner pays directly in native token | Optional via Paymaster |
+| Bundlers required | No | Yes |
+| EntryPoint contract | Not used | Required |
+| Complexity | Minimal | High |
+
+## Key Contract Functions
+
+| Function | Description |
+|----------|-------------|
+| `owner` | Returns the wallet owner's EOA address |
+| `nonce` | Transaction counter; increments on every execution for replay protection |
+| `initialize(address _owner)` | One-time setup called by the factory at deployment |
+| `execute(address to, uint256 value, bytes data)` | Execute any transaction from the wallet; only callable by the owner |
+| `changeOwner(address newOwner)` | Transfer wallet ownership to a new EOA |
+
+## Withdrawing Tokens
+
+Because your EOA owns the Smart Wallet, you withdraw tokens by calling `execute()` on the wallet contract. The wallet then calls the token's `transfer()` function internally, so the tokens move from the wallet contract to any recipient address you specify.
+
+<Tabs>
+  <Tab title="Block Explorer">
+    Use Basescan's built-in write interface — no code required.
+
+    1. Open your wallet contract on [Basescan](https://basescan.org) (or [Etherscan](https://etherscan.io) for Ethereum).
+    2. Go to **Contract** → **Write Contract**.
+    3. Click **Connect to Web3** and connect the MetaMask wallet that is the owner EOA.
+    4. Expand the `execute` function and fill in the three parameters:
+
+    | Parameter | Value |
+    |-----------|-------|
+    | `to` | Token contract address (e.g. cNGN) |
+    | `value` | `0` — you are not sending native tokens |
+    | `data` | ABI-encoded `transfer(address,uint256)` call (see below) |
+
+    To build the `data` hex string, run the following snippet locally and paste the output into the `data` field:
+
+    ```javascript
+    const { ethers } = require("ethers");
+
+    // Encode a transfer of 1000 cNGN (6 decimals) to a recipient
+    const data = new ethers.Interface([
+      "function transfer(address to, uint256 amount)"
+    ]).encodeFunctionData("transfer", [
+      "0xRecipientAddressHere",
+      ethers.parseUnits("1000", 6)
+    ]);
+
+    console.log(data);
+    // 0xa9059cbb000000000000000000000000...
+    ```
+
+    5. Click **Write** and confirm the transaction in MetaMask.
+  </Tab>
+  <Tab title="ethers.js">
+    ```javascript
+    const { ethers } = require("ethers");
+
+    // Connect your owner EOA
+    const provider = new ethers.JsonRpcProvider("https://mainnet.base.org");
+    const signer = new ethers.Wallet("YOUR_PRIVATE_KEY", provider);
+
+    // Attach to your Smart Wallet contract
+    const walletAddress = "0xYourSmartWalletAddress";
+    const walletABI = [
+      "function execute(address to, uint256 value, bytes data) returns (bytes)"
+    ];
+    const smartWallet = new ethers.Contract(walletAddress, walletABI, signer);
+
+    // Token details
+    const tokenAddress = "0xTokenContractAddress"; // e.g. cNGN contract
+    const recipient    = "0xRecipientAddress";
+    const amount       = ethers.parseUnits("1000", 6); // 1 000 cNGN — 6 decimals
+
+    // Encode the ERC-20 transfer call
+    const transferData = new ethers.Interface([
+      "function transfer(address to, uint256 amount)"
+    ]).encodeFunctionData("transfer", [recipient, amount]);
+
+    // Send the withdrawal transaction
+    const tx = await smartWallet.execute(tokenAddress, 0, transferData);
+    await tx.wait();
+
+    console.log("Withdrawal successful:", tx.hash);
+    ```
+  </Tab>
+  <Tab title="viem">
+    ```typescript
+    import {
+      createWalletClient,
+      http,
+      encodeFunctionData,
+      parseUnits,
+    } from "viem";
+    import { base } from "viem/chains";
+    import { privateKeyToAccount } from "viem/accounts";
+
+    // Connect your owner EOA
+    const account = privateKeyToAccount("0xYOUR_PRIVATE_KEY");
+
+    const client = createWalletClient({
+      account,
+      chain: base,
+      transport: http(),
+    });
+
+    // Encode the ERC-20 transfer call
+    const transferData = encodeFunctionData({
+      abi: [
+        {
+          name: "transfer",
+          type: "function",
+          inputs: [
+            { name: "to",     type: "address" },
+            { name: "amount", type: "uint256" },
+          ],
+          outputs: [{ type: "bool" }],
+        },
+      ],
+      functionName: "transfer",
+      args: ["0xRecipientAddress", parseUnits("1000", 6)],
+    });
+
+    // Call execute on your Smart Wallet
+    const hash = await client.writeContract({
+      address: "0xYourSmartWalletAddress",
+      abi: [
+        {
+          name: "execute",
+          type: "function",
+          inputs: [
+            { name: "to",    type: "address" },
+            { name: "value", type: "uint256" },
+            { name: "data",  type: "bytes"   },
+          ],
+          outputs: [{ type: "bytes" }],
+        },
+      ],
+      functionName: "execute",
+      args: ["0xTokenContractAddress", 0n, transferData],
+    });
+
+    console.log("Transaction hash:", hash);
+    ```
+  </Tab>
+</Tabs>
+
+## Important Notes
+
+- **Gas fees** — the owner EOA pays gas in the native token (ETH on Base and Ethereum). Keep a small ETH balance in the owner wallet for transaction fees.
+- **Token decimals** — cNGN uses 6 decimal places. Always confirm the target token's `decimals()` value before encoding amounts to avoid over- or under-withdrawing.
+- **Ownership** — only the current owner EOA can call `execute()` or `changeOwner()`. Verify ownership on-chain before attempting a withdrawal, especially after any ownership transfer.
+- **Liquidity locks** — if the Smart Wallet has active FX orders on the Strails orderbook, a portion of the balance may be locked as collateral. Treat your available balance as total balance minus any locked amount.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Wallet Management API" icon="wallet" href="/api-reference/wallet">
+    API endpoints for creating and managing Smart Wallets
+  </Card>
+  <Card title="Transactions API" icon="arrow-right-arrow-left" href="/api-reference/transactions">
+    Execute transfers, swaps, and onramp operations
+  </Card>
+  <Card title="MPC Wallet" icon="shield-halved" href="/mpc-wallet">
+    Threshold-signing custody for the USDC/USDT FX leg
+  </Card>
+  <Card title="Multi-Chain Wallet" icon="link" href="/multi-chain-wallet">
+    HSM-managed execution wallet for cross-chain operations
+  </Card>
+</CardGroup>

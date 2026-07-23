@@ -1,0 +1,186 @@
+---
+title: "Strails Payload Encryption with Ed25519 and libsodium"
+sidebarTitle: "Encryption"
+description: "Learn how to encrypt Strails API request payloads and decrypt responses using Ed25519 key pairs and libsodium's sealed-box construction."
+---
+
+Strails supports **Ed25519 payload encryption** using [libsodium](https://libsodium.gitbook.io/doc/)'s sealed-box (`crypto_box_seal`) construction. Encryption is optional on some endpoints, but you should enable it for any production integration that handles PII, wallet addresses, or financial data — an intercepted transport layer will not expose your payload contents.
+
+## Security Model
+
+Every encrypted exchange involves two key pairs. Both parties generate their own pair; each shares only their public key.
+
+| Party | Key pair | Purpose |
+|---|---|---|
+| **Fintech (you)** | Your Ed25519 key pair | Decrypt responses that Strails seals to your public key |
+| **Strails** | Strails Ed25519 key pair | Encrypt requests you send — seal them to Strails' public key |
+
+Strails gives you its public key during onboarding. You generate your own key pair and register your public key with Strails so it can encrypt responses back to you.
+
+## Request Encryption Flow
+
+To send an encrypted request:
+
+<Steps>
+  <Step title="Build your JSON payload">
+    Construct the request body as documented for the endpoint — a plain JSON object.
+  </Step>
+  <Step title="Seal the payload">
+    Use the Strails Ed25519 public key to seal the payload with libsodium `crypto_box_seal`. This produces an opaque byte array that only Strails can unseal.
+  </Step>
+  <Step title="Base64-encode and send">
+    Base64-encode the sealed bytes and send the resulting string in the `payload` field of your request body.
+  </Step>
+</Steps>
+
+```
+Your JSON payload
+      +
+Strails public key
+      ↓
+libsodium crypto_box_seal
+      ↓
+Base64-encoded ciphertext  →  sent as "payload" in request body
+```
+
+```javascript
+const sodium = require('libsodium-wrappers');
+
+await sodium.ready;
+
+// Strails public key — received during onboarding
+const strailsPublicKey = sodium.from_hex(process.env.STRAILS_PUBLIC_KEY_HEX);
+
+const payload = JSON.stringify({
+  bvn: '12345678901',
+  userId: 'user_uniqueID',
+  email: 'user@example.com',
+  phoneNumber: '+2348012345678',
+});
+
+const encrypted = sodium.crypto_box_seal(
+  sodium.from_string(payload),
+  strailsPublicKey
+);
+
+const base64Payload = sodium.to_base64(encrypted);
+
+// Include base64Payload as the "payload" field in your request body
+const response = await fetch('https://api.strails.io/v1/onboarduser', {
+  method: 'POST',
+  headers: {
+    'x-api-key': process.env.STRAILS_API_KEY,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ payload: base64Payload }),
+});
+```
+
+## Response Decryption Flow
+
+To decrypt an encrypted response:
+
+<Steps>
+  <Step title="Extract the payload field">
+    Pull the `payload` string from the response body.
+  </Step>
+  <Step title="Base64-decode it">
+    Convert the string back to raw bytes.
+  </Step>
+  <Step title="Unseal with your private key">
+    Use libsodium `crypto_box_seal_open` with your public and private keys to recover the original JSON.
+  </Step>
+</Steps>
+
+```
+Encrypted base64 string  (from response body)
+      ↓
+Base64-decode
+      ↓
+libsodium crypto_box_seal_open  (your public key + your private key)
+      ↓
+Original JSON payload
+```
+
+```javascript
+const sodium = require('libsodium-wrappers');
+
+await sodium.ready;
+
+const yourPublicKey  = sodium.from_hex(process.env.MY_PUBLIC_KEY_HEX);
+const yourPrivateKey = sodium.from_hex(process.env.MY_PRIVATE_KEY_HEX);
+
+// `responseBody` is the parsed JSON response from Strails
+const encryptedBytes = sodium.from_base64(responseBody.payload);
+
+const decryptedBytes = sodium.crypto_box_seal_open(
+  encryptedBytes,
+  yourPublicKey,
+  yourPrivateKey
+);
+
+const data = JSON.parse(sodium.to_string(decryptedBytes));
+console.log(data);
+```
+
+## Generate Your Key Pair
+
+<Tabs>
+  <Tab title="Node.js">
+    ```javascript
+    const sodium = require('libsodium-wrappers');
+
+    await sodium.ready;
+
+    const keyPair = sodium.crypto_box_keypair();
+
+    console.log('Public key (hex):', sodium.to_hex(keyPair.publicKey));
+    console.log('Private key (hex):', sodium.to_hex(keyPair.privateKey));
+
+    // Store the private key in your secrets manager immediately.
+    // Share only the public key with Strails via POST /storepublickey.
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import nacl.public
+
+    keypair = nacl.public.PrivateKey.generate()
+
+    print("Public key (hex):", keypair.public_key.encode().hex())
+    print("Private key (hex):", keypair.encode().hex())
+
+    # Store the private key in your secrets manager immediately.
+    # Share only the public key with Strails via POST /storepublickey.
+    ```
+  </Tab>
+</Tabs>
+
+## Storing Your Public Key
+
+Register your public key with Strails by calling `POST /storepublickey`. Strails will use this key to encrypt all responses sent back to your integration.
+
+```bash
+POST /storepublickey
+x-api-key: YOUR_API_KEY
+Content-Type: application/json
+```
+
+```json
+{
+  "data": "<hex-encoded-public-key>"
+}
+```
+
+A successful registration returns `200 OK`. After this, Strails will seal response payloads to your public key so only you can decrypt them.
+
+## Best Practices
+
+- **Never expose your private key.** Keep it out of client-side code, logs, environment files committed to source control, and any network call.
+- **Use a dedicated secrets manager.** Store your private key in AWS Secrets Manager, HashiCorp Vault, or an equivalent service — not in a plain `.env` file.
+- **Rotate keys periodically.** Generate a new key pair on a regular schedule, register the new public key with Strails, and retire the old private key from your secrets manager.
+- **Test encryption in staging first.** Validate your encrypt/decrypt round-trip against `https://beta.stablesrail.io/v1/` before enabling it in production.
+
+<Note>
+  Contact [support@strails.io](mailto:support@strails.io) to receive the current Strails public key, register your own public key, or get help troubleshooting encryption issues.
+</Note>

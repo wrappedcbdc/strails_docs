@@ -1,0 +1,375 @@
+---
+title: "Fiat Payout API: Add and Manage Nigerian Bank Accounts"
+sidebarTitle: "Fiat Payouts"
+description: "Register, verify, and manage Nigerian bank accounts used for offramp settlement — including default account selection and NIBSS bank code lookup."
+---
+
+The Fiat Payout API lets you manage the Nigerian bank accounts that Strails pays out to when you or your end-users perform an offramp. Before you can call [`/initiateofframp`](/api-reference/transactions#fintech-offramp) or [`/cngnofframp`](/api-reference/transactions#user-offramp), you need at least one verified bank account on file. Accounts are automatically validated against live bank records at the time of addition — you cannot add an account whose number does not match the account name at the issuing bank.
+
+## Endpoints Overview
+
+| Endpoint | Method | Description |
+|---|---|---|
+| [`/getbankscode`](#retrieve-supported-banks) | POST | Get a list of all supported Nigerian banks with their NIBSS codes |
+| [`/addbankaccount`](#add-a-bank-account) | POST | Add and verify a new Nigerian bank account for payout |
+| [`/updatebankaccount`](#update-a-bank-account) | PUT | Update the label or default status of a bank account |
+| [`/deletebankaccount`](#delete-a-bank-account) | DELETE | Remove a bank account from your fintech configuration |
+| [`/getbankaccounts`](#retrieve-a-single-bank-account) | GET | Retrieve details of a single bank account by ID |
+| [`/listbankaccounts`](#retrieve-all-bank-accounts) | GET | Retrieve all bank accounts configured on your fintech account |
+
+---
+
+## Retrieve Supported Banks
+
+`POST /getbankscode`
+
+Returns the full list of Nigerian banks currently supported for payout, along with their NIBSS bank codes. Use these `bankCode` values when calling `/addbankaccount` or `/cngnofframp`.
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/getbankscode" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+This endpoint requires no request body.
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="countryCode" type="string">ISO 3166-1 alpha-2 country code (always `NG` for Nigeria).</ResponseField>
+    <ResponseField name="banks" type="array">
+      Array of bank objects. Each entry contains:
+      - `bank_name` — full registered name of the bank
+      - `bank_code` — NIBSS bank identifier code
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Banks retrieved successfully",
+  "data": {
+    "countryCode": "NG",
+    "banks": [
+      { "bank_name": "AB MICROFINANCE BANK", "bank_code": "090270" },
+      { "bank_name": "ACCESS BANK", "bank_code": "044" },
+      { "bank_name": "GUARANTY TRUST BANK", "bank_code": "058" },
+      { "bank_name": "HACKMAN MICROFINANCE BANK", "bank_code": "090147" },
+      { "bank_name": "UNITED BANK FOR AFRICA", "bank_code": "000004" }
+    ]
+  }
+}
+```
+
+---
+
+## Add a Bank Account
+
+`POST /addbankaccount`
+
+Adds a Nigerian bank account to your fintech configuration and immediately verifies it against bank records. The account is only activated if the account number is valid and the account name resolves correctly at the bank.
+
+<Info>
+  Accounts are automatically verified against live bank records before activation. Verification is synchronous — the response includes the resolved `verifiedAccountName` and `isValidated` flag.
+</Info>
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/addbankaccount" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "accountNumber": "1234567890",
+    "bankCode": "044",
+    "isDefault": false
+  }'
+```
+
+<ParamField body="accountNumber" type="string" required>
+  The 10-digit Nigerian bank account number.
+</ParamField>
+
+<ParamField body="bankCode" type="string" required>
+  The NIBSS bank identifier code (e.g. `044` for Access Bank). Use [`/getbankscode`](#retrieve-supported-banks) to look up the correct code.
+</ParamField>
+
+<ParamField body="isDefault" type="boolean">
+  When `true`, this account becomes the default payout destination. Defaults to `false`.
+</ParamField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="accountId" type="string">UUID of the newly created bank account record. Use this value as the account identifier in subsequent calls.</ResponseField>
+    <ResponseField name="verifiedAccountName" type="string">Account holder name resolved from the bank's records during verification.</ResponseField>
+    <ResponseField name="accountNumber" type="string">The account number that was registered.</ResponseField>
+    <ResponseField name="bankName" type="string">Full name of the bank.</ResponseField>
+    <ResponseField name="bankCode" type="string">NIBSS bank code of the bank.</ResponseField>
+    <ResponseField name="isValidated" type="boolean">Whether the account passed live bank verification.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Bank account added and verified successfully",
+  "data": {
+    "accountId": "uuid-account-id",
+    "verifiedAccountName": "JOHN DOE",
+    "accountNumber": "1234567890",
+    "bankName": "Access Bank",
+    "bankCode": "044",
+    "isValidated": true,
+    "message": "Bank account added successfully"
+  }
+}
+```
+
+**Error responses**
+
+```json Validation error
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Account number must be 10 digits"
+}
+```
+
+```json Verification failed
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Bank account verification failed",
+  "error": "Account name does not match or account is invalid"
+}
+```
+
+---
+
+## Update a Bank Account
+
+`PUT /updatebankaccount`
+
+Updates the label or default status of an existing bank account. You cannot change the account number or bank code — delete the account and add a new one instead.
+
+```bash
+curl --request PUT \
+  --url "https://api.strails.io/updatebankaccount" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "accountId": "uuid-account-id",
+    "isDefault": true
+  }'
+```
+
+<ParamField body="accountId" type="string" required>
+  UUID of the bank account to update, as returned by `/addbankaccount`.
+</ParamField>
+
+<ParamField body="isDefault" type="boolean">
+  When `true`, sets this account as the default payout destination.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Bank account updated successfully"
+}
+```
+
+**Error response**
+
+```json Account not found
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "Bank account not found",
+  "error": "No bank account found with the provided accountId"
+}
+```
+
+---
+
+## Delete a Bank Account
+
+`DELETE /deletebankaccount`
+
+Permanently removes a bank account from your fintech configuration. This action cannot be undone.
+
+<Info>
+  Bank accounts with **pending offramp transactions cannot be deleted**. Wait for all in-progress transactions to settle before attempting deletion.
+</Info>
+
+```bash
+curl --request DELETE \
+  --url "https://api.strails.io/deletebankaccount?accountId=uuid-account-id" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+<ParamField query="accountId" type="string" required>
+  UUID of the bank account to delete, as returned by `/addbankaccount`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Bank account deleted successfully"
+}
+```
+
+**Error response**
+
+```json Pending transactions
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Cannot delete account with pending offramp transactions",
+  "error": "PENDING_TRANSACTIONS"
+}
+```
+
+---
+
+## Retrieve a Single Bank Account
+
+`GET /getbankaccounts`
+
+Returns the details of a single bank account by its UUID.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/getbankaccounts?accountId=uuid-account-id" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+<ParamField query="accountId" type="string" required>
+  UUID of the bank account to retrieve, as returned by `/addbankaccount`.
+</ParamField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="accounts" type="array">
+      Array containing the single matched account. Each entry includes:
+      - `accountId` — UUID of the account
+      - `fintechId` — UUID of your fintech
+      - `accountName` — verified account holder name
+      - `accountNumber` — bank account number
+      - `bankName` — full bank name
+      - `bankCode` — NIBSS bank code
+      - `isDefault` — whether this is the default payout account
+      - `isValidated` — whether the account passed bank verification
+      - `validationDetails.validatedAt` — ISO 8601 timestamp of verification
+      - `validationDetails.accountNameMatch` — whether the name matched during verification
+      - `createdAt` and `updatedAt` — ISO 8601 timestamps
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Bank accounts retrieved successfully",
+  "data": {
+    "accounts": [
+      {
+        "accountId": "account-uuid",
+        "fintechId": "fintech-uuid",
+        "accountName": "JOHN DOE",
+        "accountNumber": "1234567890",
+        "bankName": "Access Bank",
+        "bankCode": "044",
+        "isDefault": true,
+        "isValidated": true,
+        "validationDetails": {
+          "validatedAt": "2026-02-04T10:30:00.000Z",
+          "accountNameMatch": true
+        },
+        "createdAt": "2026-02-04T10:30:00.000Z",
+        "updatedAt": "2026-02-04T10:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Retrieve All Bank Accounts
+
+`GET /listbankaccounts`
+
+Returns all bank accounts configured on your fintech account, along with a summary of the current default account.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/listbankaccounts" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+This endpoint requires no query parameters.
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="accounts" type="array">Full list of bank account objects. Each entry has the same shape as the single-account response above.</ResponseField>
+    <ResponseField name="total" type="number">Total number of configured bank accounts.</ResponseField>
+    <ResponseField name="defaultAccount" type="object">Summary of the account currently marked as default, including `accountId`, `accountName`, `accountNumber`, `bankName`, and `bankCode`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Bank accounts retrieved successfully",
+  "data": {
+    "accounts": [
+      {
+        "accountId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "fintechId": "fintech-uuid",
+        "accountName": "JOHN DOE",
+        "accountNumber": "1234567890",
+        "bankName": "Access Bank",
+        "bankCode": "044",
+        "isDefault": true,
+        "isValidated": true,
+        "validationDetails": {
+          "validatedAt": "2026-04-27T08:32:24.917Z",
+          "accountNameMatch": true
+        },
+        "createdAt": "2026-02-04T10:30:00.000Z",
+        "updatedAt": "2026-02-04T10:30:00.000Z"
+      },
+      {
+        "accountId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "fintechId": "fintech-uuid",
+        "accountName": "JOHN DOE ENTERPRISES",
+        "accountNumber": "9876543210",
+        "bankName": "GTBank",
+        "bankCode": "058",
+        "isDefault": false,
+        "isValidated": true,
+        "validationDetails": {
+          "validatedAt": "2026-04-27T08:32:24.917Z",
+          "accountNameMatch": true
+        },
+        "createdAt": "2026-02-03T08:00:00.000Z",
+        "updatedAt": "2026-02-03T08:00:00.000Z"
+      }
+    ],
+    "total": 2,
+    "defaultAccount": {
+      "accountId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "accountName": "JOHN DOE",
+      "accountNumber": "1234567890",
+      "bankName": "Access Bank",
+      "bankCode": "044"
+    }
+  }
+}
+```

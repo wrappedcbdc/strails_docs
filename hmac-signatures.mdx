@@ -1,0 +1,174 @@
+---
+title: "Verify Strails Webhook Signatures with HMAC-SHA256"
+sidebarTitle: "HMAC Signatures"
+description: "Learn how to verify that Strails webhook deliveries are authentic using HMAC-SHA256 signatures, timestamps, and timing-safe comparison."
+---
+
+Every webhook Strails sends is signed with an HMAC-SHA256 signature. Verifying this signature before you act on the payload guarantees that the event originated from Strails and was not tampered with — or replayed — by a third party. Strails passes the signature and all verification metadata in request headers.
+
+## Webhook Headers
+
+Strails includes the following headers with every webhook delivery:
+
+| Header | Description |
+|---|---|
+| `X-Strails-Signature` | HMAC-SHA256 hex digest computed over `timestamp.payload` |
+| `X-Strails-Timestamp` | ISO 8601 timestamp of when Strails sent the event |
+| `X-Webhook-ID` | Unique UUID identifying this specific delivery attempt |
+| `X-Strails-Event` | Event type, e.g. `wallet.funding.completed` |
+
+## Signature Format
+
+Strails computes the signature by running HMAC-SHA256 over the concatenation of the timestamp, a literal `.`, and the raw JSON request body:
+
+```
+signature = HMAC-SHA256(webhook_secret, timestamp + "." + payload)
+```
+
+Where:
+
+- **`webhook_secret`** is the secret you configured when you registered your webhook URL.
+- **`timestamp`** is the exact value of the `X-Strails-Timestamp` header.
+- **`payload`** is the **raw** request body string — do not parse it to JSON and re-serialize it before computing the digest, because whitespace or key ordering differences will produce a different hash.
+
+## Verifying Webhooks
+
+<Tabs>
+  <Tab title="Node.js">
+    ```javascript
+    const crypto = require('crypto');
+
+    /**
+     * Returns true if the webhook signature is valid, false otherwise.
+     * Pass the raw body buffer — do not call JSON.parse before this function.
+     */
+    function verifyStrailsWebhook(rawBody, headers, webhookSecret) {
+      const signature = headers['x-strails-signature'];
+      const timestamp  = headers['x-strails-timestamp'];
+
+      if (!signature || !timestamp) return false;
+
+      const expected = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(`${timestamp}.${rawBody}`)
+        .digest('hex');
+
+      // Use timing-safe comparison to prevent timing-based attacks
+      try {
+        return crypto.timingSafeEqual(
+          Buffer.from(signature, 'hex'),
+          Buffer.from(expected,  'hex')
+        );
+      } catch {
+        // Buffers of different lengths throw — treat as invalid
+        return false;
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import hmac
+    import hashlib
+
+    def verify_strails_webhook(
+        raw_body: bytes,
+        timestamp: str,
+        signature: str,
+        webhook_secret: str,
+    ) -> bool:
+        """
+        Returns True if the webhook signature is valid, False otherwise.
+        Pass the raw request body bytes — do not decode/re-encode before calling.
+        """
+        expected = hmac.new(
+            webhook_secret.encode('utf-8'),
+            f"{timestamp}.{raw_body.decode('utf-8')}".encode('utf-8'),
+            hashlib.sha256,
+        ).hexdigest()
+
+        # Use compare_digest for timing-safe comparison
+        return hmac.compare_digest(expected, signature)
+    ```
+  </Tab>
+</Tabs>
+
+## Webhook Handler Example
+
+Acknowledge every webhook immediately with `200 OK` and do the heavy lifting in a background queue. If your handler takes too long to respond, Strails may retry the delivery.
+
+```javascript
+const express = require('express');
+const crypto  = require('crypto');
+
+const app = express();
+
+// Use express.raw so you receive the body as a Buffer — required for correct HMAC verification
+app.post('/webhooks/strails', express.raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.headers['x-strails-signature'];
+  const timestamp  = req.headers['x-strails-timestamp'];
+  const rawBody    = req.body.toString('utf-8');
+
+  // 1. Reject if required headers are missing
+  if (!signature || !timestamp) {
+    return res.status(400).send('Missing signature headers');
+  }
+
+  // 2. Reject replays older than 5 minutes
+  const eventTime  = new Date(timestamp).getTime();
+  const ageSeconds = (Date.now() - eventTime) / 1000;
+  if (ageSeconds > 300) {
+    return res.status(400).send('Webhook timestamp too old');
+  }
+
+  // 3. Verify the signature
+  const expected = crypto
+    .createHmac('sha256', process.env.STRAILS_WEBHOOK_SECRET)
+    .update(`${timestamp}.${rawBody}`)
+    .digest('hex');
+
+  const isValid = crypto.timingSafeEqual(
+    Buffer.from(signature, 'hex'),
+    Buffer.from(expected,  'hex')
+  );
+
+  if (!isValid) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  // 4. Enqueue the event for async processing — respond immediately
+  const event = JSON.parse(rawBody);
+  await queue.add({ eventType: event.eventType, payload: event.payload });
+
+  // 5. Acknowledge receipt
+  res.sendStatus(200);
+});
+```
+
+## Configuring Your Webhook Secret
+
+Register your webhook URL and secret by calling `POST /setwebhook`:
+
+```json
+{
+  "webhookUrl": "https://your-domain.com/webhooks/strails",
+  "secret": "your_webhook_secret_key",
+  "enabled": true
+}
+```
+
+<Warning>
+  The `/setwebhook` endpoint is rate-limited to **10 rpm**. Avoid calling it more than once per deployment.
+</Warning>
+
+## Best Practices
+
+- **Use a long, random secret.** Generate at least 32 bytes of cryptographically random data (e.g. `openssl rand -hex 32`) and use that as your webhook secret.
+- **Store the secret in an environment variable.** Load it from `process.env.STRAILS_WEBHOOK_SECRET` or your secrets manager — never hard-code it in source.
+- **Always verify before acting.** Process the event payload only after the signature check passes. Treat any verification failure as a potential attack.
+- **Reject stale timestamps.** Discard webhooks where `X-Strails-Timestamp` is more than 5 minutes in the past to prevent replay attacks.
+- **Return `200 OK` quickly and process asynchronously.** Enqueue the event and respond immediately. Long-running handlers risk timeouts that trigger unnecessary retries.
+
+---
+
+See [Webhook Events](/api-reference/webhook-events) for the complete list of event types and their payload schemas.

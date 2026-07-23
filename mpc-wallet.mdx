@@ -1,0 +1,196 @@
+---
+title: "MPC Wallet Guide: Threshold Signing for FX Settlement"
+sidebarTitle: "MPC Wallet"
+description: "Configure your MPC Vault for threshold-signed USDC/USDT custody, enable auto-signing, and integrate with the Strails FX settlement orderbook."
+---
+
+The **MPC Wallet** — also called the **MPC Vault** — is your fintech's custody wallet for stablecoin settlement on the Strails FX orderbook. It holds USDC and USDT, and authorises transfers through threshold signing so no single private key is ever exposed or used in isolation.
+
+In every FX trade on Strails, the settlement is split across two custody sources:
+
+- **Your Smart Wallet** holds and transfers cNGN (the naira-pegged leg).
+- **Your MPC Vault** holds and signs USDC/USDT transfers (the stablecoin leg).
+
+You configure and control the MPC Vault; Strails orchestrates the settlement workflow and tracks signing status.
+
+## Overview
+
+| Feature | Description |
+|---------|-------------|
+| **Control** | Fintech-controlled transaction authorisation |
+| **Security** | Threshold signing with distributed key material; no single exposed key |
+| **Assets** | USDC, USDT (and other enabled quote tokens) |
+| **Networks** | Base (primary) |
+| **Trading role** | Stablecoin custody and signing leg for the FX orderbook |
+
+## What MPC Means
+
+MPC (Multi-Party Computation) lets a cryptographic signature be produced through coordinated computation across distributed key shares, rather than from one private key held in one place.
+
+On Strails, this gives you:
+
+- **No single point of key exposure** — no individual party holds a complete key that can unilaterally move funds.
+- **Policy-gated signing** — you can require manual approval for high-value transactions and enable auto-signing for routine trades below a threshold you set.
+- **Auditability** — every signing request is tracked; you can verify which trades were auto-signed and which required manual approval.
+
+## FX Settlement Model
+
+All LP-to-LP FX settlements involving a stablecoin transfer require MPC signing on the stablecoin leg. The rule is: **whoever sends stablecoins from their MPC Vault is the party that signs.**
+
+### Who Signs
+
+| Order Side | Stablecoin Sender | Who Signs |
+|------------|------------------|-----------| 
+| BUY order | Maker's MPC Vault | Maker signs |
+| SELL order | Taker's MPC Vault | Taker signs |
+
+### Wallet Roles per Asset Leg
+
+| Asset Leg | Custody Source |
+|-----------|---------------|
+| cNGN leg | Smart Wallet |
+| USDC / USDT leg | MPC Vault |
+
+## Setup
+
+<Steps>
+  <Step title="Register MPC Vault">
+    Register your MPC Vault credentials and token wallet mappings so your fintech can participate in FX settlement. This step initialises your MPC configuration and places it in an approval workflow before activation.
+
+    Before calling this endpoint, complete the MPCVault API user setup to obtain your `mpcVaultApiKey`, `callbackClientSignerPublicKey`, and `mpcClientSignerPrivateKey`. Follow the [MPCVault client signer guide](https://docs.mpcvault.com/guides/18-how-to-enable-api/client-signer) for steps 1–3.
+
+    ```bash
+    POST /fx/mpc/register
+    ```
+
+    ```json
+    {
+      "mpcVaultApiKey": "your-mpcvault-api-key",
+      "callbackClientSignerPublicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... mpcvault-client-signer",
+      "mpcClientSignerPrivateKey": "-----BEGIN OPENSSH PRIVATE KEY-----\n<base64-line-1>\n<base64-line-2>\n-----END OPENSSH PRIVATE KEY-----",
+      "vaultId": "your-mpcvault-vault-id",
+      "tokenWallets": {
+        "USDT": "0xYourMPCVaultUSDTWalletAddress",
+        "USDC": "0xYourMPCVaultUSDCWalletAddress"
+      },
+      "notificationEmails": [
+        "admin@yourcompany.com"
+      ]
+    }
+    ```
+
+    Strails admin reviews and approves the registration before your vault becomes active.
+  </Step>
+  <Step title="Enable Auto-Signing">
+    Enable automatic signing so lower-value FX transactions can proceed without requiring manual approval on every trade.
+
+    ```bash
+    POST /fx/auto-signing/enable
+    ```
+
+    ```json
+    {
+      "enabled": true
+    }
+    ```
+
+    Auto-signing applies only to trades at or below the threshold you configure in the next step. Trades above the threshold always require manual approval.
+  </Step>
+  <Step title="Set Auto-Signing Threshold">
+    Define the USD value limit below which trades are auto-signed. Transactions above this value remain on manual approval even when auto-signing is enabled.
+
+    ```bash
+    POST /fx/auto-signing/threshold
+    ```
+
+    ```json
+    {
+      "thresholdUsd": 500
+    }
+    ```
+
+    In this example, any FX settlement with a stablecoin value of $500 or less is eligible for auto-signing.
+  </Step>
+  <Step title="Verify Configuration">
+    Retrieve your complete FX configuration to confirm vault status, auto-signing state, threshold, and signer infrastructure readiness. Use `GET /fx/settings` and check that `mpcConfigStatus` is `active` and `autoSigning.vmStatus` is `running`.
+
+    See [Onchain FX Settings — Get FX Settings](/api-reference/fx-setting#get-fx-settings) for the full response schema.
+
+    <Warning>
+      After Strails admin approval, copy the `natExternalIp` value returned in the `GET /fx/settings` response and add it to **both** of the following whitelists in your MPCVault account:
+
+      - **API User IP Whitelist**
+      - **API Client Signer IP Whitelist**
+
+      Auto-signing will not function until this step is complete.
+    </Warning>
+  </Step>
+</Steps>
+
+## Auto-Signing Configuration
+
+Auto-signing allows the Strails platform to trigger signing on your MPC Vault automatically for trades that meet your policy. When a matching FX settlement is initiated:
+
+1. Strails sends a signing request to your configured MPCVault callback endpoint.
+2. The MPC client signer validates the request against your threshold policy.
+3. If the trade is within threshold, signing proceeds automatically and the on-chain transfer executes.
+4. If the trade exceeds the threshold, it is queued for manual approval in your MPCVault interface.
+
+Check your current auto-signing status at any time:
+
+```bash
+GET /fx/auto-signing/status
+```
+
+```json
+{
+  "data": {
+    "autoSigning": {
+      "configured": true,
+      "enabled": true,
+      "usdThreshold": "500",
+      "vmStatus": "running",
+      "vmHealthy": true,
+      "todayStats": {
+        "totalAutoSigned": 12,
+        "totalUsdAutoSigned": "4250",
+        "fallbackCount": 0,
+        "successRate": 100,
+        "avgExecutionTimeMs": 1180
+      }
+    }
+  }
+}
+```
+
+## Liquidity Requirements
+
+To place or fill FX orders, you must hold sufficient liquidity in the correct wallet for the trade direction.
+
+<Warning>
+  Active FX orders lock the corresponding balance as collateral. Your available balance is your **total balance minus the locked balance**. Placing orders without accounting for locks can cause settlement failures.
+</Warning>
+
+| Order Type | Required Liquidity | Wallet |
+|------------|------------------|--------|
+| BUY order (you are the maker) | cNGN | Smart Wallet |
+| SELL order (you are the taker) | USDC or USDT | MPC Vault |
+
+Maintain a buffer above your expected order sizes to accommodate concurrent active orders and any in-flight settlements.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Smart Wallet" icon="file-contract" href="/smart-wallet">
+    Owner-controlled smart contract wallets that handle the cNGN leg
+  </Card>
+  <Card title="FX Settings API" icon="gear" href="/api-reference/fx-setting">
+    Register your MPC Vault and manage auto-signing configuration
+  </Card>
+  <Card title="Trading Management" icon="chart-line" href="/api-reference/trading-management">
+    Place, manage, and monitor FX orderbook positions
+  </Card>
+  <Card title="Multi-Chain Wallet" icon="link" href="/multi-chain-wallet">
+    HSM-managed execution wallet for Strails-initiated operations
+  </Card>
+</CardGroup>

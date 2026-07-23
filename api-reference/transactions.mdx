@@ -1,0 +1,1228 @@
+---
+title: "Transactions API: Onramp, Offramp, Swaps & Transfers"
+sidebarTitle: "Transactions"
+description: "Process all financial flows — fiat-to-token onramps, token-to-fiat offramps, cross-token swaps, and asset transfers — with async requestId tracking."
+---
+
+The Transactions API handles every financial operation in Strails. You can fund user wallets by converting Naira to cNGN (**onramp**), return cNGN back to a Nigerian bank account (**offramp**), swap between cNGN, USDC, and USDT (**swap**), and withdraw assets to external wallets (**transfer**). Most operations are asynchronous — each call returns a `requestId` you can use to poll for the final status or receive a webhook notification.
+
+## Endpoints Overview
+
+| Endpoint | Method | Description |
+|---|---|---|
+| [`/cngnonramp`](#user-onramp) | POST | Fund a user wallet by converting Naira to cNGN or a supported token |
+| [`/cngnofframp`](#user-offramp) | POST | Convert a user's cNGN back to Naira and pay out to their bank account |
+| [`/getfintechvirtualaccount`](#fintech-onramp) | GET | Retrieve the persistent virtual bank account attached to your fintech |
+| [`/initiateofframp`](#fintech-offramp) | POST | Convert cNGN from your fintech Smart Wallet to Naira |
+| [`/withdrawasset`](#user-token-withdrawal) | POST | Withdraw tokens from a user wallet to an external wallet |
+| [`/fintechtransfer`](#fintech-token-withdrawal) | POST | Withdraw tokens from your fintech Smart Wallet to a registered external wallet |
+| [`/cngnonrampstatus`](#cngn-onramp-status) | POST | Check the current status of a user onramp request |
+| [`/cngnofframpstatus`](#cngn-offramp-status) | POST | Check the current status of a user offramp request |
+| [`/getofframpstatus`](#fintech-offramp-status) | GET | Check the current status of a fintech offramp request |
+| [`/deposits`](#list-deposits) | GET | List deposit transactions with filtering and pagination |
+| [`/payouts`](#list-payouts) | GET | List payout transactions with filtering and pagination |
+| [`/transactions`](#list-transactions) | GET | List all transactions (deposits and payouts) with filtering and pagination |
+| [`/swaptrigger`](#swap-trigger) | POST | Trigger an asynchronous swap for a specific wallet address |
+| [`/swap`](#user-swap) | POST | Request a token swap on a user's default Smart Wallet |
+| [`/swapstatus`](#swap-status) | GET | Get the status of an asynchronous swap request |
+
+---
+
+## User Onramp
+
+`POST /cngnonramp`
+
+Creates a temporary Smart Wallet and a bank transfer instruction so your end-user can fund their wallet by paying Naira into a virtual account. After the bank transfer is confirmed, cNGN is minted to the generated wallet.
+
+<Info>
+  Use the [`/getvirtualaccount`](/api-reference/virtual-accounts) endpoint to retrieve the virtual bank account details for payment. The generated account is only active for **30 minutes** after creation.
+</Info>
+
+<Warning>
+  Payment into the generated virtual account must originate from the verified bank account of the Strails end-user. Payments from unverified accounts will not be processed.
+</Warning>
+
+<Note>
+  The `amount` field is denominated in **Naira**. For example, `500` means ₦500 — not 500 kobo or 500 token units.
+</Note>
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/cngnonramp" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "userId": "user_uniqueID",
+    "amount": 500,
+    "assetSwap": "USDC",
+    "autoSwap": true,
+    "sweepToOfframp": false,
+    "destinationAssetSwap": "0xDestinationAddress"
+  }'
+```
+
+<ParamField body="userId" type="string" required>
+  Unique identifier (hash or UUID) of the end-user initiating the onramp.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to fund **in Naira** (e.g. `500` = ₦500). Must be greater than 0.
+</ParamField>
+
+<ParamField body="assetSwap" type="string">
+  The token to swap cNGN into after funding (e.g. `USDC`, `USDT`). Only used when `autoSwap` is `true`.
+</ParamField>
+
+<ParamField body="autoSwap" type="boolean">
+  When `true`, automatically swaps the funded cNGN into `assetSwap` after the bank payment is confirmed.
+</ParamField>
+
+<ParamField body="sweepToOfframp" type="boolean">
+  When `true`, automatically routes the funded (and optionally swapped) amount to the user's default Smart Wallet after confirmation. When set, `destinationAssetSwap` is ignored.
+</ParamField>
+
+<ParamField body="destinationAssetSwap" type="string">
+  Destination wallet address for the swapped assets. Only used when `autoSwap` is `true` and `sweepToOfframp` is `false`.
+</ParamField>
+
+<ParamField body="owner" type="string">
+  Your EOA wallet address to take ownership of the generated Smart Wallet. When set, you can withdraw tokens directly using your EOA. Note that Strails cannot withdraw funds from wallets with a custom owner.
+</ParamField>
+
+### autoSwap behaviour matrix
+
+| `autoSwap` | `sweepToOfframp` | `destinationAssetSwap` | Result |
+|---|---|---|---|
+| `false` | `false` | — | cNGN stays in the generated wallet |
+| `false` | `true` | ignored | cNGN is swept to the user's default Smart Wallet |
+| `true` | `false` | not set | cNGN → `assetSwap`, stays in the generated wallet |
+| `true` | `false` | set | cNGN → `assetSwap` → `destinationAssetSwap` |
+| `true` | `true` | ignored | cNGN → `assetSwap` → user's default Smart Wallet |
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="requestId" type="string">Unique identifier for this onramp request. Use it with `/cngnonrampstatus` and `/getvirtualaccount` to track the bank account and status.</ResponseField>
+    <ResponseField name="walletAddress" type="string">The generated Smart Wallet address that will receive the minted cNGN.</ResponseField>
+    <ResponseField name="status" type="string">Initial status of the request (e.g. `requested`).</ResponseField>
+    <ResponseField name="autoSwapEnabled" type="boolean">Whether auto-swap is active for this request.</ResponseField>
+    <ResponseField name="sweepToOfframpEnabled" type="boolean">Whether sweep-to-offramp is active for this request.</ResponseField>
+    <ResponseField name="targetAsset" type="string">The swap target asset (e.g. `USDC`).</ResponseField>
+    <ResponseField name="feeBreakdown" type="object">
+      <Expandable title="feeBreakdown fields">
+        <ResponseField name="baseAmount" type="number">The base Naira amount before fees.</ResponseField>
+        <ResponseField name="fintechFee" type="number">Fee charged by your fintech.</ResponseField>
+        <ResponseField name="strailsFee" type="number">Fee charged by Strails.</ResponseField>
+        <ResponseField name="totalFee" type="number">Sum of all fees.</ResponseField>
+        <ResponseField name="totalAmount" type="number">Total Naira amount to be paid (base + total fees).</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "cNGN request submitted successfully",
+  "data": {
+    "requestId": "uuid",
+    "walletAddress": "0x..",
+    "status": "requested",
+    "version": "1.0.0",
+    "message": "Ensure you pay 528.84 naira (520 + 8.84 total fees: 0.00 fintech + 8.84 strails) to the bank account generated. Wallet created successfully and Bank account generation in progress. Bank account is only active for 30mins after creation. Use requestId to get the bank account details for payment.",
+    "autoSwapEnabled": false,
+    "sweepToOfframpEnabled": false,
+    "targetAsset": "USDC",
+    "feeBreakdown": {
+      "baseAmount": 520,
+      "fintechFee": 0,
+      "strailsFee": 8.84,
+      "totalFee": 8.84,
+      "totalAmount": 528.84
+    }
+  }
+}
+```
+
+**Error responses**
+
+```json Validation error
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Amount must be greater than 0"
+}
+```
+
+```json User not found
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "User not found",
+  "error": "No verified user found with the provided userId"
+}
+```
+
+---
+
+## User Offramp
+
+`POST /cngnofframp`
+
+Converts cNGN held in a user's Smart Wallet to Naira and initiates a bank transfer to the specified account. The call returns immediately with a `requestId`; the actual bank transfer completes asynchronously.
+
+<Note>
+  The `amount` field is denominated in **Naira** (e.g. `5000` = ₦5,000), not in token units or kobo.
+</Note>
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/cngnofframp" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "userId": "user_uniqueID",
+    "amount": 5000,
+    "accountNumber": "0123456789",
+    "bankCode": "058",
+    "ticker": "CNGN"
+  }'
+```
+
+<ParamField body="userId" type="string" required>
+  Unique identifier (hash or UUID) of the user initiating the offramp.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to convert and transfer **in Naira** (e.g. `5000` = ₦5,000). Must be greater than 0.
+</ParamField>
+
+<ParamField body="accountNumber" type="string" required>
+  The destination bank account number (10 digits).
+</ParamField>
+
+<ParamField body="bankCode" type="string" required>
+  The NIBSS bank identifier code (e.g. `058` for GTBank). Use [`/getbankscode`](/api-reference/fiat-payout-management#retrieve-supported-banks) to get a full list.
+</ParamField>
+
+<ParamField body="ticker" type="string" required>
+  The asset symbol being off-ramped (e.g. `CNGN`).
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Vault return token transfer completed, payout processing initiated",
+  "data": {
+    "requestId": "uuid",
+    "status": "payout_pending",
+    "stage": "payout",
+    "tokenAddress": "0x...",
+    "vaultAddress": "0x..."
+  }
+}
+```
+
+**Error responses**
+
+```json Validation error
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Invalid bank code format"
+}
+```
+
+```json User not found
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "User not found",
+  "error": "No verified user found with the provided userId"
+}
+```
+
+```json Insufficient balance
+{
+  "status": "Error",
+  "response_code": "05",
+  "message": "Insufficient balance",
+  "error": "User wallet has insufficient cNGN balance for this offramp"
+}
+```
+
+---
+
+## Fintech Onramp
+
+`GET /getfintechvirtualaccount`
+
+Returns the persistent virtual bank account assigned to your fintech. Any Naira payment received on this account is automatically converted to cNGN and credited to your fintech Smart Wallet.
+
+<Info>
+  Use [`/getfintechwallet`](/api-reference/wallet#retrieve-the-fintech-wallet) to find your Smart Wallet address — that is where minted cNGN is credited after a deposit is confirmed.
+</Info>
+
+For full virtual account management (including per-user virtual accounts and fee configuration), see the [Virtual Accounts API](/api-reference/virtual-accounts) page.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/getfintechvirtualaccount" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Virtual account retrieved successfully",
+  "data": {
+    "virtualAccount": {
+      "accountNumber": "9800000094",
+      "accountName": "Example Fintech",
+      "bankName": "FAME Bank",
+      "provider": "Sample Provider",
+      "status": "active",
+      "createdAt": "2026-01-28T13:06:38.867Z"
+    }
+  }
+}
+```
+
+---
+
+## Fintech Offramp
+
+`POST /initiateofframp`
+
+Converts cNGN from your fintech Smart Wallet to Naira and initiates a payout to a configured bank account. Returns a `requestId` immediately; the transfer completes asynchronously.
+
+<Warning>
+  The `amount` field must be provided in the **lowest currency unit** (kobo-equivalent token units). For example, `1000000` represents 10.00 cNGN, not ₦1,000,000. Use [`/listbankaccounts`](/api-reference/fiat-payout-management#retrieve-all-bank-accounts) to find your `bankAccountId`.
+</Warning>
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/initiateofframp" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "amount": 1000000,
+    "bankAccountId": "uuid-of-bank-account"
+  }'
+```
+
+<ParamField body="amount" type="number" required>
+  Amount to transfer in the **lowest currency unit** (e.g. `1000000` = 10.00 cNGN). Must be greater than 0.
+</ParamField>
+
+<ParamField body="bankAccountId" type="string" required>
+  UUID of the destination bank account, as returned by [`/addbankaccount`](/api-reference/fiat-payout-management#add-a-bank-account).
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Offramp initiated successfully",
+  "data": {
+    "requestId": "uuid",
+    "amount": 170,
+    "walletSource": "system_wallet",
+    "status": "pending",
+    "message": "Your offramp request is being processed. cNGN will be transferred from your smart wallet. You will receive a webhook notification when completed."
+  }
+}
+```
+
+**Error responses**
+
+```json Validation error
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Amount must be greater than 0"
+}
+```
+
+```json Bank account not found
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "Bank account not found",
+  "error": "No bank account found with the provided bankAccountId"
+}
+```
+
+```json Insufficient balance
+{
+  "status": "Error",
+  "response_code": "05",
+  "message": "Insufficient balance",
+  "error": "Smart wallet has insufficient cNGN balance"
+}
+```
+
+---
+
+## User Token Withdrawal
+
+`POST /withdrawasset`
+
+Withdraws a token from a user's internal Smart Wallet to an external destination wallet. Supports multi-chain transfers — set the `network` parameter to route the withdrawal through a bridge to a non-Base chain.
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/withdrawasset" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "userId": "user_uniqueID",
+    "internalWallet": "0xInternalWalletAddress",
+    "destinationWallet": "0xExternalWalletAddress",
+    "amount": 100,
+    "ticker": "CNGN",
+    "network": "base"
+  }'
+```
+
+<ParamField body="userId" type="string" required>
+  Unique identifier (hash or UUID) of the user initiating the withdrawal.
+</ParamField>
+
+<ParamField body="internalWallet" type="string" required>
+  The user's internal (source) wallet address on the platform.
+</ParamField>
+
+<ParamField body="destinationWallet" type="string" required>
+  The external destination address to receive the withdrawn tokens.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to withdraw (human-readable token units, must be greater than 0).
+</ParamField>
+
+<ParamField body="ticker" type="string" required>
+  Asset symbol to withdraw (e.g. `CNGN`, `USDC`, `USDT`).
+</ParamField>
+
+<ParamField body="network" type="string">
+  Target network for the withdrawal. When set, Strails routes the transfer through a bridge. Supported values: `base`, `bsc`, `sol`, `eth`, `xbn`, `asc`, `arc`, `lisk`. Defaults to `base` if not provided.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Withdrawal executed successfully",
+  "data": {
+    "transactionHash": "tranx_hash",
+    "smartWalletAddress": "0xInternalWalletAddress",
+    "requestId": "req_uuid_12345",
+    "executedAt": "2026-06-11T08:47:59.653Z",
+    "gasUsed": "85397",
+    "effectiveGasPrice": "1010000000",
+    "blockNumber": "47189167",
+    "duration": 8641,
+    "userId": "user_uniqueID",
+    "amount": "200",
+    "destinationWallet": "0xExternalWalletAddress",
+    "tokenAddress": "0x46C85152bFe9f96829aA94755D9f915F9B10EF5F",
+    "tokenSymbol": "CNGN",
+    "network": "base",
+    "networkDisplayName": "Base",
+    "estimatedConfirmationTime": "2-5 minutes",
+    "warnings": ["High gas fees relative to withdrawal amount"],
+    "feeBreakdown": {
+      "requestedAmount": "200",
+      "totalFee": "5.965",
+      "netAmount": "194.035",
+      "usedFintechOverride": false
+    }
+  }
+}
+```
+
+**Error responses**
+
+```json Validation error
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Amount must be greater than 0"
+}
+```
+
+```json User not found
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "User not found",
+  "error": "No verified user found with the provided userId"
+}
+```
+
+```json Insufficient balance
+{
+  "status": "Error",
+  "response_code": "05",
+  "message": "Insufficient balance",
+  "error": "Wallet has insufficient balance for this withdrawal"
+}
+```
+
+---
+
+## Fintech Token Withdrawal
+
+`POST /fintechtransfer`
+
+Transfers tokens from your fintech Smart Wallet to a registered external wallet. The destination address must already be whitelisted via [`/addexternalwallet`](/api-reference/wallet#add-an-external-wallet) before you call this endpoint.
+
+<Info>
+  You must whitelist the destination address before calling `/fintechtransfer`. Use [`/addexternalwallet`](/api-reference/wallet#add-an-external-wallet) to register the address first.
+</Info>
+
+<Warning>
+  The `amount` field must be in the **lowest currency unit**. For example, `5000000` = 5.0 cNGN (cNGN uses 6 decimal places). Active orders and escrows reduce the available balance — the API will reject the transfer if the net balance after commitments is insufficient.
+</Warning>
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/fintechtransfer" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "destinationAddress": "0xExternalRegisteredAddress",
+    "amount": 5000000,
+    "ticker": "CNGN",
+    "note": "Withdrawal to cold storage"
+  }'
+```
+
+<ParamField body="destinationAddress" type="string" required>
+  Ethereum address of the destination wallet. Must be a wallet already registered via `/addexternalwallet`.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to transfer in the **lowest currency unit** (e.g. `5000000` = 5.0 cNGN).
+</ParamField>
+
+<ParamField body="ticker" type="string">
+  Token symbol to transfer: `CNGN` (default), `USDC`, or `USDT`.
+</ParamField>
+
+<ParamField body="note" type="string">
+  Optional memo for internal record-keeping (max 500 characters).
+</ParamField>
+
+```json Response
+{
+  "code": "00",
+  "message": "Transfer completed successfully",
+  "data": {
+    "requestId": "req_uuid_12345",
+    "transactionHash": "0xabc...def",
+    "smartWalletAddress": "0x123...456",
+    "destinationAddress": "0x742...c87",
+    "destinationLabel": "My Cold Wallet",
+    "amount": "5000000",
+    "ticker": "CNGN",
+    "blockNumber": "12345678",
+    "gasUsed": "150000",
+    "commitmentsSafeguarded": {
+      "activeOrders": 3,
+      "activeEscrows": 1,
+      "totalCommitted": "2000000",
+      "remainingBalance": "3000000"
+    },
+    "executedAt": "2026-03-21T10:30:00Z",
+    "version": "1.0.0"
+  }
+}
+```
+
+**Error responses**
+
+```json Destination not registered
+{
+  "code": "01",
+  "message": "Validation error",
+  "error": "Destination address is not a registered external wallet"
+}
+```
+
+```json Insufficient balance
+{
+  "code": "05",
+  "message": "Insufficient balance",
+  "error": "Smart wallet has insufficient balance after accounting for active orders and escrows"
+}
+```
+
+---
+
+## cNGN Onramp Status
+
+`POST /cngnonrampstatus`
+
+Returns the current status of a user onramp request, including virtual account details, funding timestamps, and any active FX quote.
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/cngnonrampstatus" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "walletAddress": "0xGeneratedWalletAddress"
+  }'
+```
+
+<ParamField body="walletAddress" type="string" required>
+  The Smart Wallet address returned by `/cngnonramp`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Wallet status retrieved successfully",
+  "data": {
+    "status": "funded",
+    "requestId": "uuid",
+    "version": "1.0.0",
+    "wallet": {
+      "walletAddress": "0x.....",
+      "owner": "0x.....",
+      "tokenBuy": "USDC",
+      "autoSwap": false,
+      "sweepToOfframp": true,
+      "amount": "200",
+      "createdAt": "2026-01-28T11:17:47.513Z",
+      "fundingRequestedAt": "2026-01-28T11:21:20.170Z",
+      "fundedAt": "2026-01-28T11:22:01.527Z",
+      "transactionHash": "0x......",
+      "virtualAccountDetails": {
+        "accountNumber": "xxxx",
+        "bankName": "XXXX Bank",
+        "accountName": "Okaformbah",
+        "amount": 200,
+        "createdAt": "2026-01-28T11:18:09.353Z"
+      },
+      "virtualAccountStatus": "created"
+    },
+    "fxQuote": {
+      "available": true,
+      "pair": "CNGN-USDC",
+      "cngnAmount": "1000",
+      "tokenAmount": "0.689655",
+      "averagePrice": "1450.00",
+      "averageSpread": 0.5,
+      "expiresAt": "2026-04-04T08:58:36.072Z",
+      "note": "This quote is valid for 5 minutes"
+    }
+  }
+}
+```
+
+---
+
+## cNGN Offramp Status
+
+`POST /cngnofframpstatus`
+
+Returns the current status of a user offramp request, including on-chain token transfer details and the fiat payout outcome.
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/cngnofframpstatus" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "requestId": "uuid"
+  }'
+```
+
+<ParamField body="requestId" type="string" required>
+  The `requestId` returned by `/cngnofframp`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Vault return status retrieved successfully",
+  "data": {
+    "requestId": "vr_1769599852415_oosd",
+    "status": "completed",
+    "stage": "completed",
+    "createdAt": "2026-01-28T12:30:54.921Z",
+    "updatedAt": "2026-01-28T12:31:10.690Z",
+    "tokenAddress": "0x....",
+    "amount": "200",
+    "tokenTransfer": {
+      "status": "confirmed",
+      "transactionHash": "0x....",
+      "blockNumber": "41405258",
+      "timestamp": "2026-01-28T12:31:02.112Z"
+    },
+    "payout": {
+      "status": "completed",
+      "reference": "0x....",
+      "transactionId": "0x....",
+      "timestamp": "2026-01-28T12:31:10.690Z",
+      "attempts": 1
+    }
+  }
+}
+```
+
+---
+
+## Fintech Offramp Status
+
+`GET /getofframpstatus`
+
+Returns the current status of a fintech offramp request initiated via `/initiateofframp`.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/getofframpstatus?requestId=uuid" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+<ParamField query="requestId" type="string" required>
+  The `requestId` returned by `/initiateofframp`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Offramp status retrieved successfully",
+  "data": {
+    "requestId": "uuid",
+    "status": "completed",
+    "amount": 17000,
+    "currency": "NGN",
+    "bankAccount": {
+      "accountNumber": "123456789",
+      "accountName": "Bidemi Chioma Hauwa",
+      "bankName": "UNITED BANK"
+    },
+    "wallet": {
+      "source": "system_wallet",
+      "address": "0x...."
+    },
+    "transferDetails": {
+      "txHash": "0x-transactionHash",
+      "status": "confirmed"
+    },
+    "payoutDetails": {
+      "reference": "uuid",
+      "provider": "novac",
+      "status": "completed"
+    },
+    "initiatedAt": "2026-01-29T03:56:20.198Z",
+    "completedAt": "2026-01-29T03:57:07.012Z"
+  }
+}
+```
+
+---
+
+## List Deposits
+
+`GET /deposits`
+
+Returns a paginated list of deposit transactions. Filter by type (`fintech_deposit` for direct fintech deposits, `user_onramp` for end-user onramps), status, date range, and user.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/deposits?type=fintech_deposit&status=completed&limit=20&offset=0" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+<ParamField query="type" type="string">
+  Transaction type filter. One of `fintech_deposit` or `user_onramp`.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  Filter by end-user ID. Only applicable when `type` is `user_onramp`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status. One of `pending`, `processing`, `completed`, `failed`, or `cancelled`.
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  ISO 8601 start of the date range (e.g. `2026-01-01T00:00:00Z`).
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  ISO 8601 end of the date range (e.g. `2026-01-31T23:59:59Z`).
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Maximum number of results to return. Defaults to `20`, maximum `100`.
+</ParamField>
+
+<ParamField query="offset" type="number">
+  Pagination offset. Defaults to `0`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Deposits retrieved successfully",
+  "data": {
+    "deposits": [
+      {
+        "id": "6653603d-74fd-4a1f-80a1-d9b84bc0173a",
+        "type": "fintech_deposit",
+        "direction": "in",
+        "fintechId": "c8fe1911-d292-4f84-aa88-e34ceeea5b65",
+        "amount": 500,
+        "currency": "NGN",
+        "virtualAccountNumber": "9800000094",
+        "virtualAccountName": "Example Fintech",
+        "depositor": {
+          "name": "JOHN DOE",
+          "accountNumber": "1234567890",
+          "bankName": "SAMPLE BANK",
+          "bankCode": "000001"
+        },
+        "transactionReference": "000015260129043400000000099569",
+        "provider": "novac",
+        "status": "completed",
+        "walletAddress": "0x3af904Ff6FA747A3da92E7ce21d312de4b2Ef967",
+        "mintTxHash": "0x59a8094c6dce96396d50e67083eba7d7d4ac7cd4393e976c7e73e46a67164077",
+        "createdAt": "2026-01-29T03:34:35.582Z",
+        "completedAt": "2026-01-29T03:35:12.198Z"
+      }
+    ],
+    "total": 1,
+    "limit": 20,
+    "offset": 0,
+    "hasMore": false,
+    "filters": { "type": "fintech_deposit" }
+  }
+}
+```
+
+---
+
+## List Payouts
+
+`GET /payouts`
+
+Returns a paginated list of payout transactions. Filter by type (`fintech_offramp` for fintech-initiated payouts, `user_offramp` for end-user offramps), status, date range, and user.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/payouts?type=fintech_offramp&status=completed&limit=10&offset=0" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+<ParamField query="type" type="string">
+  Transaction type filter. One of `fintech_offramp` or `user_offramp`.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  Filter by end-user ID. Only applicable when `type` is `user_offramp`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status. One of `pending`, `processing`, `completed`, `failed`, or `cancelled`.
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  ISO 8601 start of the date range.
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  ISO 8601 end of the date range.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Maximum number of results to return. Defaults to `20`, maximum `100`.
+</ParamField>
+
+<ParamField query="offset" type="number">
+  Pagination offset. Defaults to `0`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Payouts retrieved successfully",
+  "data": {
+    "payouts": [
+      {
+        "id": "6653603d-74fd-4a1f-80a1-d9b84bc0173a",
+        "type": "fintech_offramp",
+        "direction": "out",
+        "fintechId": "c8fe1911-d292-4f84-aa88-e34ceeea5b65",
+        "amount": 5000,
+        "currency": "NGN",
+        "sourceWalletAddress": "0x3af904Ff6FA747A3da92E7ce21d312de4b2Ef967",
+        "sourceNetwork": "base",
+        "bankAccount": {
+          "accountNumber": "0123456789",
+          "accountName": "JANE DOE",
+          "bankName": "UNITED BANK FOR AFRICA",
+          "bankCode": "000004"
+        },
+        "status": "completed",
+        "transferTxHash": "0x59a8094c6dce96396d50e67083eba7d7d4ac7cd4393e976c7e73e46a67164077",
+        "payoutReference": "6653603d-74fd-4a1f-80a1-d9b84bc0173a",
+        "payoutProvider": "novac",
+        "payoutStatus": "completed",
+        "processingFee": 75.00,
+        "totalDeducted": 5075.00,
+        "createdAt": "2026-01-29T03:56:20.198Z",
+        "completedAt": "2026-01-29T03:57:07.012Z"
+      }
+    ],
+    "total": 1,
+    "limit": 10,
+    "offset": 0,
+    "hasMore": false,
+    "filters": { "type": "fintech_offramp", "status": "completed" }
+  }
+}
+```
+
+---
+
+## List Transactions
+
+`GET /transactions`
+
+Returns a paginated list of all transactions — both deposits and payouts — with a combined summary. Use `direction` to separate inbound from outbound flows.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/transactions?direction=in&status=completed&limit=50&offset=0" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+<ParamField query="direction" type="string">
+  Filter by flow direction. `in` for deposits, `out` for payouts.
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by type. One of `fintech_deposit`, `user_onramp`, `fintech_offramp`, or `user_offramp`.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  Filter by end-user ID.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status. One of `pending`, `processing`, `completed`, `failed`, or `cancelled`.
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  ISO 8601 start of the date range.
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  ISO 8601 end of the date range.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Maximum number of results to return. Defaults to `20`, maximum `100`.
+</ParamField>
+
+<ParamField query="offset" type="number">
+  Pagination offset. Defaults to `0`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Transactions retrieved successfully",
+  "data": {
+    "transactions": [
+      {
+        "id": "000015260129043400000000099569",
+        "type": "fintech_deposit",
+        "direction": "in",
+        "fintechId": "c8fe1911-d292-4f84-aa88-e34ceeea5b65",
+        "amount": 500,
+        "currency": "NGN",
+        "virtualAccountNumber": "9800000094",
+        "virtualAccountName": "Example Fintech",
+        "depositor": {
+          "name": "JOHN DOE",
+          "accountNumber": "1234567890",
+          "bankName": "SAMPLE BANK",
+          "bankCode": "000001"
+        },
+        "transactionReference": "000015260129043400000000099569",
+        "provider": "novac",
+        "status": "completed",
+        "walletAddress": "0x3af904Ff6FA747A3da92E7ce21d312de4b2Ef967",
+        "createdAt": "2026-01-29T03:34:35.582Z",
+        "completedAt": "2026-01-29T03:35:12.198Z"
+      }
+    ],
+    "total": 2,
+    "limit": 50,
+    "offset": 0,
+    "hasMore": false,
+    "summary": {
+      "totalDeposits": 2,
+      "totalPayouts": 0,
+      "depositVolume": "1500.00",
+      "payoutVolume": "0.00"
+    },
+    "filters": { "direction": "in", "status": "completed" }
+  }
+}
+```
+
+---
+
+## Swap Trigger
+
+`POST /swaptrigger`
+
+Queues an asynchronous token swap for a specific wallet address. The swap is processed in the background — use [`/swapstatus`](#swap-status) with the returned `requestId` to poll for completion.
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/swaptrigger" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "walletAddress": "0xGeneratedWalletAddress",
+    "sellToken": "CNGN",
+    "buyToken": "USDC",
+    "amount": 500,
+    "slippage": 2
+  }'
+```
+
+<ParamField body="walletAddress" type="string" required>
+  The Smart Wallet address generated during a `/cngnonramp` request.
+</ParamField>
+
+<ParamField body="sellToken" type="string" required>
+  The token to sell. One of `CNGN`, `USDC`, or `USDT`.
+</ParamField>
+
+<ParamField body="buyToken" type="string">
+  The token to buy. One of `CNGN`, `USDC`, or `USDT`. Falls back to the wallet's configured `tokenBuy` if not provided.
+</ParamField>
+
+<ParamField body="amount" type="number">
+  Human-readable amount of `sellToken` to swap. Falls back to the wallet's funded amount if not provided.
+</ParamField>
+
+<ParamField body="slippage" type="number">
+  Maximum acceptable slippage percentage. Defaults to `5`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Swap trigger submitted successfully",
+  "data": {
+    "requestId": "req_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "status": "queued",
+    "message": "Your swap request has been queued and will be processed asynchronously",
+    "swapConfig": {
+      "sellToken": "CNGN",
+      "buyToken": "USDT",
+      "amount": "500.000000",
+      "walletAddress": "0x..."
+    },
+    "destinationConfig": {
+      "destinationWallet": "fintech_smart_wallet",
+      "sweepToOfframp": false
+    }
+  }
+}
+```
+
+**Error responses**
+
+```json Validation error
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Invalid wallet address format"
+}
+```
+
+```json Insufficient liquidity
+{
+  "status": "Error",
+  "response_code": "05",
+  "message": "Insufficient liquidity",
+  "error": "Not enough liquidity in pool for swap"
+}
+```
+
+---
+
+## User Swap
+
+`POST /swap`
+
+Requests a token swap on a user's default Smart Wallet. Primarily used for USDC → cNGN conversions. The swap is processed asynchronously — use [`/swapstatus`](#swap-status) with the returned `requestId` to track completion.
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/swap" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "sellToken": "USDC",
+    "buyToken": "CNGN",
+    "amount": 100.50,
+    "slippage": 2,
+    "userId": "user_hash",
+    "smartWalletAddress": "0xSmartWalletAddress",
+    "destinationAssetSwap": "0xDestinationAddress"
+  }'
+```
+
+<ParamField body="sellToken" type="string" required>
+  The token to sell. One of `USDC`, `USDT`, or `CNGN`.
+</ParamField>
+
+<ParamField body="buyToken" type="string" required>
+  The token to buy. One of `USDC`, `USDT`, or `CNGN`.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Human-readable amount to swap (e.g. `100.50` = 100.50 USDC).
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  Unique identifier (hash or UUID) of the verified end-user.
+</ParamField>
+
+<ParamField body="slippage" type="number">
+  Maximum acceptable slippage percentage. Defaults to `2`.
+</ParamField>
+
+<ParamField body="smartWalletAddress" type="string">
+  The user's Smart Wallet address to execute the swap from. If not provided, the user's default Smart Wallet is used.
+</ParamField>
+
+<ParamField body="destinationAssetSwap" type="string">
+  Alternative destination wallet for the output tokens. If not provided, output tokens are sent to the user's default Smart Wallet.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Swap request submitted successfully",
+  "data": {
+    "requestId": "swap-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "status": "requested",
+    "message": "Your swap request has been submitted and will be processed asynchronously",
+    "smartWalletExecutionDetails": {
+      "smartWalletAddress": "0x...",
+      "executionMethod": "smart_wallet_execute",
+      "validationSummary": {
+        "balanceCheck": "passed",
+        "allowanceCheck": "passed"
+      }
+    }
+  }
+}
+```
+
+**Error responses**
+
+```json Validation error
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Amount must be greater than 0"
+}
+```
+
+```json User not found
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "User not found",
+  "error": "No verified user found with the provided userId"
+}
+```
+
+```json Insufficient balance
+{
+  "status": "Error",
+  "response_code": "05",
+  "message": "Insufficient balance",
+  "error": "Wallet has insufficient balance for this swap"
+}
+```
+
+---
+
+## Swap Status
+
+`GET /swapstatus`
+
+Returns the current status of an asynchronous swap request. Use the `requestId` returned from either `/swaptrigger` or `/swap`.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/swapstatus?requestId=swap-a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+<ParamField query="requestId" type="string" required>
+  The `requestId` returned by `/swaptrigger` or `/swap`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Operation status retrieved successfully",
+  "data": {
+    "requestId": "swap-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "type": "swap_trigger",
+    "status": "completed",
+    "createdAt": "2026-05-26T10:30:00.000Z",
+    "updatedAt": "2026-05-26T10:30:45.000Z",
+    "txHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "amountOut": "775000000",
+    "executionRate": "1550.25",
+    "executionMethod": "smart_wallet_execute",
+    "smartWalletAddress": "0x625A4612e3aAa7ce62C43EdDf5C81d7443418E4f"
+  }
+}
+```
+
+**Error response**
+
+```json Request not found
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "Not found",
+  "error": "No swap request found with the provided requestId"
+}
+```

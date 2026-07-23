@@ -1,0 +1,586 @@
+---
+title: "FX Settings: MPC Vault Registration & Auto-Signing"
+sidebarTitle: "FX Settings"
+description: "Register your MPC vault, configure auto-signing thresholds, and retrieve complete FX infrastructure settings for your fintech integration."
+---
+
+Configure your fintech's FX infrastructure by registering an MPC vault, enabling automatic transaction signing, and tuning per-trade USD thresholds. Every order you place on the orderbook and every trade you execute depends on a correctly registered MPC vault, so complete this setup before interacting with any other FX endpoint.
+
+---
+
+## Endpoints Overview
+
+| Endpoint                        | Method | Description                                                    |
+| ------------------------------- | ------ | -------------------------------------------------------------- |
+| `/fx/mpc/register`              | POST   | Register MPC vault configuration for FX trading operations     |
+| `/fx/settings`                  | GET    | Retrieve complete FX settings including MPC vault and wallets  |
+| `/fx/auto-signing/enable`       | POST   | Enable automatic transaction signing for FX trades            |
+| `/fx/auto-signing/disable`      | POST   | Disable automatic transaction signing                         |
+| `/fx/auto-signing/threshold`    | POST   | Set the USD threshold for auto-signing transactions           |
+| `/fx/auto-signing/status`       | GET    | Retrieve auto-signing configuration and today's statistics    |
+| `/fx/auto-signing/stats`        | GET    | Retrieve auto-signing statistics over a rolling period        |
+
+---
+
+## Register MPC Vault
+
+Register your MPC vault configuration to enable FX trading. This step is required before you can create limit orders or execute trades. Your registration is submitted for admin approval and the cNGN wallet is automatically assigned to your fintech smart wallet.
+
+<Warning>
+  The `mpcVaultApiKey` and `mpcClientSignerPrivateKey` are sensitive credentials. Store them securely and never expose them in client-side code or logs. Both fields are partially masked in all API responses.
+</Warning>
+
+<Note>
+  MPC Vault is a third-party wallet infrastructure provider independent of Strails. You must create and maintain your own account at [mpcvault.com](https://mpcvault.com). All interactions with MPC Vault are subject to MPC Vault's own terms and conditions. Strails assumes no liability for losses arising from the use of MPC Vault services.
+</Note>
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request POST \
+      --url https://api.strails.io/fx/mpc/register \
+      --header "Authorization: Bearer <API_KEY>" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "mpcVaultApiKey": "your-mpc-vault-api-key",
+        "callbackClientSignerPublicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... mpcvault-client-signer",
+        "mpcClientSignerPrivateKey": "-----BEGIN OPENSSH PRIVATE KEY-----\n<base64-line-1>\n<base64-line-2>\n<base64-line-3>\n-----END OPENSSH PRIVATE KEY-----",
+        "vaultId": "your-mpc-vault-id",
+        "tokenWallets": {
+          "USDT": "0x9e9fd8e75E07A1xxxxxxxxx",
+          "USDC": "0x9e9fd8e75E07A1xxxxxxxxx"
+        },
+        "notificationEmails": [
+          "admin@yourcompany.com"
+        ]
+      }'
+    ```
+
+    <Warning>
+      The `mpcClientSignerPrivateKey` must encode newlines as `\n` escape sequences. Each line of your OpenSSH private key must be separated by a literal `\n` character, not an actual line break.
+    </Warning>
+
+    <ParamField body="mpcVaultApiKey" type="string" required>
+      Your MPC Vault API key, obtained from the MPC Vault dashboard.
+    </ParamField>
+
+    <ParamField body="callbackClientSignerPublicKey" type="string" required>
+      The SSH public key used to verify callback signatures from MPC Vault.
+    </ParamField>
+
+    <ParamField body="mpcClientSignerPrivateKey" type="string" required>
+      Your OpenSSH private key with `\n` as the newline separator between each base64-encoded line.
+    </ParamField>
+
+    <ParamField body="vaultId" type="string" required>
+      Your MPC Vault identifier, found in the MPC Vault dashboard.
+    </ParamField>
+
+    <ParamField body="tokenWallets" type="object" required>
+      Wallet addresses for each supported stablecoin.
+
+      <Expandable title="tokenWallets fields">
+        <ParamField body="tokenWallets.USDT" type="string" required>
+          Wallet address used for USDT operations.
+        </ParamField>
+
+        <ParamField body="tokenWallets.USDC" type="string" required>
+          Wallet address used for USDC operations.
+        </ParamField>
+      </Expandable>
+    </ParamField>
+
+    <ParamField body="notificationEmails" type="array" required>
+      One or more email addresses that will receive FX event notifications.
+    </ParamField>
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "MPC vault registered successfully. Awaiting admin approval.",
+      "data": {
+        "vaultId": "74e8defc-5569-4f01-86c9-0XXXXXXX",
+        "status": "pending",
+        "tokenWallets": {
+          "USDT": "0x9e9fd8e75E07A1xxxxxxxxx",
+          "USDC": "0x9e9fd8e75E07A1xxxxxxxxx",
+          "cNGN": "0x3af904Ff6FA747xxxxxxxxx"
+        },
+        "createdAt": "2026-05-01T10:30:00.000Z",
+        "note": "Your MPC configuration is pending admin approval. You will be notified once approved. cNGN wallet automatically set to your smart wallet."
+      }
+    }
+    ```
+
+    <ResponseField name="data.vaultId" type="string">
+      Your registered MPC Vault identifier.
+    </ResponseField>
+
+    <ResponseField name="data.status" type="string">
+      Registration status. Returns `pending` until a Strails admin approves the configuration.
+    </ResponseField>
+
+    <ResponseField name="data.tokenWallets" type="object">
+      Registered wallet addresses, including the cNGN wallet automatically assigned to your fintech smart wallet.
+    </ResponseField>
+
+    <ResponseField name="data.createdAt" type="string">
+      ISO 8601 UTC timestamp of the registration request.
+    </ResponseField>
+
+    <ResponseField name="data.note" type="string">
+      Status information and next steps.
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## Get FX Settings
+
+Retrieve your fintech's complete FX configuration after Strails admin approval. The response includes MPC vault credentials (partially masked), auto-signing VM details, token wallet addresses, and notification settings.
+
+<Note>
+  Once auto-signing is enabled, you must add the `natExternalIp` value returned in this response to both your MPC Vault API allowlist and your MPC Vault IP whitelist. Without this step, auto-signing requests will be rejected by MPC Vault. If auto-signing ever fails, Strails automatically falls back to manual approval so that active trades are not lost.
+</Note>
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request GET \
+      --url https://api.strails.io/fx/settings \
+      --header "Authorization: Bearer <API_KEY>"
+    ```
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "FX settings retrieved successfully",
+      "data": {
+        "vaultId": "74e8defc-5569-4f01-86c9-0XXXXXXX",
+        "mpcVaultApiKey": "4nzx**************...",
+        "mpcClientSignerPrivateKey": "tGyH****************...",
+        "callbackClientSignerPublicKey": "ssh-ed25519 AAAA... mpcvault-client-signer",
+        "mpcConfigStatus": "active",
+        "autoSigning": {
+          "available": true,
+          "enabled": true,
+          "threshold": "10000",
+          "vmStatus": "running",
+          "vmInstanceName": "mpc-signer-c8fe1911-d292-4f84-a-xxxxxx",
+          "natExternalIp": "35.192.15.0",
+          "note": "Add this IP to MPC Vault allowlist"
+        },
+        "tokenWallets": {
+          "USDT": "0x9e9fd8e75E07A1xxxxxxxxx",
+          "USDC": "0x9e9fd8e75E07A1xxxxxxxxx",
+          "cNGN": "0x3af904Ff6FA747xxxxxxxxx"
+        },
+        "notificationEmails": [
+          "admin@yourcompany.com"
+        ]
+      }
+    }
+    ```
+
+    <ResponseField name="data.vaultId" type="string">
+      Your MPC Vault identifier.
+    </ResponseField>
+
+    <ResponseField name="data.mpcVaultApiKey" type="string">
+      Your MPC Vault API key, partially masked for security.
+    </ResponseField>
+
+    <ResponseField name="data.mpcClientSignerPrivateKey" type="string">
+      Your MPC client signer private key, partially masked for security.
+    </ResponseField>
+
+    <ResponseField name="data.callbackClientSignerPublicKey" type="string">
+      SSH public key used to verify MPC Vault callback signatures.
+    </ResponseField>
+
+    <ResponseField name="data.mpcConfigStatus" type="string">
+      MPC configuration status: `active`, `pending`, or `inactive`.
+    </ResponseField>
+
+    <ResponseField name="data.autoSigning" type="object">
+      Auto-signing VM configuration and current state.
+
+      <Expandable title="autoSigning fields">
+        <ResponseField name="available" type="boolean">
+          Whether the auto-signing feature has been provisioned for your fintech.
+        </ResponseField>
+
+        <ResponseField name="enabled" type="boolean">
+          Whether auto-signing is currently active.
+        </ResponseField>
+
+        <ResponseField name="threshold" type="string">
+          The USD value threshold below which trades are automatically signed.
+        </ResponseField>
+
+        <ResponseField name="vmStatus" type="string">
+          Google Cloud VM instance status: `running`, `stopped`, or `terminated`.
+        </ResponseField>
+
+        <ResponseField name="vmInstanceName" type="string">
+          The Cloud VM instance name hosting the auto-signer process.
+        </ResponseField>
+
+        <ResponseField name="natExternalIp" type="string">
+          External IP address of the auto-signer VM. Add this to your MPC Vault allowlist.
+        </ResponseField>
+
+        <ResponseField name="note" type="string">
+          Configuration reminder, typically the IP allowlist instruction.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="data.tokenWallets" type="object">
+      Wallet addresses for USDT, USDC, and cNGN.
+    </ResponseField>
+
+    <ResponseField name="data.notificationEmails" type="array">
+      Email addresses receiving FX event notifications.
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## Enable Auto-Signing
+
+Enable automatic transaction signing for FX trades. When enabled, any trade whose USD value falls at or below your configured threshold is signed by the auto-signer VM without manual intervention.
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request POST \
+      --url https://api.strails.io/fx/auto-signing/enable \
+      --header "Authorization: Bearer <API_KEY>" \
+      --header "Content-Type: application/json" \
+      --data '{}'
+    ```
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "Auto-signing enabled successfully",
+      "data": {
+        "autoSigning": {
+          "enabled": true,
+          "usdThreshold": "10000",
+          "vmHealthy": true,
+          "vmStatus": "running"
+        }
+      }
+    }
+    ```
+
+    <ResponseField name="data.autoSigning.enabled" type="boolean">
+      Auto-signing status, now `true`.
+    </ResponseField>
+
+    <ResponseField name="data.autoSigning.usdThreshold" type="string">
+      The USD threshold currently in effect for auto-signing.
+    </ResponseField>
+
+    <ResponseField name="data.autoSigning.vmHealthy" type="boolean">
+      Whether the auto-signer VM is responding to health checks.
+    </ResponseField>
+
+    <ResponseField name="data.autoSigning.vmStatus" type="string">
+      Current VM instance status.
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## Disable Auto-Signing
+
+Disable automatic transaction signing. After disabling, all FX trades will require manual approval through MPC Vault regardless of their USD value.
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request POST \
+      --url https://api.strails.io/fx/auto-signing/disable \
+      --header "Authorization: Bearer <API_KEY>" \
+      --header "Content-Type: application/json" \
+      --data '{}'
+    ```
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "Auto-signing disabled successfully",
+      "data": {
+        "autoSigning": {
+          "enabled": false
+        }
+      }
+    }
+    ```
+
+    <ResponseField name="data.autoSigning.enabled" type="boolean">
+      Auto-signing status, now `false`.
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## Set Auto-Signing Threshold
+
+Set the USD value threshold for automatic signing. Trades at or below this threshold are auto-signed when auto-signing is enabled; trades above the threshold require manual MPC Vault approval.
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request POST \
+      --url https://api.strails.io/fx/auto-signing/threshold \
+      --header "Authorization: Bearer <API_KEY>" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "usdThreshold": "10000"
+      }'
+    ```
+
+    <ParamField body="usdThreshold" type="string" required>
+      The maximum USD equivalent trade value that will be automatically signed. Trades above this value require manual approval. For example, `"10000"` means trades worth up to $10,000 USD are auto-signed.
+    </ParamField>
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "Auto-signing threshold updated successfully",
+      "data": {
+        "autoSigning": {
+          "enabled": true,
+          "usdThreshold": "10000"
+        }
+      }
+    }
+    ```
+
+    <ResponseField name="data.autoSigning.enabled" type="boolean">
+      Current auto-signing enabled state.
+    </ResponseField>
+
+    <ResponseField name="data.autoSigning.usdThreshold" type="string">
+      The newly applied USD threshold value.
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## Get Auto-Signing Status
+
+Retrieve the current auto-signing configuration alongside today's signing statistics, including how many trades were auto-signed, how many fell back to manual approval, and average execution time.
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request GET \
+      --url https://api.strails.io/fx/auto-signing/status \
+      --header "Authorization: Bearer <API_KEY>"
+    ```
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "Auto-signing configuration retrieved",
+      "data": {
+        "autoSigning": {
+          "configured": true,
+          "enabled": true,
+          "usdThreshold": "10000",
+          "vmStatus": "running",
+          "vmHealthy": true,
+          "todayStats": {
+            "totalAutoSigned": 42,
+            "totalUsdAutoSigned": "187500",
+            "fallbackCount": 2,
+            "successRate": 95.45,
+            "avgExecutionTimeMs": 1240
+          }
+        }
+      }
+    }
+    ```
+
+    <ResponseField name="data.autoSigning.configured" type="boolean">
+      Whether auto-signing has been set up for your fintech.
+    </ResponseField>
+
+    <ResponseField name="data.autoSigning.enabled" type="boolean">
+      Whether auto-signing is currently active.
+    </ResponseField>
+
+    <ResponseField name="data.autoSigning.usdThreshold" type="string">
+      The USD threshold currently configured for auto-signing.
+    </ResponseField>
+
+    <ResponseField name="data.autoSigning.vmStatus" type="string">
+      Current status of the auto-signer VM instance.
+    </ResponseField>
+
+    <ResponseField name="data.autoSigning.vmHealthy" type="boolean">
+      Whether the VM is passing health checks.
+    </ResponseField>
+
+    <ResponseField name="data.autoSigning.todayStats" type="object">
+      Signing statistics for the current calendar day (UTC).
+
+      <Expandable title="todayStats fields">
+        <ResponseField name="totalAutoSigned" type="number">
+          Number of trades auto-signed today.
+        </ResponseField>
+
+        <ResponseField name="totalUsdAutoSigned" type="string">
+          Cumulative USD value of all auto-signed trades today.
+        </ResponseField>
+
+        <ResponseField name="fallbackCount" type="number">
+          Number of trades that fell back to manual approval today.
+        </ResponseField>
+
+        <ResponseField name="successRate" type="number">
+          Auto-signing success rate as a percentage (0–100).
+        </ResponseField>
+
+        <ResponseField name="avgExecutionTimeMs" type="number">
+          Average time in milliseconds from trade creation to auto-sign completion.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Tab>
+</Tabs>
+
+---
+
+## Get Auto-Signing Stats
+
+Retrieve daily auto-signing statistics over a rolling window of days, along with aggregate totals across the entire period. Use this endpoint to audit signing activity or troubleshoot threshold configuration.
+
+<Tabs>
+  <Tab title="Request">
+    ```bash
+    curl --request GET \
+      --url "https://api.strails.io/fx/auto-signing/stats?days=7" \
+      --header "Authorization: Bearer <API_KEY>"
+    ```
+
+    <ParamField query="days" type="number">
+      Number of days to include in the statistics window. Defaults to `7` if omitted.
+    </ParamField>
+  </Tab>
+
+  <Tab title="Response">
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "Auto-signing statistics retrieved",
+      "data": {
+        "stats": {
+          "days": 7,
+          "daily": [
+            {
+              "date": "2026-05-01",
+              "totalAutoSigned": 38,
+              "totalAmountAutoSigned": "142000",
+              "fallbackCount": 1,
+              "successRate": 97.44,
+              "avgExecutionTimeMs": 1180
+            }
+          ],
+          "totals": {
+            "totalAutoSigned": 210,
+            "totalAmountAutoSigned": "876000",
+            "totalFallbacks": 8,
+            "avgSuccessRate": 96.30
+          }
+        }
+      }
+    }
+    ```
+
+    <ResponseField name="data.stats.days" type="number">
+      The number of days covered by this response.
+    </ResponseField>
+
+    <ResponseField name="data.stats.daily" type="array">
+      Array of per-day statistics objects, one entry per calendar day (UTC).
+
+      <Expandable title="daily entry fields">
+        <ResponseField name="date" type="string">
+          Calendar date in `YYYY-MM-DD` format.
+        </ResponseField>
+
+        <ResponseField name="totalAutoSigned" type="number">
+          Number of trades auto-signed on this day.
+        </ResponseField>
+
+        <ResponseField name="totalAmountAutoSigned" type="string">
+          Total USD value of trades auto-signed on this day.
+        </ResponseField>
+
+        <ResponseField name="fallbackCount" type="number">
+          Number of trades that fell back to manual approval on this day.
+        </ResponseField>
+
+        <ResponseField name="successRate" type="number">
+          Auto-signing success rate for this day as a percentage (0–100).
+        </ResponseField>
+
+        <ResponseField name="avgExecutionTimeMs" type="number">
+          Average execution time in milliseconds for this day.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="data.stats.totals" type="object">
+      Aggregate figures across all days in the requested window.
+
+      <Expandable title="totals fields">
+        <ResponseField name="totalAutoSigned" type="number">
+          Total number of auto-signed trades across all days.
+        </ResponseField>
+
+        <ResponseField name="totalAmountAutoSigned" type="string">
+          Total USD value of all auto-signed trades across all days.
+        </ResponseField>
+
+        <ResponseField name="totalFallbacks" type="number">
+          Total number of manual-approval fallbacks across all days.
+        </ResponseField>
+
+        <ResponseField name="avgSuccessRate" type="number">
+          Average daily success rate across all days as a percentage.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Tab>
+</Tabs>

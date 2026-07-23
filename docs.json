@@ -1,0 +1,133 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "luma",
+  "name": "Strails",
+  "colors": {
+    "primary": "#5624c7",
+    "light": "#34147c",
+    "dark": "#8b5cec"
+  },
+  "logo": {
+    "light": "https://media.brand.dev/3d524d92-2dd3-4d92-be8e-18c6e5f1e32b.svg",
+    "dark": "https://media.brand.dev/3d524d92-2dd3-4d92-be8e-18c6e5f1e32b.svg"
+  },
+  "favicon": "https://media.brand.dev/e70962d0-045f-4d91-bb72-18492d5abc1b.png",
+  "icons": {
+    "library": "fontawesome"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "core-concepts",
+              "implementation-guide",
+              "going-live"
+            ]
+          },
+          {
+            "group": "Wallets",
+            "pages": [
+              "smart-wallet",
+              "multi-chain-wallet",
+              "mpc-wallet",
+              "virtual-accounts-guide"
+            ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "authentication",
+              "encryption",
+              "hmac-signatures"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "payload-formats",
+              "testing-scenarios",
+              "troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/index"
+            ]
+          },
+          {
+            "group": "Core APIs",
+            "pages": [
+              "api-reference/user-management",
+              "api-reference/virtual-accounts",
+              "api-reference/wallet",
+              "api-reference/transactions",
+              "api-reference/fiat-payout-management"
+            ]
+          },
+          {
+            "group": "FX & Trading",
+            "pages": [
+              "api-reference/fx-setting",
+              "api-reference/orderbook-management",
+              "api-reference/trading-management"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "api-reference/fee-management-api",
+              "api-reference/management-api",
+              "api-reference/webhook-events"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Releases",
+            "pages": [
+              "changelog"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Postman Collection",
+        "href": "https://github.com/wrappedcbdc/strails-docs/blob/main/postman-collection.json"
+      },
+      {
+        "label": "Support",
+        "href": "mailto:support@strails.io"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.strails.io"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/wrappedcbdc",
+      "twitter": "https://twitter.com/strailsio"
+    }
+  }
+}

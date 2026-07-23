@@ -1,0 +1,309 @@
+---
+title: "Strails API Troubleshooting: Status Codes & Errors"
+sidebarTitle: "Troubleshooting"
+description: "Complete reference for all Strails response codes, transaction status lifecycles, error strings, common issues, and filter values to help you debug fast."
+---
+
+This page is your complete reference for every response code, transaction status, error code string, and filter value that the Strails API can return. Use it alongside your server logs to diagnose and fix issues quickly.
+
+## Response Codes
+
+Every API response includes a `response_code` field. The six possible values are:
+
+| Code | Status | HTTP Code | Description |
+|---|---|---|---|
+| `00` | `SUCCESS` | 200 | The operation completed successfully |
+| `01` | `VALIDATION_ERROR` | 400 | One or more request fields failed validation |
+| `02` | `NOT_FOUND` | 404 | The requested resource does not exist |
+| `03` | `UNAUTHORIZED` | 401 / 403 | Authentication failed or the caller lacks permission |
+| `04` | `RATE_LIMITED` | 429 | The request rate limit has been exceeded |
+| `05` | `INTERNAL_ERROR` | 500 | An unexpected server-side error occurred |
+
+## Transaction Status Lifecycles
+
+<AccordionGroup>
+
+  <Accordion title="User Onramp Statuses">
+
+    Onramp requests go through the following statuses as a user funds their cNGN wallet via bank transfer:
+
+    | Status | Description |
+    |---|---|
+    | `requested` | Onramp initiated; virtual account not yet created |
+    | `pending` | Virtual account created and waiting for the bank transfer |
+    | `processing` | Payment received; cNGN minting in progress |
+    | `funded` | Wallet successfully credited with cNGN |
+    | `swap_queued` | cNGN credited; auto-swap to USDC/USDT queued |
+    | `swap_processing` | Swap is being executed |
+    | `completed` | Full flow complete (funding and optional swap) |
+    | `failed` | Funding or swap failed |
+
+    **Lifecycle flow:**
+
+    ```
+    requested → pending → processing → funded → completed
+                                ↓           ↓
+                              failed      failed
+                                            ↓ (if autoSwap enabled)
+                             swap_queued → swap_processing → completed
+                                                    ↓
+                                                  failed
+    ```
+
+    **Virtual account sub-statuses:**
+
+    | Status | Description |
+    |---|---|
+    | `active` | Virtual account is ready to receive payments |
+    | `expired` | Virtual account expired after the 30-minute window |
+    | `used` | Virtual account was successfully used for a payment |
+
+  </Accordion>
+
+  <Accordion title="User Offramp Statuses">
+
+    Offramp requests burn cNGN on-chain and pay out Naira to a Nigerian bank account:
+
+    | Status | Description |
+    |---|---|
+    | `pending` | Offramp request received |
+    | `processing` | Request is being processed |
+    | `bank_verification` | Verifying the destination bank account details |
+    | `transfer_pending` | cNGN transfer to burn address pending |
+    | `transfer_confirmed` | cNGN transfer confirmed on-chain |
+    | `payout_pending` | Bank payout queued |
+    | `completed` | Naira successfully sent to the user's bank account |
+    | `failed` | Offramp failed at one of the steps above |
+    | `cancelled` | Offramp was cancelled before completion |
+
+    **Lifecycle flow:**
+
+    ```
+    pending → processing → bank_verification → transfer_pending
+        ↓         ↓               ↓                   ↓
+    cancelled   failed          failed              failed
+                                                       ↓
+                                          transfer_confirmed → payout_pending → completed
+                                                                     ↓               ↓
+                                                                   failed          failed
+    ```
+
+  </Accordion>
+
+  <Accordion title="FX Trade Statuses">
+
+    FX trades execute against the Strails orderbook and have a strict 5-minute lock window:
+
+    | Status | Description |
+    |---|---|
+    | `pending` | Trade created; validating parameters and available liquidity |
+    | `locked` | Funds locked in escrow; 5-minute countdown active |
+    | `signing` | Awaiting MPC signature for the blockchain transaction |
+    | `settling` | Blockchain transaction submitted and executing |
+    | `completed` | Trade executed successfully |
+    | `expired` | Lock window elapsed before settlement completed |
+    | `failed` | Settlement or execution failed |
+
+    **Lifecycle flow:**
+
+    ```
+    pending → locked → signing → settling → completed
+                  ↓        ↓          ↓
+               expired   expired    failed
+    ```
+
+    <Note>
+      A trade can only expire from `locked` or `signing` states. Once the transaction reaches `settling`, it either completes or fails — it cannot expire.
+    </Note>
+
+  </Accordion>
+
+  <Accordion title="Swap Statuses">
+
+    Auto-swaps are triggered after a successful onramp when `autoSwap` is enabled:
+
+    | Status | Description |
+    |---|---|
+    | `pending` | Swap queued for processing |
+    | `requested` | Swap request submitted to the execution engine |
+    | `queued` | Swap is in the execution queue |
+    | `processing` | Swap execution in progress |
+    | `completed` | Swap executed successfully |
+    | `failed` | Swap failed |
+
+  </Accordion>
+
+  <Accordion title="Fee Withdrawal Statuses">
+
+    Fee withdrawals convert accumulated platform fees to Naira and send them to your registered bank account:
+
+    | Status | Description |
+    |---|---|
+    | `pending` | Withdrawal request submitted |
+    | `processing` | Withdrawal is being processed |
+    | `completed` | Naira sent to your bank account |
+    | `failed` | Withdrawal failed |
+
+  </Accordion>
+
+</AccordionGroup>
+
+## Common Error Codes
+
+These error code strings appear in the `error` field of a failed response and indicate the specific reason for the failure:
+
+| Error Code | HTTP Status | Description |
+|---|---|---|
+| `AUTHENTICATION_FAILED` | 401 | The `x-api-key` header is missing, malformed, or the key does not exist |
+| `AUTHORIZATION_FAILED` | 403 | The API key is valid but the caller's IP is not on the allowlist, or the action is not permitted |
+| `VALIDATION_ERROR` | 400 | One or more required fields are missing or fail format rules |
+| `NOT_FOUND` | 404 | The resource ID supplied (user, transaction, order, etc.) does not exist |
+| `RATE_LIMIT_EXCEEDED` | 429 | The caller has exceeded the maximum allowed requests per minute |
+| `INTERNAL_ERROR` | 500 | An unexpected server-side error; retry with exponential backoff and contact support if it persists |
+
+## Common Issues
+
+<AccordionGroup>
+
+  <Accordion title="401 Unauthorized / 403 Forbidden">
+
+    **401 Unauthorized** means the API key itself is invalid or missing.
+
+    - Confirm you are sending the header as **`x-api-key`** (all lowercase). Sending `X-Api-Key`, `Authorization: Bearer`, or any other casing will result in a 401.
+    - Verify you are using the correct key for the environment (sandbox vs. production).
+    - Ensure the API key has not been revoked in your dashboard.
+
+    **403 Forbidden** means the key is valid but the request is blocked.
+
+    - Check that the IP address of your server is on your allowlist. Use `POST /manageipallowlist` with `"action": "add"` to add it.
+    - If you recently added an IP, allow up to 60 seconds for the change to propagate.
+
+    ```bash
+    # Quickly verify which IP your server uses
+    curl -s https://api.ipify.org
+    ```
+
+  </Accordion>
+
+  <Accordion title="429 Too Many Requests">
+
+    You have exceeded the rate limit for the endpoint.
+
+    - Implement **exponential backoff**: wait 1 s, then 2 s, then 4 s, etc., before retrying.
+    - Queue non-urgent requests client-side and dispatch them at a steady rate rather than in bursts.
+    - Cache responses where the underlying data does not change frequently (e.g. supported bank lists).
+    - See the Rate Limits page for per-endpoint limits and the `Retry-After` header value included in 429 responses.
+
+  </Accordion>
+
+  <Accordion title="BVN Verification Fails">
+
+    BVN verification will fail if any of the following are true:
+
+    - The BVN is not exactly **11 numeric digits**. Whitespace, hyphens, or other characters cause an immediate `VALIDATION_ERROR`.
+    - The `firstName` or `lastName` you submitted does not exactly match the name registered with the BVN. Include middle names if they appear on the BVN record.
+    - The BVN belongs to a different phone number than the one submitted.
+
+    Correct the mismatch and submit a fresh `/onboarduser` request. You cannot retry the same onboarding record after a `failed` status — create a new one.
+
+  </Accordion>
+
+  <Accordion title="Transaction Stuck in Pending">
+
+    A transaction that stays in `pending` or `processing` for more than a few minutes may need intervention:
+
+    1. Call the relevant status endpoint (e.g. `/cngnofframpstatus`, `/onboardstatus`) with the `requestId` to get the latest status and any error detail.
+    2. If the status has not changed after 10 minutes, call **`POST /manualstatusrecovery`** with the `requestId`. This endpoint triggers a manual reconciliation check on the backend.
+    3. If the transaction is still stuck after a manual recovery attempt, contact [support@strails.io](mailto:support@strails.io) with the `requestId` and timestamp.
+
+  </Accordion>
+
+  <Accordion title="Webhook Not Receiving Events">
+
+    Check the following if your webhook endpoint is not receiving events:
+
+    - Your webhook URL must use **HTTPS**. Plain HTTP endpoints are rejected.
+    - Verify the URL you registered via `/setwebhook` is publicly reachable from the internet. Test it with [webhook.site](https://webhook.site) or `ngrok http 3000` during local development.
+    - Confirm your endpoint returns **HTTP 200** within 10 seconds. Slow responses or non-200 status codes cause Strails to retry delivery with backoff.
+    - Re-check your webhook signature verification logic. A bug that raises an unhandled exception before the `200` response is sent will cause the delivery to be marked as failed.
+    - Inspect your server logs for any incoming POST requests that may have been silently rejected by a firewall or middleware.
+
+  </Accordion>
+
+  <Accordion title="Virtual Account Expired">
+
+    Virtual accounts generated by `/cngnonramp` are valid for **30 minutes** only.
+
+    - If a user does not complete the bank transfer before the expiry time, the virtual account status moves to `expired` and the onramp status moves to `failed`.
+    - You must create a **new onramp request** via `POST /cngnonramp` to generate a fresh virtual account. You cannot reactivate an expired one.
+    - Display the `expiresAt` timestamp from `/getvirtualaccount` in your UI so users know how long they have.
+
+  </Accordion>
+
+</AccordionGroup>
+
+## Filter Values Reference
+
+Use these values when querying list endpoints with the `type`, `status`, `side`, and `pair` filters.
+
+**Deposits**
+
+| Filter | Valid Values |
+|---|---|
+| `type` | `fintech_deposit`, `user_onramp` |
+| `status` | `pending`, `processing`, `completed`, `failed`, `cancelled` |
+
+**Payouts**
+
+| Filter | Valid Values |
+|---|---|
+| `type` | `fintech_offramp`, `user_offramp` |
+| `status` | `pending`, `processing`, `completed`, `failed`, `cancelled` |
+
+**Transactions**
+
+| Filter | Valid Values |
+|---|---|
+| `direction` | `in`, `out` |
+| `type` | `fintech_deposit`, `user_onramp`, `fintech_offramp`, `user_offramp` |
+| `status` | `pending`, `processing`, `completed`, `failed`, `cancelled` |
+
+**FX Orders**
+
+| Filter | Valid Values |
+|---|---|
+| `pair` | `CNGN-USDC`, `CNGN-USDT` |
+| `side` | `buy`, `sell` |
+| `status` | `active`, `paused`, `deleted` |
+
+**FX Trades**
+
+| Filter | Valid Values |
+|---|---|
+| `pair` | `CNGN-USDC`, `CNGN-USDT` |
+| `side` | `buy`, `sell` |
+| `status` | `pending`, `locked`, `signing`, `settling`, `completed`, `expired`, `failed` |
+
+**Asset Withdrawals**
+
+| Filter | Valid Values |
+|---|---|
+| `tokenType` | `CNGN`, `USDC`, `USDT` |
+| `status` | `pending`, `confirmed`, `failed` |
+| `sortOrder` | `asc`, `desc` |
+
+## Amount Format Reminders
+
+<Note>
+  **Fiat endpoints** (onramp, offramp, fee withdrawals) accept amounts in **Naira** as plain integers or decimals. `5000` means ₦5,000. Do not convert to kobo or smallest units on these endpoints.
+</Note>
+
+<Note>
+  **Token endpoints** (blockchain transfers, swaps, FX trades, asset withdrawals) require amounts in the **smallest unit** with 6 decimal places for cNGN, USDC, and USDT. To send 500 cNGN, pass `500000000` (500 × 10⁶). DAI uses 18 decimals.
+</Note>
+
+---
+
+<Info>
+  If you cannot resolve an issue using this guide, email the Strails support team at [support@strails.io](mailto:support@strails.io) with your `requestId`, the full request payload (redact your API key), and the timestamp of the failed call.
+</Info>

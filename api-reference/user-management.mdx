@@ -1,0 +1,379 @@
+---
+title: "User Management API: BVN Onboarding, KYC & Account Control"
+sidebarTitle: "User Management"
+description: "Onboard users via BVN verification, track onboarding status, retrieve user details, and manage account activation states for your fintech."
+---
+
+The User Management API lets you register end-users on Strails using their Bank Verification Number (BVN), track the async KYC process through to completion, fetch full user profiles including wallet addresses and virtual accounts, and control user account status. Because BVN verification is handled by an external identity provider, all onboarding requests are processed asynchronously — you receive a `requestId` immediately and poll or listen for the result.
+
+## Endpoints Overview
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/onboarduser` | POST | Initiate BVN-based KYC and create a new user account. |
+| `/onboardstatus` | POST | Check the current status of a pending onboarding request. |
+| `/getuserdetails` | POST | Retrieve a user's full profile, wallets, and virtual accounts. |
+| `/manageuserstatus` | POST | Activate or deactivate a user account with an audit reason. |
+| `/listfintechusers` | POST | Retrieve a paginated list of all users belonging to your fintech. |
+
+---
+
+### POST /onboarduser
+
+Initiates onboarding for a new user by submitting their 11-digit BVN for identity verification. The request is processed asynchronously — use the returned `requestId` to poll `/onboardstatus` or wait for the `user_registration` webhook event.
+
+```bash
+curl -X POST https://beta.stablesrail.io/v1/onboarduser \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "bvn": "12345678901"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="bvn" type="string" required>
+  The user's 11-digit Bank Verification Number. Must be exactly 11 numeric digits and must not belong to an existing Strails user.
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "User registration initiated",
+  "data": {
+    "requestId": "7898f29e-10a6-4b2b-9496-f4ee50549fd4",
+    "status": "processing",
+    "userHash": "user_uniqueID",
+    "message": "User registration request has been submitted for processing",
+    "estimatedCompletionTime": "2-5 minutes"
+  }
+}
+```
+
+<Info>
+  Store the `requestId` returned here — you will need it to check onboarding status via `/onboardstatus`.
+</Info>
+
+#### Error Responses
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Invalid BVN format. BVN must be 11 digits"
+}
+```
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "User already exists",
+  "error": "A user with this BVN is already registered"
+}
+```
+
+```json
+{
+  "status": "Error",
+  "response_code": "05",
+  "message": "BVN verification failed",
+  "error": "Unable to verify BVN with identity provider"
+}
+```
+
+---
+
+### POST /onboardstatus
+
+Checks the current status of a pending user onboarding request using the `requestId` returned by `/onboarduser`. Poll this endpoint until `status` is `"completed"` or `"failed"`, or handle the `user_registration` webhook event instead.
+
+```bash
+curl -X POST https://beta.stablesrail.io/v1/onboardstatus \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "requestId": "7898f29e-10a6-4b2b-9496-f4ee50549fd4"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="requestId" type="string" required>
+  The unique identifier returned by `/onboarduser` when the registration was initiated.
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "User registration completed successfully",
+  "data": {
+    "type": "user_registration",
+    "userId": "user_uniqueID",
+    "status": "completed",
+    "createdAt": "2026-01-18T19:33:39.945Z",
+    "message": "User registration completed successfully"
+  }
+}
+```
+
+Once `status` is `"completed"`, use the `userId` from the response to call `/getuserdetails` and retrieve the user's full profile.
+
+#### Error Responses
+
+```json
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "Request not found",
+  "error": "No onboarding request found with the provided requestId"
+}
+```
+
+---
+
+### POST /getuserdetails
+
+Retrieves the full profile for a verified user, including their personal details pulled from BVN verification, all multi-chain wallet addresses provisioned by Strails, and any virtual accounts assigned to them.
+
+```bash
+curl -X POST https://beta.stablesrail.io/v1/getuserdetails \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "userId": "user_uniqueID"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier for the user, returned as `userId` in the `/onboardstatus` response once onboarding is complete.
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "User details retrieved successfully",
+  "data": {
+    "userId": "user_uniqueID",
+    "isActive": true,
+    "personalDetails": {
+      "firstName": "John",
+      "middleName": "Doe",
+      "lastName": "Smith"
+    },
+    "walletDetails": {
+      "evmWallet": "0x2KCC051A79dE65d7068542cB5D9D03754cc22F60",
+      "bantuWallet": "GB63QBTTWQXRO5BNO3Z4RRAGBPQFDGAGWNHKHTGSJOZF3V2NKG7V4XTY",
+      "solanaWallet": "HaXjvARhAxjKZRojmer86G31kXm52Nd4FZP4jrg4H2hf",
+      "walletCreatedAt": "2025-08-20T10:15:00.000Z"
+    },
+    "virtualAccounts": [
+      {
+        "accountNumber": "1234567890",
+        "accountName": "John Doe",
+        "bankName": "Optimus Bank",
+        "bankCode": "0000",
+        "provider": "novac",
+        "accountType": "user_permanent",
+        "reference": "userId",
+        "createdAt": "2026-05-29T12:42:45.034Z"
+      }
+    ]
+  }
+}
+```
+
+#### Error Responses
+
+```json
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "User not found",
+  "error": "No verified user found with the provided userId"
+}
+```
+
+---
+
+### POST /manageuserstatus
+
+Activates or deactivates a user account. When deactivating, you must supply a `reason` — this is recorded in the audit trail. Deactivated users cannot initiate transactions or receive deposits until reactivated.
+
+```bash
+curl -X POST https://beta.stablesrail.io/v1/manageuserstatus \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "userId": "user_uniqueID",
+    "active": false,
+    "reason": "Account suspended by customer request"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier of the user whose status you want to change.
+</ParamField>
+
+<ParamField body="active" type="boolean" required>
+  Set to `true` to activate the account or `false` to deactivate it.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  A human-readable explanation for the status change. **Required when `active` is `false`.** Recorded in the audit log for compliance purposes.
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "User deactivated successfully",
+  "data": {
+    "userId": "user_uniqueID",
+    "active": false,
+    "changedAt": "2025-12-16T09:17:33.658Z"
+  }
+}
+```
+
+#### Error Responses
+
+```json
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "User not found",
+  "error": "No verified user found with the provided userId"
+}
+```
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Reason is required when deactivating a user"
+}
+```
+
+---
+
+### POST /listfintechusers
+
+Returns a paginated list of all users belonging to your fintech, with summary wallet and virtual account information for each. Use `limit` and `offset` to page through large user sets, and `status` to filter by account state.
+
+```bash
+curl -X POST https://beta.stablesrail.io/v1/listfintechusers \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "limit": 20,
+    "offset": 0,
+    "status": "all",
+    "orderBy": "verifiedAt",
+    "orderDirection": "desc"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="limit" type="number">
+  Number of users to return per page. Accepts values between `1` and `100`. Defaults to `20`.
+</ParamField>
+
+<ParamField body="offset" type="number">
+  Number of users to skip before returning results. Use with `limit` to paginate through the full list. Defaults to `0`.
+</ParamField>
+
+<ParamField body="status" type="string">
+  Filter users by account state. Accepted values: `"active"`, `"inactive"`, `"all"`. Defaults to `"all"`.
+</ParamField>
+
+<ParamField body="orderBy" type="string">
+  Field to sort results by. Accepted values: `"createdAt"`, `"verifiedAt"`. Defaults to `"verifiedAt"`.
+</ParamField>
+
+<ParamField body="orderDirection" type="string">
+  Sort direction. Accepted values: `"asc"`, `"desc"`. Defaults to `"desc"`.
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Users retrieved successfully",
+  "data": {
+    "users": [
+      {
+        "userId": "abc123...",
+        "firstName": "John",
+        "lastName": "Doe",
+        "isActive": true,
+        "hasWallet": true,
+        "wallets": {
+          "evm": "0x...",
+          "solana": null,
+          "bantu": null
+        },
+        "virtualAccount": {
+          "accountNumber": "1234567890",
+          "accountName": "John Doe",
+          "bankName": "Fidelity Bank",
+          "bankCode": "070",
+          "provider": "redbiller"
+        },
+        "verifiedAt": "2026-05-10T12:00:00.000Z",
+        "createdAt": "2026-05-10T12:00:00.000Z"
+      }
+    ],
+    "pagination": {
+      "total": 150,
+      "limit": 20,
+      "offset": 0,
+      "currentPage": 1,
+      "totalPages": 8,
+      "hasNextPage": true,
+      "hasPreviousPage": false
+    }
+  }
+}
+```
+
+<ResponseField name="data.users" type="array">
+  Array of user summary objects, one per verified user belonging to your fintech.
+</ResponseField>
+
+<ResponseField name="data.pagination.total" type="number">
+  Total number of users matching the applied filter, regardless of `limit` and `offset`.
+</ResponseField>
+
+<ResponseField name="data.pagination.totalPages" type="number">
+  Total number of pages available at the current `limit` setting.
+</ResponseField>
+
+<ResponseField name="data.pagination.hasNextPage" type="boolean">
+  `true` if there are more users beyond the current page. Increment `offset` by `limit` to fetch the next page.
+</ResponseField>
+
+<ResponseField name="data.pagination.hasPreviousPage" type="boolean">
+  `true` if the current `offset` is greater than `0`, meaning a previous page exists.
+</ResponseField>

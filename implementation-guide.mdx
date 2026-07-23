@@ -1,0 +1,435 @@
+---
+title: "End-to-End Strails Integration Walkthrough"
+sidebarTitle: "Integration Guide"
+description: "Step-by-step guide to integrating Strails: connect, configure webhooks, onboard users, fund wallets, process withdrawals, and execute FX trades."
+---
+
+This guide walks you through a complete Strails integration, from your first API call to executing an FX trade. Follow the steps in order — each one builds on the previous.
+
+<Info>
+  **Before you start, make sure you have:**
+  - A Strails **API key** (contact [support@strails.io](mailto:support@strails.io) to obtain one)
+  - An **HTTPS webhook endpoint** you control (use [webhook.site](https://webhook.site) or [ngrok](https://ngrok.com) during development)
+  - A **test BVN** (11-digit Nigerian BVN) for user onboarding tests
+</Info>
+
+<Steps>
+  <Step title="Test Your API Connection">
+    Verify your API key and confirm you can reach the staging environment by retrieving your fintech wallet.
+
+    ```bash
+    curl -X GET https://beta.stablesrail.io/v1/getfintechwallet \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json"
+    ```
+
+    **Expected response:**
+
+    ```json
+    {
+      "status": "success",
+      "response_code": "00",
+      "message": "Fintech wallet retrieved successfully",
+      "data": {
+        "smartWallet": "0x1234...abcd",
+        "mpcVault": "0x5678...efgh",
+        "managedWallet": "0xabcd...1234"
+      }
+    }
+    ```
+
+    If you see your three wallet addresses, your API key is valid and you are connected to the test environment. Save these addresses — you will reference them throughout the integration.
+
+    <Warning>
+      The header name must be `x-api-key` in lowercase. Headers named `X-API-Key` or `api-key` will return `401 Unauthorized`.
+    </Warning>
+  </Step>
+
+  <Step title="Configure Your Webhook">
+    Register your webhook URL so Strails can notify you when asynchronous operations complete. This is strongly recommended before you proceed — without it you will need to poll every status endpoint manually.
+
+    ```bash
+    curl -X POST https://beta.stablesrail.io/v1/setwebhook \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "webhookUrl": "https://yourapp.com/webhooks/strails",
+        "events": ["all"]
+      }'
+    ```
+
+    Set up your handler to verify the HMAC signature on every incoming request:
+
+    ```javascript
+    const express = require('express');
+    const crypto  = require('crypto');
+
+    const app = express();
+    app.use(express.json());
+
+    app.post('/webhooks/strails', (req, res) => {
+      const signature = req.headers['x-strails-signature'];
+      const timestamp  = req.headers['x-strails-timestamp'];
+      const payload    = JSON.stringify(req.body);
+
+      // Reject requests that are more than 5 minutes old
+      const age = Date.now() / 1000 - Number(timestamp);
+      if (age > 300) {
+        return res.status(401).send('Timestamp too old');
+      }
+
+      // Verify HMAC-SHA256 signature
+      const expected = crypto
+        .createHmac('sha256', process.env.WEBHOOK_SECRET)
+        .update(`${timestamp}.${payload}`)
+        .digest('hex');
+
+      if (signature !== expected) {
+        return res.status(401).send('Invalid signature');
+      }
+
+      // Acknowledge immediately — process asynchronously
+      res.status(200).send('OK');
+
+      const { event, data } = req.body;
+      console.log(`Received event: ${event}`, data);
+      // Update your database, notify users, trigger downstream logic
+    });
+    ```
+
+    <Tip>
+      Return `200 OK` before doing any processing. If your handler takes too long to respond, Strails will retry the delivery, causing duplicate events.
+    </Tip>
+  </Step>
+
+  <Step title="Onboard Your First User">
+    Register a user with BVN verification. Strails verifies the BVN against Nigerian records and creates a wallet for the user.
+
+    **Initiate onboarding:**
+
+    ```bash
+    curl -X POST https://beta.stablesrail.io/v1/onboarduser \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "bvn": "12345678901",
+        "userId": "user_uniqueID",
+        "email": "user@example.com",
+        "phoneNumber": "+2348012345678"
+      }'
+    ```
+
+    **Response:**
+
+    ```json
+    {
+      "status": "success",
+      "response_code": "00",
+      "message": "User onboarding initiated",
+      "data": {
+        "userId": "user_uniqueID",
+        "status": "pending_verification",
+        "requestId": "req_xyz789"
+      }
+    }
+    ```
+
+    **Check onboarding status:**
+
+    ```bash
+    curl -X GET "https://beta.stablesrail.io/v1/onboardstatus?userId=user_uniqueID" \
+      -H "x-api-key: YOUR_API_KEY"
+    ```
+
+    **Successful verification response:**
+
+    ```json
+    {
+      "status": "success",
+      "response_code": "00",
+      "data": {
+        "userId": "user_uniqueID",
+        "status": "verified",
+        "bvnVerified": true,
+        "createdAt": "2026-04-10T10:00:00Z"
+      }
+    }
+    ```
+
+    <Info>
+      BVN verification typically completes in 2–5 seconds. If the status is still `pending_verification`, wait a few seconds and poll again. You can also listen for the `user.verified` webhook event instead of polling.
+    </Info>
+  </Step>
+
+  <Step title="Fund a User Wallet">
+    Initiate an onramp to generate a virtual bank account and fund the user's wallet with cNGN (optionally auto-swapped to USDC or USDT).
+
+    The `/cngnonramp` endpoint accepts three parameters that control what happens after NGN is deposited. Use the table below to choose the combination that matches your product:
+
+    | `autoSwap` | `assetSwap` | `sweepToOfframp` | Outcome |
+    |---|---|---|---|
+    | `false` | — | `false` | NGN deposited → cNGN minted to user wallet. No swap. |
+    | `true` | `"USDC"` or `"USDT"` | `false` | NGN deposited → cNGN minted → auto-swapped to `assetSwap` token via Aerodrome DEX. |
+    | `true` | `"USDC"` or `"USDT"` | `true` | NGN deposited → cNGN minted → auto-swapped → USDC/USDT immediately sent to offramp (payout to bank). |
+
+    **Initiate the onramp:**
+
+    ```bash
+    curl -X POST https://beta.stablesrail.io/v1/cngnonramp \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "userId": "user_uniqueID",
+        "amount": 5000,
+        "assetSwap": "USDC",
+        "autoSwap": true,
+        "sweepToOfframp": false
+      }'
+    ```
+
+    **Response (with fee breakdown):**
+
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "cNGN request submitted successfully",
+      "data": {
+        "requestId": "f16c0e3c-0c0f-473f-91f7-ab2b85bc9117",
+        "walletAddress": "0xF94384E5792F44fDF231A56cea4f4C14d998e58c",
+        "status": "requested",
+        "message": "Ensure you pay 5075.00 naira to the bank account generated. Use requestId to get the bank account details for payment.",
+        "autoSwapEnabled": true,
+        "targetAsset": "USDC",
+        "feeBreakdown": {
+          "baseAmount": 5000,
+          "totalFee": 75,
+          "totalAmount": 5075
+        }
+      }
+    }
+    ```
+
+    **Retrieve the virtual account details to show your user:**
+
+    ```bash
+    curl -X POST https://beta.stablesrail.io/v1/getvirtualaccount \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "requestId": "f16c0e3c-0c0f-473f-91f7-ab2b85bc9117"
+      }'
+    ```
+
+    **Response:**
+
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "data": {
+        "accountNumber": "9800001234",
+        "bankName": "FAME Bank",
+        "accountName": "Test User Strails",
+        "amount": 5000,
+        "totalAmountWithFee": 5075,
+        "expiresAt": "2026-04-10T11:30:00Z"
+      }
+    }
+    ```
+
+    <Warning>
+      Virtual accounts expire **30 minutes** after creation. Display the `expiresAt` time prominently to your user so they complete the transfer before the window closes.
+    </Warning>
+
+    **Check the onramp status after payment:**
+
+    ```bash
+    curl -X POST https://beta.stablesrail.io/v1/cngnonrampstatus \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "requestId": "f16c0e3c-0c0f-473f-91f7-ab2b85bc9117"
+      }'
+    ```
+
+    **Completed response:**
+
+    ```json
+    {
+      "status": "success",
+      "response_code": "00",
+      "data": {
+        "requestId": "f16c0e3c-0c0f-473f-91f7-ab2b85bc9117",
+        "status": "completed",
+        "walletAddress": "0xF94384E5792F44fDF231A56cea4f4C14d998e58c",
+        "amount": "5000000000",
+        "swapCompleted": true,
+        "finalAsset": "USDC",
+        "txHash": "0xabcd1234...",
+        "completedAt": "2026-04-10T10:35:00Z"
+      }
+    }
+    ```
+
+    Note that `amount` in the completed response is in the smallest unit (wei format): `5000000000` = 5,000 cNGN at 6 decimals. See [Amount Formats](/core-concepts#amount-formats) for conversion details.
+  </Step>
+
+  <Step title="Process a Withdrawal (Offramp)">
+    Convert a user's cNGN back to Naira and send it to their Nigerian bank account.
+
+    **Get the list of supported banks:**
+
+    ```bash
+    curl -X GET https://beta.stablesrail.io/v1/getbankscode \
+      -H "x-api-key: YOUR_API_KEY"
+    ```
+
+    **Response:**
+
+    ```json
+    {
+      "status": "success",
+      "response_code": "00",
+      "data": [
+        { "bankCode": "058", "bankName": "GTBank" },
+        { "bankCode": "044", "bankName": "Access Bank" },
+        { "bankCode": "033", "bankName": "UBA" }
+      ]
+    }
+    ```
+
+    **Initiate the offramp:**
+
+    ```bash
+    curl -X POST https://beta.stablesrail.io/v1/cngnofframp \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "userId": "user_uniqueID",
+        "amount": 3000,
+        "accountNumber": "0123456789",
+        "bankCode": "058",
+        "ticker": "CNGN"
+      }'
+    ```
+
+    **Response:**
+
+    ```json
+    {
+      "status": "Success",
+      "response_code": "00",
+      "message": "Vault return token transfer completed, payout processing initiated",
+      "data": {
+        "requestId": "req_offramp_xyz",
+        "status": "payout_pending",
+        "stage": "payout"
+      }
+    }
+    ```
+
+    **Check the offramp status:**
+
+    ```bash
+    curl -X POST https://beta.stablesrail.io/v1/cngnofframpstatus \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "requestId": "req_offramp_xyz"
+      }'
+    ```
+
+    Listen for the `offramp.completed` webhook event to confirm the bank transfer has settled. Store the `requestId` from every offramp so you can query its status if the user disputes a withdrawal.
+  </Step>
+
+  <Step title="Execute an FX Trade">
+    Post an order to the cNGN ↔ USDC/USDT orderbook, get a quote, and execute the trade.
+
+    **Create an orderbook entry:**
+
+    ```bash
+    curl -X POST https://beta.stablesrail.io/v1/fx/orders \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "orderType": "sell",
+        "baseCurrency": "cNGN",
+        "quoteCurrency": "USDC",
+        "price": "1350000",
+        "minAmount": "500000000",
+        "maxAmount": "2000000000"
+      }'
+    ```
+
+    **Response:**
+
+    ```json
+    {
+      "status": "success",
+      "response_code": "00",
+      "data": {
+        "orderId": "order_abc123",
+        "status": "active",
+        "price": "1350000",
+        "availableLiquidity": "2000000000"
+      }
+    }
+    ```
+
+    **Get an FX quote:**
+
+    ```bash
+    curl -X GET "https://beta.stablesrail.io/v1/fx/quote?baseCurrency=cNGN&quoteCurrency=USDC&amount=1000000000" \
+      -H "x-api-key: YOUR_API_KEY"
+    ```
+
+    The quote response includes a `quoteId` and is valid for **5 minutes**. Pass the `quoteId` directly to the trade endpoint.
+
+    **Execute the trade:**
+
+    ```bash
+    curl -X POST https://beta.stablesrail.io/v1/fx/trade \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "quoteId": "quote_xyz789",
+        "quoteCurrency": "USDC"
+      }'
+    ```
+
+    After execution, tokens from both sides are held in escrow. Settlement completes automatically and Strails fires a `fx.trade.settled` webhook event when both sides' balances are updated.
+
+    <Tip>
+      All FX amounts (`price`, `minAmount`, `maxAmount`) use the smallest-unit (wei) format. See [Amount Formats](/core-concepts#amount-formats) for the conversion formulas.
+    </Tip>
+  </Step>
+</Steps>
+
+## Common Integration Patterns
+
+**Simple Wallet Funding**
+Onboard a user → generate a virtual account → user pays NGN → cNGN is minted to their wallet. Use this pattern when your users just need a cNGN balance.
+
+**Wallet Funding with Auto-Swap**
+Set `"autoSwap": true` and `"assetSwap": "USDC"` on the onramp request. After the NGN deposit is received, Strails mints cNGN and immediately swaps it to USDC via Aerodrome DEX — no extra API calls required. Use this pattern for products where users want USD-denominated stablecoins.
+
+**Fintech Liquidity Management**
+Post a limit order on the FX orderbook → wait for a match → confirm the trade quote → execute. Escrow settles the counterparty automatically. Use this pattern to rebalance your fintech's cNGN and USDC/USDT pools.
+
+## Testing Tips
+
+- **Use Postman:** Import the Strails Postman collection, set `BASE_URL` to `https://beta.stablesrail.io/v1` and `API_KEY` to your key, then run the collection to exercise all endpoints.
+- **Start small:** Test onramp and offramp flows with amounts between ₦100 and ₦500 before increasing transaction sizes.
+- **Inspect webhooks locally:** Use [webhook.site](https://webhook.site) for a hosted listener, or [ngrok](https://ngrok.com) to tunnel to your local machine during development.
+
+## Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| `401 Unauthorized` on every request | Check that your header is named `x-api-key` (lowercase) and that the key value is correct. |
+| IP not in allowlist error | Add your server's public IP via `/manageipallowlist` or contact support to add it for you. |
+| `429 Too Many Requests` | Implement exponential backoff. Contact [support@strails.io](mailto:support@strails.io) if you need a higher rate limit. |
+| BVN verification returns `failed` | Confirm the BVN is exactly 11 digits and that the user details match what is on record with the NIBSS. |
+| Transaction stuck in `pending` for more than 10 minutes | Query `/cngnonrampstatus` with the `requestId`, then try `GET /v1/manualstatusrecovery?requestId=YOUR_REQUEST_ID`. Contact support if the issue persists. |
+| Webhooks not arriving | Confirm your URL is HTTPS, returns `200 OK`, and is publicly reachable. Check your HMAC verification logic for off-by-one errors in the signature string. |

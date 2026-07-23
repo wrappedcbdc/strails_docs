@@ -1,0 +1,413 @@
+---
+title: "Testing Your Strails API Integration in the Sandbox"
+sidebarTitle: "Testing"
+description: "Step-by-step sandbox test scenarios for API connection, user onboarding, onramp, offramp, IP allowlist, and FX trading with ready-to-run curl commands."
+---
+
+The Strails sandbox environment lets you exercise every API endpoint with real request/response cycles without touching live funds. Use your **sandbox API key** (issued during onboarding) and the base URL `https://beta.stablesrail.io/v1/` for all test requests. Sandbox state is isolated from production — you can freely create users, trigger transactions, and inspect webhook payloads without consequence.
+
+## Required Headers
+
+Include these three headers on every request:
+
+```bash
+Content-Type: application/json
+Accept: */*
+x-api-key: YOUR_SANDBOX_API_KEY
+```
+
+<Warning>
+  The API key header name is **lowercase** `x-api-key`. Sending `X-Api-Key` or `Authorization` will return a `401 Unauthorized` error.
+</Warning>
+
+## Test Scenarios
+
+Work through the scenarios below in order. Each builds on the data returned by the previous step.
+
+<Steps>
+
+### Test API Connection
+
+Verify that your API key is valid and your IP is reachable by fetching your fintech wallet details.
+
+```bash
+curl -X GET "https://beta.stablesrail.io/v1/getfintechwallet" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY"
+```
+
+**Expected response:**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Fintech wallet retrieved successfully",
+  "data": {
+    "walletAddress": "0xYourFintechWalletAddress",
+    "balances": {
+      "cNGN": "0",
+      "USDC": "0",
+      "USDT": "0"
+    }
+  }
+}
+```
+
+If you receive a `401`, double-check that you are sending `x-api-key` (all lowercase) and that your sandbox key is correct. If you receive a `403`, add your IP to the allowlist — see **Test Scenario 5** below.
+
+### User Onboarding
+
+Onboard a test user with a BVN, then poll for the onboarding result.
+
+**Step 1 — Submit the onboarding request:**
+
+```bash
+curl -X POST "https://beta.stablesrail.io/v1/onboarduser" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -d '{
+    "firstName": "Adebayo",
+    "lastName": "Ogundimu",
+    "email": "adebayo@example.com",
+    "phoneNumber": "+2348012345678",
+    "bvn": "12345678901"
+  }'
+```
+
+**Expected response:**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "User onboarding initiated",
+  "data": {
+    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933",
+    "status": "processing"
+  }
+}
+```
+
+Save the `userId` — you will need it in every subsequent call.
+
+**Step 2 — Check onboarding status:**
+
+```bash
+curl -X POST "https://beta.stablesrail.io/v1/onboardstatus" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -d '{
+    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933"
+  }'
+```
+
+**Expected response (completed):**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "User onboarding status retrieved",
+  "data": {
+    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933",
+    "status": "completed",
+    "bvnStatus": "verified"
+  }
+}
+```
+
+### Fund a Wallet (Onramp)
+
+Create a cNGN onramp request, then retrieve the temporary virtual account for the test bank transfer.
+
+**Step 1 — Initiate an onramp:**
+
+```bash
+curl -X POST "https://beta.stablesrail.io/v1/cngnonramp" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -d '{
+    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933",
+    "amount": 5000,
+    "currency": "NGN"
+  }'
+```
+
+**Expected response:**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Onramp request created",
+  "data": {
+    "requestId": "req_abc123",
+    "status": "pending"
+  }
+}
+```
+
+**Step 2 — Retrieve the virtual account:**
+
+```bash
+curl -X POST "https://beta.stablesrail.io/v1/getvirtualaccount" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -d '{
+    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933"
+  }'
+```
+
+**Expected response:**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Virtual account retrieved",
+  "data": {
+    "accountNumber": "9876543210",
+    "accountName": "Adebayo Ogundimu — Strails",
+    "bankName": "Wema Bank",
+    "bankCode": "035",
+    "expiresAt": "2023-12-07T11:00:00Z"
+  }
+}
+```
+
+<Note>
+  Virtual accounts expire after **30 minutes**. Simulate the bank transfer before the `expiresAt` timestamp, or create a new onramp request.
+</Note>
+
+Once the simulated transfer is received, the onramp progresses through `processing` → `funded` → `completed` and you receive a webhook notification.
+
+### Process Withdrawal (Offramp)
+
+Burn cNGN and send the equivalent Naira to a bank account.
+
+**Step 1 — Initiate an offramp:**
+
+```bash
+curl -X POST "https://beta.stablesrail.io/v1/cngnofframp" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -d '{
+    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933",
+    "amount": 2000,
+    "bankCode": "058",
+    "accountNumber": "0123456789",
+    "accountName": "Adebayo Ogundimu"
+  }'
+```
+
+**Expected response:**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Offramp request initiated",
+  "data": {
+    "requestId": "req_def456",
+    "status": "pending"
+  }
+}
+```
+
+**Step 2 — Poll for offramp status:**
+
+```bash
+curl -X POST "https://beta.stablesrail.io/v1/cngnofframpstatus" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -d '{
+    "requestId": "req_def456"
+  }'
+```
+
+**Expected response (completed):**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Offramp status retrieved",
+  "data": {
+    "requestId": "req_def456",
+    "status": "completed",
+    "payoutReference": "PAY_GHI789"
+  }
+}
+```
+
+### IP Allowlist
+
+Add and remove IP addresses from your allowlist. Only IPs on the allowlist can call the Strails API.
+
+**Add an IP:**
+
+```bash
+curl -X POST "https://beta.stablesrail.io/v1/manageipallowlist" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -d '{
+    "action": "add",
+    "ipAddress": "102.88.108.96"
+  }'
+```
+
+**Expected response:**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "IP allowlist updated successfully",
+  "data": {
+    "ipAddress": "102.88.108.96",
+    "action": "add"
+  }
+}
+```
+
+**Remove an IP:**
+
+```bash
+curl -X POST "https://beta.stablesrail.io/v1/manageipallowlist" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -d '{
+    "action": "remove",
+    "ipAddress": "102.88.108.96"
+  }'
+```
+
+**Expected response:**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "IP allowlist updated successfully",
+  "data": {
+    "ipAddress": "102.88.108.96",
+    "action": "remove"
+  }
+}
+```
+
+<Warning>
+  Removing your own IP from the allowlist will lock you out immediately. Always add the replacement IP before removing the old one.
+</Warning>
+
+### FX Quote & Trade
+
+Get a live exchange rate for a cNGN ↔ USDC or cNGN ↔ USDT pair, then execute the trade within the 5-minute quote window.
+
+**Step 1 — Request a quote:**
+
+```bash
+curl -X POST "https://beta.stablesrail.io/v1/fx/quote" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -d '{
+    "pair": "CNGN-USDC",
+    "side": "sell",
+    "amount": "500000000"
+  }'
+```
+
+**Expected response:**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Quote generated",
+  "data": {
+    "quoteId": "quote_jkl012",
+    "pair": "CNGN-USDC",
+    "side": "sell",
+    "inputAmount": "500000000",
+    "outputAmount": "312500",
+    "rate": "0.000625",
+    "expiresAt": "2023-12-07T10:35:00Z"
+  }
+}
+```
+
+**Step 2 — Execute the trade:**
+
+```bash
+curl -X POST "https://beta.stablesrail.io/v1/fx/trade" \
+  -H "Content-Type: application/json" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -d '{
+    "quoteId": "quote_jkl012",
+    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933"
+  }'
+```
+
+**Expected response:**
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Trade initiated",
+  "data": {
+    "tradeId": "trade_mno345",
+    "status": "locked",
+    "pair": "CNGN-USDC",
+    "inputAmount": "500000000",
+    "outputAmount": "312500"
+  }
+}
+```
+
+The trade moves through `locked` → `signing` → `settling` → `completed`. Monitor progress via your configured webhook or by polling the trade status endpoint.
+
+</Steps>
+
+## Postman Collection
+
+<Info>
+  A ready-to-import Postman collection covering all endpoints is available at [github.com/wrappedcbdc/strails-docs/blob/main/postman-collection.json](https://github.com/wrappedcbdc/strails-docs/blob/main/postman-collection.json).
+</Info>
+
+To use the collection:
+
+1. Download `postman-collection.json` from the repository.
+2. Open Postman and select **Import → Upload Files**.
+3. Create a new Postman environment and add two variables:
+
+   | Variable | Value |
+   |---|---|
+   | `BASE_URL` | `https://beta.stablesrail.io/v1` |
+   | `API_KEY` | Your sandbox API key |
+
+4. Select your new environment from the environment dropdown before sending any request.
+
+<Note>
+  The raw collection file contains a repository-specific first line that must be removed before importing into Newman or other CLI clients. Run `sed '1d' postman-collection.json > clean-collection.json` to produce a clean copy.
+</Note>
+
+## Testing Tips
+
+- **Start with small amounts.** Use values between ₦100 and ₦500 for onramp and offramp tests so that any misconfigured amount format (e.g. accidentally sending Naira on a token endpoint) is immediately obvious from the response.
+- **Use webhook.site or ngrok to receive webhooks.** Visit [webhook.site](https://webhook.site) to get a temporary HTTPS URL, or run `ngrok http 3000` to expose a local server. Configure the URL via `/setwebhook` before running your onramp or offramp scenarios.
+- **Test BVNs must be exactly 11 digits.** Any BVN shorter or longer than 11 digits will fail validation with a `01 VALIDATION_ERROR` response before the BVN lookup even runs.
+- **Virtual accounts expire after 30 minutes.** If your test transfer simulation times out, call `/cngnonramp` again to generate a fresh virtual account.
+

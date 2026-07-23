@@ -1,0 +1,507 @@
+---
+title: "Strails Management API: Webhooks, Keys & IP Allowlist"
+sidebarTitle: "Management"
+description: "Configure webhooks, manage IP security allowlists, rotate API keys, and control per-user asset preferences for your fintech account."
+---
+
+Use the Management API to configure the operational settings for your Strails integration — register and toggle webhook endpoints, manage IP allowlist rules that guard your API access, rotate your API key, and set per-user onramp asset preferences. You can also inspect the auto-signing threshold assigned to your fintech for cNGN buying.
+
+## Endpoints overview
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/regenerateapikey` | GET | Generate a new API key, immediately invalidating the old one |
+| `/setwebhook` | POST | Configure your webhook URL, secret, and event subscriptions |
+| `/togglewebhookstatus` | POST | Enable or disable webhook delivery without changing the URL |
+| `/getwebhook` | GET | Retrieve your current webhook configuration |
+| `/manageipallowlist` | POST | Add, remove, list, or check IP addresses on your allowlist |
+| `/updateonrampasset` | POST | Update a user's onramp asset preferences |
+| `/autosigning/config` | GET | Retrieve your auto-approval threshold for cNGN buying |
+
+---
+
+## GET /regenerateapikey
+
+Generate a fresh API key for your fintech account.
+
+<Warning>
+  Calling this endpoint **immediately invalidates your existing API key**. Any requests still using the old key will be rejected. Store your new key securely before making further API calls — it will not be shown again.
+</Warning>
+
+### Request
+
+```bash
+curl --request GET \
+  --url "{{BASE_URL}}/regenerateapikey" \
+  --header "Authorization: Bearer YOUR_CURRENT_API_KEY"
+```
+
+### Response
+
+<ResponseField name="data.apiKey" type="string">
+  Your new API key. Copy and store this value immediately — it is only returned once.
+</ResponseField>
+
+<ResponseField name="data.rotatedAt" type="string">
+  ISO 8601 timestamp recording when the key was rotated.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "API key regenerated successfully",
+  "data": {
+    "apiKey": "key-xxxxxxxxxxxxxxxxx",
+    "rotatedAt": "2025-08-26T10:20:00.000Z"
+  }
+}
+```
+
+---
+
+## POST /setwebhook
+
+Register or update the webhook endpoint that Strails uses to deliver event notifications to your server. You can also attach a signing secret so you can verify each delivery.
+
+For details on verifying the HMAC signature included with every webhook delivery, see the [HMAC Signatures](/hmac-signatures) page.
+
+### Body parameters
+
+<ParamField body="webhookUrl" type="string" required>
+  The publicly reachable HTTPS URL on your server that will receive POST requests for webhook events.
+</ParamField>
+
+<ParamField body="secret" type="string">
+  A secret string used by Strails to sign outgoing webhook payloads. Include this to enable signature verification on your end.
+</ParamField>
+
+<ParamField body="enabled" type="boolean" required>
+  Set to `true` to activate delivery to this URL immediately, or `false` to register it in a disabled state.
+</ParamField>
+
+<ParamField body="events" type="array">
+  List of event types to subscribe to. Pass `["all"]` to receive every event type. Refer to the [Webhook Events](/api-reference/webhook-events) page for all available event names.
+</ParamField>
+
+### Request
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/setwebhook" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "webhookUrl": "https://your-domain.com/webhook",
+    "secret": "your_webhook_secret_key",
+    "enabled": true,
+    "events": ["all"]
+  }'
+```
+
+### Response
+
+<ResponseField name="data.webhookUrl" type="string">
+  The URL that was registered.
+</ResponseField>
+
+<ResponseField name="data.enabled" type="boolean">
+  Current delivery status of the webhook.
+</ResponseField>
+
+<ResponseField name="data.hasSecret" type="boolean">
+  `true` if a signing secret is configured for this webhook.
+</ResponseField>
+
+<ResponseField name="data.urlValidated" type="boolean">
+  `true` if Strails was able to reach and validate the provided URL.
+</ResponseField>
+
+<ResponseField name="data.updatedAt" type="string">
+  ISO 8601 timestamp of when the configuration was saved.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Webhook configured successfully",
+  "data": {
+    "webhookUrl": "https://your-domain.com/webhook",
+    "enabled": true,
+    "hasSecret": true,
+    "urlValidated": true,
+    "updatedAt": "2025-08-26T11:00:00.000Z"
+  }
+}
+```
+
+---
+
+## POST /togglewebhookstatus
+
+Enable or disable webhook delivery without modifying the registered URL or signing secret. Use this to pause notifications during maintenance windows or re-enable them when you are ready.
+
+### Body parameters
+
+<ParamField body="enabled" type="boolean" required>
+  Set to `true` to resume webhook delivery or `false` to pause it.
+</ParamField>
+
+### Request
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/togglewebhookstatus" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "enabled": true
+  }'
+```
+
+### Response
+
+<ResponseField name="data.webhookUrl" type="string">
+  Your registered webhook URL (partially masked for security).
+</ResponseField>
+
+<ResponseField name="data.enabled" type="boolean">
+  The new delivery status that was applied.
+</ResponseField>
+
+<ResponseField name="data.updatedAt" type="string">
+  ISO 8601 timestamp of when the status change took effect.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Webhook activated successfully",
+  "data": {
+    "webhookUrl": "htt***com/webhook",
+    "enabled": true,
+    "updatedAt": "2026-06-23T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+## GET /getwebhook
+
+Retrieve your current webhook configuration, including the registered URL (partially masked), delivery status, and whether a signing secret is set.
+
+### Request
+
+```bash
+curl --request GET \
+  --url "{{BASE_URL}}/getwebhook" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response
+
+<ResponseField name="data.webhookUrl" type="string">
+  Your registered webhook URL, partially masked to protect the full path.
+</ResponseField>
+
+<ResponseField name="data.enabled" type="boolean">
+  `true` if webhook delivery is currently active.
+</ResponseField>
+
+<ResponseField name="data.hasSecret" type="boolean">
+  `true` if a signing secret is attached to this webhook configuration.
+</ResponseField>
+
+<ResponseField name="data.events" type="array">
+  The list of event types currently subscribed. Returns `["all"]` if you subscribed to all events.
+</ResponseField>
+
+<ResponseField name="data.updatedAt" type="string">
+  ISO 8601 timestamp of the last configuration update.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Webhook configuration retrieved successfully",
+  "data": {
+    "webhookUrl": "https://sgh***.ms/webhook",
+    "enabled": true,
+    "hasSecret": true,
+    "events": ["all"],
+    "updatedAt": "2026-01-29T05:11:06.862Z"
+  }
+}
+```
+
+---
+
+## POST /manageipallowlist
+
+Manage the set of IP addresses permitted to make API requests on behalf of your fintech account. You can list all allowed IPs, add a new address, remove an existing one by address or index, or check whether your current request IP is on the list.
+
+<Note>
+  In production, all servers originating API requests must have their IP addresses on your allowlist. IP changes propagate to all servers within 30 seconds.
+</Note>
+
+### Body parameters
+
+<ParamField body="action" type="string" required>
+  The operation to perform. Accepted values: `"list"`, `"add"`, `"remove"`, `"check"`.
+</ParamField>
+
+<ParamField body="ipAddress" type="string">
+  The IP address to add, remove, or check. Required when `action` is `"add"` or when removing by address. Not required for `"list"` or `"check"`.
+</ParamField>
+
+<ParamField body="index" type="number">
+  Zero-based index of the IP to remove, as returned by the `"list"` action. Use this as an alternative to specifying `ipAddress` when removing an entry.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional label describing the IP address (e.g., `"Office network IP"`). Used with the `"add"` action.
+</ParamField>
+
+### List all allowed IPs
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/manageipallowlist" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{ "action": "list" }'
+```
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "IP allowlist operation completed",
+  "data": {
+    "action": "list",
+    "ipAddresses": [
+      { "index": 0, "ip": "203.0.***.***", "description": "Office network" },
+      { "index": 1, "ip": "192.168.***.***", "description": "VPN endpoint" }
+    ],
+    "totalIps": 2
+  }
+}
+```
+
+### Add an IP address
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/manageipallowlist" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "action": "add",
+    "ipAddress": "203.0.113.45",
+    "description": "Office network IP"
+  }'
+```
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "IP allowlist operation completed",
+  "data": {
+    "action": "add",
+    "ipAddress": "203.0.***.***",
+    "totalIps": 4,
+    "message": "IP address added successfully. Changes will take effect within 30 seconds across all servers.",
+    "propagationTime": "30 seconds"
+  }
+}
+```
+
+### Remove an IP address
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/manageipallowlist" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "action": "remove",
+    "ipAddress": "10.0.0.5"
+  }'
+```
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "IP allowlist operation completed",
+  "data": {
+    "action": "remove",
+    "removed": "203.0.***.***",
+    "totalIps": 2,
+    "message": "IP address removed successfully. Changes will take effect within 30 seconds across all servers.",
+    "propagationTime": "30 seconds"
+  }
+}
+```
+
+### Check your current IP
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/manageipallowlist" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{ "action": "check" }'
+```
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "IP allowlist operation completed",
+  "data": {
+    "action": "check",
+    "yourIp": "192.168.***.***",
+    "isAllowed": true,
+    "matchedRule": "192.168.***.***",
+    "totalConfiguredIps": 3,
+    "note": "Your IP is allowed. Cache refreshed on this server instance.",
+    "cacheInfo": {
+      "ttlSeconds": 30,
+      "propagationTime": "Changes propagate to other servers within 30 seconds",
+      "cacheRefreshed": true
+    }
+  }
+}
+```
+
+---
+
+## POST /updateonrampasset
+
+Update the onramp asset preferences for a specific user on your platform. Use this to configure which token a user receives by default when they fund via onramp, whether to auto-swap on arrival, and the acceptable slippage tolerance.
+
+### Body parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier (hash or UUID) of the user whose preferences you are updating.
+</ParamField>
+
+<ParamField body="preferredAsset" type="string">
+  Asset symbol to set as the user's preferred onramp target (e.g., `"USDC"`, `"cNGN"`).
+</ParamField>
+
+<ParamField body="preferences" type="object">
+  Extended asset preference configuration for the user.
+
+  <Expandable title="preferences fields">
+    <ParamField body="defaultAsset" type="string">
+      Asset symbol set as the default for swaps or funding (e.g., `"USDC"`).
+    </ParamField>
+    <ParamField body="autoSwap" type="boolean">
+      When `true`, deposited assets are automatically swapped into `defaultAsset` upon receipt.
+    </ParamField>
+    <ParamField body="slippageTolerance" type="string">
+      Maximum allowable slippage for auto-swap operations, expressed as a percentage string (e.g., `"0.5"` for 0.5%).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Request
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/updateonrampasset" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "userId": "user_hash",
+    "preferences": {
+      "defaultAsset": "USDC",
+      "autoSwap": true,
+      "slippageTolerance": "0.5"
+    }
+  }'
+```
+
+### Response
+
+<ResponseField name="data.requestId" type="string">
+  Unique identifier for this update operation.
+</ResponseField>
+
+<ResponseField name="data.updatedAt" type="string">
+  ISO 8601 timestamp of when the preferences were saved.
+</ResponseField>
+
+<ResponseField name="data.autoSwap" type="boolean">
+  The `autoSwap` value that was applied for this user.
+</ResponseField>
+
+```json
+{
+  "status": "00",
+  "message": "Asset settings updated successfully",
+  "data": {
+    "requestId": "op_uuid",
+    "updatedAt": "2025-08-26T09:58:30.000Z",
+    "autoSwap": true
+  }
+}
+```
+
+---
+
+## GET /autosigning/config
+
+Retrieve the auto-approval threshold configuration assigned to your fintech account for cNGN buying. When a transaction amount is at or below this threshold, it is approved automatically without requiring manual signing.
+
+### Request
+
+```bash
+curl --request GET \
+  --url "{{BASE_URL}}/autosigning/config" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response
+
+<ResponseField name="data.enabled" type="boolean">
+  `true` if auto-signing is active for your fintech account.
+</ResponseField>
+
+<ResponseField name="data.thresholdAmount" type="string">
+  The maximum cNGN amount that qualifies for automatic approval. Transactions above this value require manual signing.
+</ResponseField>
+
+<ResponseField name="data.currency" type="string">
+  The token denomination for the threshold amount. Typically `"CNGN"`.
+</ResponseField>
+
+<ResponseField name="data.maxDailyAmount" type="string">
+  The cumulative daily cap for auto-signed transactions.
+</ResponseField>
+
+<ResponseField name="data.restrictToFintech" type="boolean">
+  `true` if auto-signing is scoped to transactions originating from your fintech account only.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Configuration retrieved successfully",
+  "data": {
+    "enabled": true,
+    "thresholdAmount": "***",
+    "currency": "CNGN",
+    "maxDailyAmount": "100000000",
+    "restrictToFintech": true
+  }
+}
+```

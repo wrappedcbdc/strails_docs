@@ -1,0 +1,198 @@
+---
+title: "Strails API Authentication, Rate Limits and Errors"
+sidebarTitle: "Authentication"
+description: "Learn how to authenticate with the Strails API using API keys, understand per-endpoint rate limits, and handle API errors correctly."
+---
+
+Every request to the Strails API must include a valid API key. You pass your key in the `x-api-key` request header. All requests must be made over HTTPS to either the test or production base URL. Contact the Strails team to obtain your key before you begin.
+
+## Base URLs
+
+Use the test environment while building and validating your integration. Switch to the production URL only when you are ready to go live.
+
+**Test environment**
+
+```bash
+https://beta.stablesrail.io/v1/
+```
+
+**Production environment**
+
+```bash
+https://api.strails.io/v1/
+```
+
+## API Key Authentication
+
+Include your API key in every request as the `x-api-key` header alongside a `Content-Type` header:
+
+```bash
+x-api-key: YOUR_API_KEY
+Content-Type: application/json
+```
+
+Here is a minimal `curl` example that lists your transactions:
+
+```bash
+curl --request GET \
+  --url https://api.strails.io/v1/transactions \
+  --header "x-api-key: YOUR_API_KEY" \
+  --header "Content-Type: application/json"
+```
+
+## Obtaining Your API Key
+
+<Info>
+  To get access to the Strails API, email **support@strails.io** to begin your onboarding. The team will reply with your `x-api-key` and step-by-step setup instructions. Once you receive your key, store it immediately as a server-side environment variable — never hard-code it in your application source or commit it to version control.
+</Info>
+
+```bash
+# Add to your environment (e.g. .env or your secrets manager)
+STRAILS_API_KEY=your_api_key_here
+```
+
+## Rate Limits
+
+Every endpoint enforces a per-window request limit to ensure platform stability and fair use. The tables below list the configured limit and its equivalent in requests per minute (rpm) for each endpoint. Endpoints with no explicit limit inherit the service default of **30 rpm**.
+
+<Info>
+  If your backend hits rate limits frequently, move high-volume operations behind an async queue so requests are processed in an eventually consistent way. If your use case genuinely requires higher limits, contact the Strails team with your application details and traffic patterns.
+</Info>
+
+When you exceed a limit, the API returns `429 Too Many Requests`:
+
+```json
+{
+  "status": "error",
+  "response_code": "429",
+  "message": "Too many requests. Please try again later.",
+  "data": {
+    "error": "Rate limit exceeded",
+    "retry_after": 60
+  }
+}
+```
+
+Respect the `retry_after` value (in seconds) before re-attempting the request.
+
+### User Management & Authentication
+
+| Endpoint | Rate limit |
+|---|---|
+| `/onboarduser` | 100 rpm |
+| `/onboardstatus` | 200 rpm |
+| `/getuserdetails` | 100 rpm |
+| `/manageuserstatus` | 30 rpm |
+| `/listfintechusers` | 100 rpm |
+
+### Virtual Accounts & Wallet
+
+| Endpoint | Rate limit | Notes |
+|---|---|---|
+| `/getvirtualaccount` | 10 rpm | Configured as 100 requests per 10-minute window |
+| `/getfintechvirtualaccount` | 30 rpm | Fintech on-ramp account retrieval |
+
+### Wallet Management
+
+| Endpoint | Rate limit |
+|---|---|
+| `/getfintechwallet` | 30 rpm |
+| `/addexternalwallet` | 30 rpm |
+| `/updateexternalwalletstatus` | 30 rpm |
+| `/removeexternalwallet` | 30 rpm |
+| `/listuserwallets` | 100 rpm |
+| `/migrateuserwallets` | 30 rpm |
+
+### Transactions & Asset Management
+
+| Endpoint | Rate limit | Notes |
+|---|---|---|
+| `/cngnonramp` | 100 rpm | Configured as 1 000 requests per 10-minute window |
+| `/cngnofframp` | 100 rpm | Configured as 1 000 requests per 10-minute window |
+| `/cngnonrampstatus` | 30 rpm | |
+| `/cngnofframpstatus` | 30 rpm | |
+| `/withdrawasset` | 30 rpm | |
+| `/fintechtransfer` | 30 rpm | |
+| `/initiateofframp` | 30 rpm | |
+| `/getofframpstatus` | 30 rpm | |
+| `/deposits` | 100 rpm | List deposit transactions |
+| `/payouts` | 100 rpm | List payout transactions |
+| `/transactions` | 100 rpm | List all transactions |
+| `/swaptrigger` | 30 rpm | Trigger async token swap |
+| `/swap` | 30 rpm | Swap on user smart wallet |
+| `/swapstatus` | 60 rpm | Get swap request status |
+
+### FX Orderbook & Trading
+
+| Endpoint | Method | Rate limit | Notes |
+|---|---|---|---|
+| `/fx/orders` | POST | 30 rpm | Create orderbook order |
+| `/fx/orders/:orderId` | PATCH | 30 rpm | Update orderbook order |
+| `/fx/orders/:orderId` | DELETE | 30 rpm | Delete orderbook order |
+| `/fx/orders/my-orders` | GET | 100 rpm | List your orders |
+| `/fx/orderbook` | GET | 100 rpm | Get public orderbook |
+| `/fx/orderbook/stats` | GET | 60 rpm | Orderbook statistics |
+| `/fx/orderbook-token` | GET | 30 rpm | Generate Firebase token |
+| `/fx/quote` | GET | 60 rpm | Generate trade quote |
+| `/fx/trade` | POST | 30 rpm | Execute trade |
+| `/fx/market-order` | POST | 30 rpm | Execute market order |
+| `/fx/trades/:tradeId` | GET | 60 rpm | Get trade status |
+| `/fx/trades` | GET | 100 rpm | List your trades |
+
+## Error Handling
+
+All errors follow a standard response shape:
+
+```json
+{
+  "status": "error",
+  "response_code": "400",
+  "message": "Human-readable error message",
+  "data": {
+    "error": "Validation failed",
+    "details": {
+      "field": "Additional error details"
+    }
+  }
+}
+```
+
+The table below lists the global error codes that apply across all endpoints:
+
+| Code | HTTP status | Description |
+|---|---|---|
+| `AUTHENTICATION_FAILED` | 401 | Invalid or missing API key |
+| `AUTHORIZATION_FAILED` | 403 | Insufficient permissions |
+| `VALIDATION_ERROR` | 400 | Invalid request parameters |
+| `NOT_FOUND` | 404 | Resource not found |
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
+| `INTERNAL_ERROR` | 500 | Server-side error |
+
+<Info>
+  For a full list of status codes, state transitions, and domain-specific errors (e.g. orderbook or trading errors), see the [API Status & Error Reference](/troubleshooting).
+</Info>
+
+## Security Best Practices
+
+1. **Store your API key securely.** Never commit it to version control or embed it in client-side code.
+2. **Use environment variables.** Load your key from `process.env.STRAILS_API_KEY` (Node.js) or equivalent — not from a hard-coded string.
+3. **Rotate your key regularly.** Use the [`/regenerateapikey`](/api-reference/management-api#generate-a-new-api-key) endpoint to issue a new key and revoke the old one on a regular schedule.
+4. **Always use HTTPS.** The Strails API does not accept plain HTTP connections. Every request must go over a secure TLS connection.
+
+## Registering Your Public Key
+
+Strails supports optional payload encryption for production integrations that handle PII, wallet addresses, or financial data. To opt in, register your Ed25519 public key with Strails using the `/storepublickey` endpoint. Once registered, Strails will use your public key to encrypt all response payloads — only your server can decrypt them.
+
+```bash
+POST /storepublickey
+x-api-key: YOUR_API_KEY
+Content-Type: application/json
+```
+
+```json
+{
+  "data": "<hex-encoded-public-key>"
+}
+```
+
+A `200 OK` response confirms your key has been stored. See the [Encryption](/encryption) guide for full details on key generation, request encryption, and response decryption.

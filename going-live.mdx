@@ -1,0 +1,80 @@
+---
+title: "Production Launch Checklist for Strails"
+sidebarTitle: "Going Live"
+description: "Complete every item on this checklist before switching your Strails integration to production to avoid security gaps, integration failures, or unexpected fees."
+---
+
+Before switching from the Strails staging environment to production, work through every section below. Each item represents a real failure mode caught during past integrations — don't skip them.
+
+## 1. Credentials & Environment
+
+- [ ] You have received a **production API key** from Strails via the secure onboarding process.
+- [ ] You have switched your base URL from `https://beta.stablesrail.io/v1/` to `https://api.strails.io/v1/` in every service and configuration file that calls the Strails API.
+- [ ] Your production API key is stored in a **secret manager** (AWS Secrets Manager, GCP Secret Manager, HashiCorp Vault, or equivalent) and is not present in source control, `.env` files committed to git, or CI/CD logs.
+- [ ] If your production API key was ever shared, emailed in plaintext, or accidentally exposed, you have **regenerated it** before going live.
+
+## 2. IP Allowlisting
+
+- [ ] You have retrieved the **public IP address(es)** of all production servers and load balancers that will call the Strails API.
+- [ ] You have added those IPs to your production allowlist via [`/manageipallowlist`](/api-reference/management-api#manage-ip-addresses-allowed-to-access-your-api) or by sending them to Strails support.
+- [ ] You have made a **test request from production** (not from your laptop or staging) to confirm that the allowlist is active and correct.
+
+## 3. Payload Encryption
+
+- [ ] You have generated a **production Ed25519 key pair** separate from any key pair used in staging.
+- [ ] You have registered your **production public key** with Strails by calling [`POST /storepublickey`](/api-reference/management-api#store-public-key). Strails uses this key to encrypt all responses sent back to your integration.
+- [ ] You have received the **production Strails public key** and stored it securely.
+- [ ] You have verified **encryption and decryption round-trips** end to end — encrypt a payload in your production environment and confirm Strails can process it, and vice versa.
+- [ ] Your production services use the **production Ed25519 keys**, not staging keys.
+
+See [Encryption](/encryption) for key generation, `POST /storepublickey` registration, and payload signing details.
+
+## 4. Webhooks
+
+- [ ] You have registered a **production HTTPS webhook URL** via [`/setwebhook`](/api-reference/management-api#configure-webhook-urls). The URL must be publicly reachable and serve a valid TLS certificate.
+- [ ] Your webhook handler **returns `200 OK` immediately** and processes all event logic asynchronously to prevent Strails from treating slow responses as failures.
+- [ ] You have configured a **strong, randomly generated webhook secret** (at least 32 bytes of entropy) and stored it in your secret manager.
+- [ ] Your handler verifies **`X-Strails-Signature`** using HMAC-SHA256 on every incoming request and rejects requests that fail verification.
+- [ ] Your handler **rejects requests where `X-Strails-Timestamp` is more than 5 minutes old** to prevent replay attacks.
+- [ ] You have confirmed that your handler processes all **critical event types** your integration depends on (for example, `onramp.completed`, `offramp.settled`, `fx.trade.settled`, `user.verified`).
+
+See [HMAC Signatures](/hmac-signatures) and [Webhook Events](/api-reference/webhook-events) for payload schemas and the full event list.
+
+## 5. Wallets & Liquidity
+
+- [ ] You have called [`/getfintechwallet`](/api-reference/wallet) against the **production environment** and confirmed your Smart Wallet, MPC Vault, and Managed Wallet addresses are present.
+- [ ] You have verified that your **MPC Vault is registered** and that auto-signing is configured correctly for FX trading.
+- [ ] You have retrieved your FX settings via [`/fx/settings`](/api-reference/fx-setting#get-fx-settings), noted the `natExternalIp` value, and **whitelisted that IP in MPCVault**.
+- [ ] You have confirmed that your production wallets hold **sufficient cNGN and USDC/USDT liquidity** to cover the transaction volumes you expect at launch.
+- [ ] You understand that **active FX orders lock the corresponding wallet balances** and have accounted for this in your liquidity planning.
+
+## 6. Fees & Bank Accounts
+
+- [ ] You have reviewed your current fintech fee configuration via [`/getfees`](/api-reference/fee-management-api#retrieve-the-current-fee-configuration-and-an-example-calculation-for-typical-amounts) and confirmed the fee values match your product pricing.
+- [ ] You have set your production fee structure via [`/managefees`](/api-reference/fee-management-api#configure-your-fee-settings).
+- [ ] You have added and verified your production **settlement bank account** via [`/addbankaccount`](/api-reference/fiat-payout-management#add-a-new-nigerian-bank-account-for-fintech-payout).
+- [ ] You have processed a **small-value offramp** (₦100–₦500) end to end in production to confirm that settlement reaches the correct bank account.
+
+## 7. End-to-End Testing
+
+Run all of the following flows at least once against the production environment before you open up to real users:
+
+- [ ] **User onboarding:** BVN submission → verification → `user.verified` webhook event received.
+- [ ] **Virtual account creation:** Onramp initiation → account details returned → account expires correctly after 30 minutes if unused.
+- [ ] **Wallet funding (onramp):** NGN deposit received → cNGN minted → `onramp.completed` webhook event received → balance visible on wallet.
+- [ ] **Auto-swap:** Onramp with `autoSwap: true` → cNGN minted → USDC/USDT credited → `swap.completed` webhook event received.
+- [ ] **Withdrawal (offramp):** Offramp initiated → bank transfer processed → `offramp.settled` webhook event received → correct amount credited to bank account.
+- [ ] **FX trading:** Limit order posted → quote fetched → trade executed → `fx.trade.settled` webhook event received → both wallet balances updated correctly.
+
+## 8. Monitoring & Support
+
+- [ ] You have **logging** in place that records every Strails API request and response, including `requestId` values, HTTP status codes, and response times.
+- [ ] You have **alerting** configured to notify your on-call team when API error rates exceed a threshold or when critical webhook events stop arriving.
+- [ ] You have a **runbook** documenting how to handle `429 Too Many Requests` responses — at minimum, implement exponential backoff with jitter and document how to request a rate limit increase.
+- [ ] You know how to reach Strails support: [support@strails.io](mailto:support@strails.io).
+
+---
+
+<Note>
+  If any item above is unchecked or unclear, do not switch traffic to production yet. Contact [support@strails.io](mailto:support@strails.io) and a member of the Strails team will help you resolve the blocker before you go live.
+</Note>

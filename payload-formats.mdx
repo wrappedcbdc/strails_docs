@@ -1,0 +1,375 @@
+---
+title: "Strails API JSON Request & Response Payload Formats"
+sidebarTitle: "Payload Formats"
+description: "Learn how Strails structures every JSON request, response, pagination object, amount field, and webhook payload across all API endpoints."
+---
+
+The Strails API uses consistent JSON structures across all endpoints. Every request body must be `application/json`, every response follows the same envelope shape, and webhook events arrive in one of two documented formats. Use this page as your formatting reference when building or debugging your integration.
+
+## Standard Request Format
+
+Include the following header on every request:
+
+```bash
+Content-Type: application/json
+Accept: */*
+x-api-key: YOUR_API_KEY
+```
+
+A typical request body looks like this:
+
+```json
+{
+  "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933",
+  "amount": 5000,
+  "currency": "NGN"
+}
+```
+
+## Standard Response Format
+
+### Success Response
+
+Every successful response wraps its payload in the same envelope:
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Operation completed successfully",
+  "data": {
+    "transactionId": "TXN_1702890600_001",
+    "status": "completed"
+  }
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | string | `"Success"` or `"Error"` |
+| `response_code` | string | Two-digit code — see table below |
+| `message` | string | Human-readable description of the result |
+| `data` | object | Endpoint-specific payload; `null` on some errors |
+
+### Error Response
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error: Invalid amount",
+  "error": {
+    "field": "amount",
+    "reason": "Must be greater than 0"
+  }
+}
+```
+
+### Response Code Table
+
+| Code | Status | HTTP Code | Description |
+|---|---|---|---|
+| `00` | `SUCCESS` | 200 | Operation completed successfully |
+| `01` | `VALIDATION_ERROR` | 400 | One or more request fields failed validation |
+| `02` | `NOT_FOUND` | 404 | The requested resource does not exist |
+| `03` | `UNAUTHORIZED` | 401 / 403 | Authentication failed or access denied |
+| `04` | `RATE_LIMITED` | 429 | You have exceeded the allowed request rate |
+| `05` | `INTERNAL_ERROR` | 500 | An unexpected server-side error occurred |
+
+## Pagination Format
+
+All list endpoints return a standard pagination object inside `data`:
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Data retrieved successfully",
+  "data": {
+    "items": [],
+    "pagination": {
+      "total": 243,
+      "limit": 50,
+      "offset": 0,
+      "currentPage": 1,
+      "totalPages": 5,
+      "hasNextPage": true,
+      "hasPreviousPage": false
+    }
+  }
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `total` | integer | Total number of records matching the query |
+| `limit` | integer | Maximum records returned per page |
+| `offset` | integer | Number of records skipped before this page |
+| `currentPage` | integer | The current page number (1-based) |
+| `totalPages` | integer | Total number of available pages |
+| `hasNextPage` | boolean | `true` when a subsequent page exists |
+| `hasPreviousPage` | boolean | `true` when a preceding page exists |
+
+Control pagination with the `limit` and `offset` query parameters:
+
+```bash
+GET /gettransactions?limit=50&offset=100
+```
+
+## Amount Formatting
+
+Strails uses different amount representations depending on whether the operation is fiat-based or token-based. Read this section carefully — using the wrong format is one of the most common integration mistakes.
+
+### Fiat Operations
+
+Onramp and offramp endpoints that deal directly with Nigerian Naira accept and return amounts as **plain Naira values** — regular integers or decimals.
+
+```json
+{
+  "amount": 5000
+}
+```
+
+The value `5000` means ₦5,000. There is no kobo conversion on fiat endpoints.
+
+### Token Operations
+
+Blockchain endpoints (transfers, swaps, FX trades, asset withdrawals) require amounts in the **smallest token unit**, equivalent to the wei format in Ethereum. You must multiply the human-readable amount by `10^decimals` before sending.
+
+```json
+{
+  "amount": 5000000000
+}
+```
+
+The value `5000000000` means 5,000 cNGN (6 decimals → `5000 × 10^6`).
+
+| Token | Decimals | Example: 1 token in smallest unit |
+|---|---|---|
+| cNGN | 6 | `1000000` |
+| USDC | 6 | `1000000` |
+| USDT | 6 | `1000000` |
+| DAI | 18 | `1000000000000000000` |
+
+### Helper Functions
+
+Use these functions to convert between display amounts and the values the API expects.
+
+<Tabs>
+  <Tab title="JavaScript">
+    ```javascript
+    /**
+     * Convert a human-readable token amount to smallest unit.
+     * @param {number} amount  - Display amount (e.g. 500)
+     * @param {number} decimals - Token decimals (e.g. 6 for cNGN/USDC/USDT)
+     * @returns {string} Amount as a string to avoid floating-point issues
+     */
+    function toSmallestUnit(amount, decimals) {
+      return (BigInt(Math.round(amount * 10 ** decimals))).toString();
+    }
+
+    /**
+     * Convert smallest unit back to a human-readable amount.
+     * @param {string|number} raw - Raw amount from API
+     * @param {number} decimals   - Token decimals
+     * @returns {number}
+     */
+    function fromSmallestUnit(raw, decimals) {
+      return Number(raw) / 10 ** decimals;
+    }
+
+    // Format a Naira amount for display
+    function formatNaira(amount) {
+      return `₦${Number(amount).toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    }
+
+    // Examples
+    toSmallestUnit(500, 6);        // "500000000"  — 500 cNGN
+    fromSmallestUnit(500000000, 6); // 500
+    formatNaira(5000);              // "₦5,000.00"
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    from decimal import Decimal
+
+    def to_smallest_unit(amount: float, decimals: int) -> int:
+        """Convert a display amount to the token's smallest unit."""
+        return int(Decimal(str(amount)) * (10 ** decimals))
+
+    def from_smallest_unit(raw: int, decimals: int) -> Decimal:
+        """Convert a raw token amount back to a human-readable value."""
+        return Decimal(raw) / (10 ** decimals)
+
+    def format_naira(amount: float) -> str:
+        """Format a Naira amount for display."""
+        return f"₦{amount:,.2f}"
+
+    # Examples
+    to_smallest_unit(500, 6)          # 500000000  — 500 cNGN
+    from_smallest_unit(500000000, 6)  # Decimal('500')
+    format_naira(5000)                # "₦5,000.00"
+    ```
+  </Tab>
+  <Tab title="PHP">
+    ```php
+    /**
+     * Convert a display amount to the token's smallest unit.
+     */
+    function toSmallestUnit(float $amount, int $decimals): string {
+        return bcmul((string) $amount, bcpow('10', (string) $decimals, 0), 0);
+    }
+
+    /**
+     * Convert a raw token amount back to a human-readable value.
+     */
+    function fromSmallestUnit(string $raw, int $decimals): string {
+        return bcdiv($raw, bcpow('10', (string) $decimals, 0), $decimals);
+    }
+
+    /**
+     * Format a Naira amount for display.
+     */
+    function formatNaira(float $amount): string {
+        return '₦' . number_format($amount, 2);
+    }
+
+    // Examples
+    toSmallestUnit(500, 6);           // "500000000"
+    fromSmallestUnit('500000000', 6); // "500.000000"
+    formatNaira(5000);                // "₦5,000.00"
+    ```
+  </Tab>
+</Tabs>
+
+## Webhook Payload Formats
+
+Strails sends webhook events as `HTTP POST` requests to the URL you configure via `/setwebhook`. Your endpoint must respond with `HTTP 200` to acknowledge receipt.
+
+Two payload formats are in use depending on the event source:
+
+| | Legacy Format | Virtual Account Format |
+|---|---|---|
+| **Event type field** | `event` | `notify` |
+| **Event status field** | `data.status` | `notifyType` + `Data.Status` |
+| **Transaction ID** | `data.transaction_id` | `Data.Id` |
+| **Amount** | `data.amount` | `Data.Amount` |
+| **Reference** | `data.reference` | `Data.TransactionReference` |
+| **Timestamp** | `data.timestamp` | `Data.Timestamp` |
+| **Sender name** | `data.sender_name` | `Data.SenderName` |
+| **Virtual account** | `data.virtual_account_id` | `Data.VirtualAccountId` |
+
+Detect the format in your handler by checking which top-level key is present:
+
+```javascript
+function detectPayloadFormat(payload) {
+  if (payload.notify && payload.Data) return "virtual_account";
+  if (payload.event && payload.data) return "legacy";
+  return "unknown";
+}
+```
+
+### Legacy Format
+
+The legacy format uses lowercase `event` and `data` keys:
+
+```json
+{
+  "event": "wallet_funding",
+  "data": {
+    "status": "successful",
+    "transaction_id": "TXN_1702890600_001",
+    "reference": "FUND_ABC123",
+    "amount": 5000,
+    "currency": "NGN",
+    "virtual_account_id": "VA_1702890600",
+    "sender_name": "Adebayo Ogundimu",
+    "sender_account_number": "0123456789",
+    "sender_bank": "GTBank",
+    "narration": "Payment for services",
+    "timestamp": "2023-12-07T10:30:15Z"
+  }
+}
+```
+
+### Virtual Account Format
+
+The virtual account format uses `notify`, `notifyType`, and a PascalCase `Data` object:
+
+```json
+{
+  "notify": "wallet_funding",
+  "notifyType": "successful",
+  "Data": {
+    "Amount": 5000,
+    "Status": "successful",
+    "TransactionReference": "VA_FUND_XYZ789",
+    "Currency": "NGN",
+    "Id": "VA_TXN_1702890600_001",
+    "VirtualAccountId": "VA_1702890600",
+    "SenderName": "Adebayo Ogundimu",
+    "SenderAccountNumber": "0123456789",
+    "SenderBank": "GTBank",
+    "Narration": "Payment for services",
+    "Timestamp": "2023-12-07T10:30:00Z",
+    "Domain": "cngn-dex",
+    "Channel": "virtual_account",
+    "ChargedAmount": 5000,
+    "TransactionFee": 0,
+    "TransactionType": "credit",
+    "GatewayResponseCode": "00",
+    "GatewayResponseMessage": "Transaction successful"
+  }
+}
+```
+
+<Warning>
+  Always validate the webhook signature before processing the payload. Discard any request that fails signature verification.
+</Warning>
+
+## Data Types & Validation
+
+### String Fields
+
+| Field Type | Expected Format | Example |
+|---|---|---|
+| User ID | 64-character hex string | `77aefb50d96d0a63...` |
+| Email | Valid RFC 5321 email | `user@example.com` |
+| Phone | Nigerian international format | `+2348012345678` |
+| BVN | Exactly 11 numeric digits | `12345678901` |
+| Bank code | 3-digit numeric string | `058` |
+| Currency | ISO 4217 uppercase code | `NGN` |
+
+### Numeric Fields
+
+| Field Type | Format | Notes |
+|---|---|---|
+| Fiat amount | Integer or decimal | Naira value — no kobo conversion |
+| Token amount | Integer string | Smallest unit (wei); use `BigInt` in JS |
+| Percentage | Decimal 0–1 | `0.1` represents 10% |
+
+### DateTime Fields
+
+All timestamps are ISO 8601 strings in UTC:
+
+```json
+{
+  "createdAt": "2023-12-07T10:30:00Z",
+  "updatedAt": "2023-12-07T10:30:15Z"
+}
+```
+
+## HTTP Status Codes
+
+| HTTP Code | Meaning | When you see it |
+|---|---|---|
+| `200` | OK | Request succeeded |
+| `400` | Bad Request | Missing or malformed request fields |
+| `401` | Unauthorized | API key is missing or invalid |
+| `403` | Forbidden | API key valid but IP not on allowlist, or insufficient permissions |
+| `404` | Not Found | Endpoint path or resource ID does not exist |
+| `429` | Too Many Requests | Rate limit exceeded; back off and retry |
+| `500` | Internal Server Error | Unexpected server-side failure; contact support if it persists |

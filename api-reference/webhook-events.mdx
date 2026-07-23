@@ -1,0 +1,836 @@
+---
+title: "Webhook Events: Complete Reference for All 22 Events"
+sidebarTitle: "Webhook Events"
+description: "Complete reference for all 22 HMAC-signed webhook event types, including payload schemas for onramp, offramp, transfers, and user lifecycle events."
+---
+
+Strails sends real-time event notifications to your configured webhook URL for all 22 critical operations across the platform. Every delivery is HMAC-signed so you can verify its authenticity, and any delivery that does not receive a `200` response is automatically retried with exponential backoff.
+
+## Common payload fields
+
+Every event delivered by Strails shares the following top-level fields regardless of event type.
+
+| Field | Type | Description |
+|---|---|---|
+| `eventId` | string | Unique identifier for this specific event delivery. |
+| `eventType` | string | The event name (e.g., `"user.onboarded"`, `"swap.completed"`). |
+| `timestamp` | string | ISO 8601 timestamp of when the event was generated. |
+| `requestId` | string | Identifier of the originating request or operation that triggered the event. |
+| `fintechId` | string | Your fintech account identifier. |
+| `version` | string | Schema version of the event payload (e.g., `"1.0.0"`). |
+| `userId` | string | Identifier of the user associated with the event, where applicable. Omitted for fintech-level events. |
+| `payload` | object | Event-specific data. Structure varies by event type — see each event section below. |
+
+## HTTP headers
+
+Strails includes the following headers on every webhook POST request.
+
+| Header | Description |
+|---|---|
+| `X-Strails-Signature` | HMAC-SHA256 hex digest of the raw request body, signed with your webhook secret. Verify this before processing the payload. |
+| `X-Strails-Timestamp` | ISO 8601 timestamp of when the request was sent. Use this alongside the signature to prevent replay attacks. |
+| `X-Webhook-ID` | Unique UUID for this specific delivery attempt. Use it to deduplicate retried deliveries. |
+| `X-Strails-Event` | The event type name, matching the `eventType` field in the body (e.g., `"payments.confirmed"`). |
+
+For signature verification implementation details, see the [HMAC Signatures](/hmac-signatures) page.
+
+---
+
+## Events by category
+
+<Accordion title="User & Onboarding Events">
+
+### `user.onboarded`
+
+Fired when a user completes onboarding and is successfully registered under your fintech account.
+
+**Key payload fields:** `firstName`, `lastName`, `onboardedAt`
+
+```json
+{
+  "eventId": "uuid-event-id",
+  "eventType": "user.onboarded",
+  "timestamp": "2026-07-02T10:30:00.000Z",
+  "requestId": "req-12345",
+  "fintechId": "fintech-uuid",
+  "version": "1.0.0",
+  "userId": "user-hash-12345",
+  "payload": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "onboardedAt": "2026-07-02T10:30:00.000Z"
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="Virtual Account & Payment Events">
+
+### `virtual.account.created`
+
+Fired when a reserved or checkout virtual account is created for a user.
+
+**Key payload fields:** `vaId`, `accountNumber`, `bankName`, `accountName`, `createdAt`
+
+```json
+{
+  "eventId": "ba092127-3e96-4439-bb30-b9c44142afa7",
+  "eventType": "virtual.account.created",
+  "timestamp": "2026-05-07T15:24:14.635Z",
+  "requestId": "req-12345",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "payload": {
+    "vaId": "mF50aVg9GLc2xyup0blf",
+    "accountNumber": "9800003872",
+    "bankName": "FAME MFB",
+    "accountName": "Alphgeek Technologies/UDE",
+    "createdAt": "2026-05-07T15:24:14.635Z"
+  }
+}
+```
+
+---
+
+### `payments.confirmed`
+
+Fired when an inbound payment to a virtual account is confirmed by the payment gateway.
+
+**Key payload fields:** `txRef`, `reference`, `amount`, `currency`, `status`, `confirmedAt`, `metadata.vaId`, `metadata.provider`, `metadata.walletAddress`
+
+```json
+{
+  "eventId": "143f72e3-d47c-4339-8fe0-a59a78781db8",
+  "eventType": "payments.confirmed",
+  "timestamp": "2026-05-07T15:27:01.717Z",
+  "requestId": "req-12345",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "userId": "user-hash-12345",
+  "payload": {
+    "txRef": "0x095a6e55efd0c17ab0f717e367db386aa6d06a27dfa838b90037453e6e6c35bf",
+    "reference": "0x095a6e55efd0c17ab0f717e367db386aa6d06a27dfa838b90037453e6e6c35bf",
+    "amount": 101.5,
+    "currency": "NGN",
+    "status": "confirmed",
+    "confirmedAt": "2026-05-07T15:27:01.717Z",
+    "paymentTimestamp": "2026-05-07T15:27:01.717Z",
+    "metadata": {
+      "vaId": "mF50aVg9GLc2xyup0blf",
+      "provider": "novac",
+      "walletAddress": "0x82Cc3B1035D363B02B09B787B4325a8C740658b1"
+    }
+  }
+}
+```
+
+---
+
+### `fintech.virtual_account.deposit.received`
+
+Fired when a deposit is received on your fintech's permanent reserved virtual account (as opposed to a user-level virtual account).
+
+**Key payload fields:** `depositId`, `virtualAccount.accountNumber`, `deposit.amount`, `deposit.reference`, `depositor.name`, `depositor.bankName`, `metadata.provider`
+
+```json
+{
+  "eventId": "f8e2a1b3-4c5d-6e7f-8a9b-0c1d2e3f4a5b",
+  "eventType": "fintech.virtual_account.deposit.received",
+  "timestamp": "2025-08-27T10:00:00Z",
+  "requestId": "dep-67890",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "payload": {
+    "depositId": "dep-67890",
+    "virtualAccount": {
+      "accountNumber": "1234567890",
+      "accountName": "Fintech System Account"
+    },
+    "deposit": {
+      "amount": 50000.00,
+      "currency": "NGN",
+      "reference": "TRX123456789"
+    },
+    "depositor": {
+      "name": "JOHN DOE SMITH",
+      "accountNumber": "0123456789",
+      "bankName": "Access Bank",
+      "bankCode": "044"
+    },
+    "metadata": {
+      "provider": "novac",
+      "receivedAt": "2025-08-27T09:58:30Z"
+    }
+  }
+}
+```
+
+---
+
+### `fintech.user.deposit.received`
+
+Fired when a deposit is received on a user's permanent virtual account, before cNGN minting has begun. This is the first event in the user deposit funding flow.
+
+**Key payload fields:** `depositId`, `virtualAccount.accountNumber`, `deposit.amount`, `deposit.reference`, `depositor.name`, `depositor.bankCode`, `metadata.provider`
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "fintech.user.deposit.received",
+  "timestamp": "2026-06-10T12:00:00.000Z",
+  "requestId": "deposit-id",
+  "fintechId": "your-fintech-id",
+  "version": "1.0",
+  "userId": "user-hash-string",
+  "payload": {
+    "depositId": "abc123",
+    "virtualAccount": {
+      "accountNumber": "9800003872",
+      "accountName": "Alphgeek Technologies/UDE"
+    },
+    "deposit": {
+      "amount": 50000.00,
+      "currency": "NGN",
+      "reference": "NOVAC-REF-123"
+    },
+    "depositor": {
+      "name": "JOHN DOE SMITH",
+      "accountNumber": "0123456789",
+      "bankName": "Access Bank",
+      "bankCode": "044"
+    },
+    "metadata": {
+      "provider": "novac",
+      "receivedAt": "2026-06-10T11:58:30.000Z"
+    }
+  }
+}
+```
+
+---
+
+### `fintech.user.deposit.funding.completed`
+
+Fired after a user's fiat deposit is fully processed and cNGN has been sent to their Strails-controlled HSM smart wallet. This is the final success event in the user deposit flow.
+
+**Key payload fields:** `depositId`, `amount`, `currency`, `transactionReference`, `smartWalletAddress`, `transactionHash`, `depositor`, `bvnVerified`, `completedAt`
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "fintech.user.deposit.funding.completed",
+  "timestamp": "2026-05-30T12:00:00.000Z",
+  "requestId": "deposit-id",
+  "fintechId": "your-fintech-id",
+  "version": "1.0",
+  "userId": "user-hash-string",
+  "payload": {
+    "depositId": "abc123",
+    "amount": "1000.00",
+    "currency": "NGN",
+    "transactionReference": "NOVAC-REF-123",
+    "smartWalletAddress": "0x...",
+    "transactionHash": "0x...",
+    "depositor": {
+      "accountNumber": "1234567890",
+      "accountName": "John Doe",
+      "bankCode": "123456",
+      "bankName": "Test Bank"
+    },
+    "bvnVerified": true,
+    "completedAt": "2026-05-30T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+### `fintech.user.deposit.refunded`
+
+Fired when a deposit to a user's permanent virtual account is automatically refunded because the depositor's name did not match the BVN on file for that account.
+
+**Key payload fields:** `depositId`, `amount`, `refundReference`, `refundReason`, `depositor`, `bvnVerification.isMatch`, `bvnVerification.confidenceScore`, `bvnVerification.rejectionReasons`, `refundedAt`
+
+```json
+{
+  "eventId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "eventType": "fintech.user.deposit.refunded",
+  "timestamp": "2026-06-10T12:00:00.000Z",
+  "requestId": "deposit-id-123",
+  "fintechId": "fintech-uuid",
+  "version": "1.0.0",
+  "userId": "user-hash-string",
+  "payload": {
+    "depositId": "deposit-id",
+    "amount": 5000.00,
+    "currency": "NGN",
+    "transactionReference": "tx-ref-123",
+    "refundReference": "refund-ref-456",
+    "refundReason": "bvn_name_mismatch",
+    "accountType": "checkout",
+    "depositor": {
+      "accountNumber": "0123456789",
+      "accountName": "John Doe",
+      "bankCode": "044",
+      "bankName": "Access Bank"
+    },
+    "bvnVerification": {
+      "isMatch": false,
+      "confidenceScore": 0.45,
+      "rejectionReasons": ["name_mismatch", "low_confidence"]
+    },
+    "refundedAt": "2026-06-10T12:00:00.000Z",
+    "metadata": {}
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="Wallet Funding Events">
+
+### `wallet.funding.completed`
+
+Fired when cNGN minting is complete and tokens have been credited to the user's smart wallet following a confirmed payment to a checkout or reserved virtual account.
+
+**Key payload fields:** `walletAddress`, `amount`, `transactionHash`, `completedAt`
+
+```json
+{
+  "eventId": "178f0abc-2db7-4a78-bf89-510abfdd615b",
+  "eventType": "wallet.funding.completed",
+  "timestamp": "2026-05-07T15:28:20.832Z",
+  "requestId": "req-12345",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "userId": "user-hash-12345",
+  "payload": {
+    "walletAddress": "0x82Cc3B1035D363B02B09B787B4325a8C740658b1",
+    "amount": "100",
+    "transactionHash": "0x7d832e32bb5128bf8ac19e0ad4d18c92026eec14a1b0d9a60a4df95945afd1f4",
+    "completedAt": "2026-05-07T15:28:20.832Z"
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="Swap Events">
+
+### `swap.completed`
+
+Fired when a token swap initiated from a user's smart wallet completes successfully.
+
+**Key payload fields:** `walletAddress`, `sellToken`, `buyToken`, `amountIn`, `amountOut`, `swapTxHash`, `transferTxHash`, `completedAt`, `swapMetrics.executionTime`, `swapMetrics.gasUsed`, `swapMetrics.slippage`
+
+```json
+{
+  "eventId": "ba092127-3e96-4439-bb30-b9c44142afa7",
+  "eventType": "swap.completed",
+  "timestamp": "2026-05-07T15:30:00.000Z",
+  "requestId": "req-12345",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "userId": "user-hash-12345",
+  "payload": {
+    "walletAddress": "0x82Cc3B1035D363B02B09B787B4325a8C740658b1",
+    "owner": "0x1234567890abcdef1234567890abcdef12345678",
+    "sellToken": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "buyToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "amountIn": "1000.00",
+    "amountOut": "0.75",
+    "swapTxHash": "0x7d832e32bb5128bf8ac19e0ad4d18c92026eec14a1b0d9a60a4df95945afd1f4",
+    "transferTxHash": "0x095a6e55efd0c17ab0f717e367db386aa6d06a27dfa838b90037453e6e6c35bf",
+    "completedAt": "2026-05-07T15:30:00.000Z",
+    "smartWalletContext": {
+      "smartWalletAddress": "0x82Cc3B1035D363B02B09B787B4325a8C740658b1",
+      "managedWalletAddress": "0xabc123..."
+    },
+    "swapMetrics": {
+      "executionTime": 2500,
+      "gasUsed": "185000",
+      "slippage": "0.5"
+    }
+  }
+}
+```
+
+---
+
+### `swap.failed`
+
+Fired when a token swap fails. The payload includes an error code and a `retryable` flag to help you decide whether to attempt the swap again.
+
+**Key payload fields:** `walletAddress`, `sellToken`, `buyToken`, `amountIn`, `failedAt`, `error.code`, `error.message`, `retryable`, `metadata.attemptNumber`
+
+```json
+{
+  "eventId": "ba092127-3e96-4439-bb30-b9c44142afa8",
+  "eventType": "swap.failed",
+  "timestamp": "2026-05-07T15:30:00.000Z",
+  "requestId": "req-12346",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "userId": "user-hash-12345",
+  "payload": {
+    "walletAddress": "0x82Cc3B1035D363B02B09B787B4325a8C740658b1",
+    "owner": "0x1234567890abcdef1234567890abcdef12345678",
+    "sellToken": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "buyToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "amountIn": "1000.00",
+    "failedAt": "2026-05-07T15:30:00.000Z",
+    "error": {
+      "code": "INSUFFICIENT_LIQUIDITY",
+      "message": "Not enough liquidity in pool for swap"
+    },
+    "retryable": true,
+    "metadata": {
+      "attemptNumber": 1,
+      "pool": "0xabc..."
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="Asset Transfer Events">
+
+### `fintech.asset.transfer.completed`
+
+Fired when your fintech account successfully transfers assets from its smart wallet to a registered external wallet address.
+
+**Key payload fields:** `smartWalletAddress`, `destinationAddress`, `destinationLabel`, `amount`, `ticker`, `transactionHash`, `blockNumber`, `gasUsed`, `commitmentsSafeguarded`, `completedAt`
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "fintech.asset.transfer.completed",
+  "timestamp": "2026-06-10T12:00:00.000Z",
+  "requestId": "transfer-request-id",
+  "fintechId": "your-fintech-id",
+  "version": "1.0",
+  "payload": {
+    "smartWalletAddress": "0x82Cc3B1035D363B02B09B787B4325a8C740658b1",
+    "destinationAddress": "0x1234567890abcdef1234567890abcdef12345678",
+    "destinationLabel": "Treasury Wallet",
+    "amount": "1000.00",
+    "ticker": "cNGN",
+    "tokenAddress": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "transactionHash": "0x7d832e32bb5128bf8ac19e0ad4d18c92026eec14a1b0d9a60a4df95945afd1f4",
+    "blockNumber": 12345678,
+    "gasUsed": "85000",
+    "commitmentsSafeguarded": {
+      "activeOrders": 2,
+      "activeEscrows": 1,
+      "totalCommitted": "5000000000",
+      "remainingBalance": "95000000000"
+    },
+    "note": "Monthly treasury transfer",
+    "completedAt": "2026-06-10T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+### `fintech.asset.transfer.failed`
+
+Fired when a fintech-initiated asset transfer fails, for example due to insufficient balance after accounting for FX orderbook commitments.
+
+**Key payload fields:** `error`, `failedAt`
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "fintech.asset.transfer.failed",
+  "timestamp": "2026-06-10T12:00:00.000Z",
+  "requestId": "transfer-request-id",
+  "fintechId": "your-fintech-id",
+  "version": "1.0",
+  "payload": {
+    "error": "Insufficient balance after accounting for FX orderbook commitments",
+    "failedAt": "2026-06-10T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+### `fintech.user.asset.transfer.completed`
+
+Fired when a user successfully transfers assets from their smart wallet to an external wallet address.
+
+**Key payload fields:** `smartWalletAddress`, `destinationAddress`, `amount`, `ticker`, `network`, `transactionHash`, `blockNumber`, `gasUsed`, `completedAt`
+
+```json
+{
+  "eventId": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+  "eventType": "fintech.user.asset.transfer.completed",
+  "timestamp": "2026-06-10T12:00:00.000Z",
+  "requestId": "0x...",
+  "fintechId": "fintech-uuid",
+  "version": "1.0.0",
+  "userId": "user-hash",
+  "payload": {
+    "smartWalletAddress": "0x...",
+    "destinationAddress": "0x...",
+    "amount": "1000.00",
+    "ticker": "CNGN",
+    "tokenAddress": "0x...",
+    "network": "base",
+    "transactionHash": "0x...",
+    "blockNumber": "12345678",
+    "gasUsed": "21000",
+    "completedAt": "2026-06-10T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+### `fintech.user.asset.transfer.failed`
+
+Fired when a user-initiated asset transfer fails.
+
+**Key payload fields:** `smartWalletAddress`, `destinationAddress`, `amount`, `ticker`, `network`, `error`, `failedAt`
+
+```json
+{
+  "eventId": "c3d4e5f6-a7b8-9012-cdef-345678901234",
+  "eventType": "fintech.user.asset.transfer.failed",
+  "timestamp": "2026-06-10T12:00:00.000Z",
+  "requestId": "failed-1718020800000",
+  "fintechId": "fintech-uuid",
+  "version": "1.0.0",
+  "userId": "user-hash",
+  "payload": {
+    "smartWalletAddress": "0x...",
+    "destinationAddress": "0x...",
+    "amount": "1000.00",
+    "ticker": "CNGN",
+    "tokenAddress": "0x...",
+    "network": "base",
+    "error": "Insufficient balance for transfer",
+    "failedAt": "2026-06-10T12:00:00.000Z"
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="Offramp Events">
+
+### `vault.return.transfer.confirmed`
+
+Fired when cNGN has been sent from a user's smart wallet to the Strails vault as the first step of a user-initiated offramp.
+
+**Key payload fields:** `transferId`, `vaultReturnId`, `amount`, `tokenAddress`, `transactionHash`, `confirmedAt`, `blockNumber`
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "vault.return.transfer.confirmed",
+  "timestamp": "2026-06-23T10:00:00.000Z",
+  "requestId": "request-uuid",
+  "fintechId": "fintech-uuid",
+  "version": "1.0.0",
+  "userId": "user-hash",
+  "payload": {
+    "transferId": "...",
+    "vaultReturnId": "...",
+    "amount": "100.50",
+    "tokenAddress": "0x...",
+    "transactionHash": "0x...",
+    "confirmedAt": "...",
+    "blockNumber": 12345,
+    "metadata": {}
+  }
+}
+```
+
+---
+
+### `vault.return.payout.completed`
+
+Fired when the fiat payout to the user's bank account is confirmed, completing the vault-return offramp flow.
+
+**Key payload fields:** `payoutId`, `vaultReturnId`, `amount`, `recipientAccountNumber`, `recipientBankCode`, `transactionReference`, `completedAt`
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "vault.return.payout.completed",
+  "timestamp": "2026-06-23T10:00:00.000Z",
+  "requestId": "request-uuid",
+  "fintechId": "fintech-uuid",
+  "version": "1.0.0",
+  "userId": "user-hash",
+  "payload": {
+    "payoutId": "...",
+    "vaultReturnId": "...",
+    "amount": "15000",
+    "recipientAccountNumber": "0123456789",
+    "recipientBankCode": "044",
+    "transactionReference": "...",
+    "completedAt": "...",
+    "metadata": {}
+  }
+}
+```
+
+---
+
+### `vault.return.payout.failed`
+
+Fired when the fiat payout to the user's bank account fails during the vault-return offramp flow. Check `retryable` to determine if the payout can be reattempted.
+
+**Key payload fields:** `payoutId`, `vaultReturnId`, `amount`, `recipientAccountNumber`, `recipientBankCode`, `failedAt`, `error.message`, `error.code`, `retryable`
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "vault.return.payout.failed",
+  "timestamp": "2026-06-23T10:00:00.000Z",
+  "requestId": "request-uuid",
+  "fintechId": "fintech-uuid",
+  "version": "1.0.0",
+  "userId": "user-hash",
+  "payload": {
+    "payoutId": "...",
+    "vaultReturnId": "...",
+    "amount": "15000",
+    "recipientAccountNumber": "0123456789",
+    "recipientBankCode": "044",
+    "failedAt": "...",
+    "error": {
+      "message": "...",
+      "code": "..."
+    },
+    "retryable": true,
+    "metadata": {}
+  }
+}
+```
+
+---
+
+### `fintech.offramp.initiated`
+
+Fired immediately when your fintech account initiates an offramp (cNGN-to-NGN) payout request.
+
+**Key payload fields:** `amount`, `currency`, `status`, `bankAccount.accountNumber`, `bankAccount.bankName`, `wallet.source`, `wallet.address`, `wallet.network`
+
+```json
+{
+  "eventId": "d4e5f6a7-b8c9-0123-def4-567890123456",
+  "eventType": "fintech.offramp.initiated",
+  "timestamp": "2025-08-27T10:00:00Z",
+  "requestId": "offramp-req-67890",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "payload": {
+    "amount": 100000.00,
+    "currency": "NGN",
+    "status": "pending",
+    "bankAccount": {
+      "accountNumber": "0123456789",
+      "accountName": "John Doe",
+      "bankName": "GTBank"
+    },
+    "wallet": {
+      "source": "system_wallet",
+      "address": "0x1234...5678",
+      "network": "base"
+    },
+    "metadata": {
+      "description": "Withdrawal request",
+      "initiatedBy": "api"
+    }
+  }
+}
+```
+
+---
+
+### `fintech.offramp.transfer.completed`
+
+Fired when the on-chain cNGN transfer to the Strails settlement wallet is confirmed. The bank payout has not yet been initiated at this point.
+
+**Key payload fields:** `amount`, `currency`, `status`, `burnDetails.txHash`, `burnDetails.cNgnAmount`, `burnDetails.blockNumber`, `burnDetails.confirmations`, `metadata.gasUsed`, `metadata.transferredAt`
+
+```json
+{
+  "eventId": "e5f6a7b8-c9d0-1234-ef56-789012345678",
+  "eventType": "fintech.offramp.transfer.completed",
+  "timestamp": "2025-08-27T10:02:00Z",
+  "requestId": "offramp-req-67890",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "payload": {
+    "amount": 100000.00,
+    "currency": "NGN",
+    "status": "initiating_payout",
+    "burnDetails": {
+      "txHash": "0xabc123...def456",
+      "status": "confirmed",
+      "cNgnAmount": 100000000000000000000,
+      "blockNumber": 12345678,
+      "confirmations": 12
+    },
+    "metadata": {
+      "gasUsed": "85000",
+      "transferredAt": "2025-08-27T10:02:00Z"
+    }
+  }
+}
+```
+
+---
+
+### `fintech.offramp.payout.initiated`
+
+Fired when the bank payout is submitted to the payment provider after the on-chain token transfer is confirmed.
+
+**Key payload fields:** `amount`, `currency`, `status`, `bankAccount`, `payoutDetails.reference`, `payoutDetails.provider`, `payoutDetails.status`, `metadata.payoutInitiatedAt`
+
+```json
+{
+  "eventId": "f6a7b8c9-d0e1-2345-f678-901234567890",
+  "eventType": "fintech.offramp.payout.initiated",
+  "timestamp": "2025-08-27T10:03:00Z",
+  "requestId": "offramp-req-67890",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "payload": {
+    "amount": 100000.00,
+    "currency": "NGN",
+    "status": "payout_processing",
+    "bankAccount": {
+      "accountNumber": "0123456789",
+      "accountName": "John Doe",
+      "bankName": "GTBank",
+      "bankCode": "058"
+    },
+    "payoutDetails": {
+      "reference": "PAYOUT-123456",
+      "provider": "novac",
+      "status": "processing"
+    },
+    "metadata": {
+      "payoutInitiatedAt": "2025-08-27T10:03:00Z"
+    }
+  }
+}
+```
+
+---
+
+### `fintech.offramp.completed`
+
+Fired when the entire offramp flow is complete — the on-chain token burn is confirmed and the fiat payout has settled to the destination bank account.
+
+**Key payload fields:** `amount`, `currency`, `status`, `bankAccount`, `wallet`, `burnDetails.txHash`, `payoutDetails.reference`, `payoutDetails.status`, `completedAt`, `metadata.processingTime`
+
+```json
+{
+  "eventId": "a7b8c9d0-e1f2-3456-7890-123456789abc",
+  "eventType": "fintech.offramp.completed",
+  "timestamp": "2025-08-27T10:05:00Z",
+  "requestId": "offramp-req-67890",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "payload": {
+    "amount": 100000.00,
+    "currency": "NGN",
+    "status": "completed",
+    "bankAccount": {
+      "accountNumber": "0123456789",
+      "accountName": "John Doe",
+      "bankName": "GTBank"
+    },
+    "wallet": {
+      "source": "system_wallet",
+      "address": "0x1234...5678",
+      "network": "base"
+    },
+    "burnDetails": {
+      "txHash": "0xabc123...def456",
+      "status": "confirmed",
+      "cNgnAmount": 100000000000000000000
+    },
+    "payoutDetails": {
+      "reference": "PAYOUT-123456",
+      "provider": "novac",
+      "status": "completed"
+    },
+    "completedAt": "2025-08-27T10:05:00Z",
+    "metadata": {
+      "processingTime": 300000
+    }
+  }
+}
+```
+
+---
+
+### `fintech.offramp.failed`
+
+Fired when an offramp fails at any stage in the pipeline — whether during the on-chain transfer or the bank payout. The `error` object indicates where the failure occurred and its cause.
+
+**Key payload fields:** `amount`, `currency`, `status`, `bankAccount`, `burnDetails`, `error.message`, `error.code`, `metadata.retryable`, `metadata.attemptNumber`
+
+```json
+{
+  "eventId": "b8c9d0e1-f2a3-4567-8901-23456789abcd",
+  "eventType": "fintech.offramp.failed",
+  "requestId": "offramp-req-67890",
+  "fintechId": "fintech-12345",
+  "version": "1.0.0",
+  "payload": {
+    "amount": 100000.00,
+    "currency": "NGN",
+    "status": "failed",
+    "bankAccount": {
+      "accountNumber": "0123456789",
+      "accountName": "John Doe",
+      "bankName": "GTBank"
+    },
+    "wallet": {
+      "source": "system_wallet",
+      "address": "0x1234...5678",
+      "network": "base"
+    },
+    "burnDetails": {
+      "txHash": "0xabc123...def456",
+      "status": "confirmed",
+      "cNgnAmount": 100000000000000000000
+    },
+    "error": {
+      "message": "Bank payout failed: Invalid account number",
+      "code": "PAYOUT_FAILED"
+    },
+    "timestamp": "2025-08-27T10:05:00Z",
+    "metadata": {
+      "failedAt": "2025-08-27T10:05:00Z",
+      "retryable": false,
+      "attemptNumber": 1
+    }
+  }
+}
+```
+
+</Accordion>
+
+---
+
+## Retry behaviour
+
+<Tip>
+  Strails retries failed webhook deliveries using **exponential backoff**. A delivery is considered failed if your endpoint returns any HTTP status other than `2xx`, or if it does not respond within the timeout window.
+
+  To avoid timeouts causing spurious retries, acknowledge receipt immediately by returning `HTTP 200` as soon as you receive the request, then process the payload asynchronously. Use the `X-Webhook-ID` header to deduplicate any events your system may receive more than once due to retries.
+</Tip>
+
+For full details on verifying the HMAC signature on each delivery, see the [HMAC Signatures](/hmac-signatures) page.

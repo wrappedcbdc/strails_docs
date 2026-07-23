@@ -1,0 +1,91 @@
+---
+title: "Strails API Reference: Authentication, Base URLs & Endpoints"
+sidebarTitle: "Overview"
+description: "Complete reference for the Strails REST API — covers base URLs, authentication, async processing patterns, and links to all endpoint groups."
+---
+
+The Strails REST API gives your fintech platform full programmatic control over user onboarding, virtual account management, cNGN wallets, FX trading, payouts, and webhook notifications. All requests are authenticated with your secret API key, and long-running operations follow a consistent async pattern using `requestId` polling or webhook callbacks.
+
+## Base URLs
+
+Use the test environment during integration and switch to the production URL before go-live. The two environments are completely isolated — keys, users, and funds do not carry over.
+
+**Test**
+
+```bash
+https://beta.stablesrail.io/v1/
+```
+
+**Production**
+
+```bash
+https://api.strails.io/v1/
+```
+
+## Authentication
+
+Every request must include your secret API key in the `x-api-key` header. You can retrieve and rotate your keys from the Strails dashboard.
+
+```bash
+x-api-key: YOUR_SECRET_API_KEY
+```
+
+<Warning>
+  Never expose your secret API key in client-side code or public repositories. All requests to the Strails API must originate from your backend server.
+</Warning>
+
+## Async Processing
+
+Some operations — such as user onboarding and wallet provisioning — are processed asynchronously. When you submit one of these requests, the API immediately returns a `requestId` and a `status` of `"processing"`. You can then:
+
+1. **Poll** the corresponding status endpoint (e.g. `POST /onboardstatus`) with the `requestId` until the status changes to `"completed"` or `"failed"`.
+2. **Listen for webhooks** — Strails fires a webhook event to your registered callback URL when the operation finishes, letting you avoid repeated polling.
+
+```json
+{
+  "data": {
+    "requestId": "7898f29e-10a6-4b2b-9496-f4ee50549fd4",
+    "status": "processing",
+    "estimatedCompletionTime": "2-5 minutes"
+  }
+}
+```
+
+<Info>
+  See the [Webhooks](/api-reference/webhook-events) reference for the full list of async event types and payload schemas.
+</Info>
+
+## API Reference Pages
+
+<CardGroup cols={2}>
+  <Card title="User Management" icon="users" href="/api-reference/user-management">
+    Onboard users with BVN verification, check onboarding status, retrieve user details, and manage account activation.
+  </Card>
+  <Card title="Virtual Accounts" icon="bank" href="/api-reference/virtual-accounts">
+    Retrieve fintech and user-level NGN virtual accounts for the onramp deposit flow.
+  </Card>
+  <Card title="Wallet Management" icon="wallet" href="/api-reference/wallet">
+    Query cNGN wallet balances, view wallet addresses, and manage wallet state across EVM, Solana, and Bantu networks.
+  </Card>
+  <Card title="Transactions" icon="arrow-right-arrow-left" href="/api-reference/transactions">
+    Retrieve transaction history, query individual transaction status, and filter by type or date range.
+  </Card>
+  <Card title="Fiat Payouts" icon="building-columns" href="/api-reference/fiat-payout-management">
+    Initiate and track NGN bank transfers for offramp payouts to your users.
+  </Card>
+  <Card title="FX Settings" icon="gear" href="/api-reference/fx-setting">
+    Configure exchange rate markups, spread settings, and supported currency pairs for your fintech.
+  </Card>
+  <Card title="Orderbook" icon="chart-line" href="/api-reference/orderbook-management">
+    Create, list, and cancel P2P FX orders on the Strails stablecoin orderbook engine.
+  </Card>
+  <Card title="Trading" icon="arrows-left-right" href="/api-reference/trading-management">
+    Execute trades against open orderbook offers and manage trade lifecycle events.
+  </Card>
+  <Card title="Fee Management" icon="percent" href="/api-reference/fee-management-api">
+    Set and update transaction fee rules, including percentage-based and capped fee structures.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/api-reference/webhook-events">
+    Register webhook endpoints and explore the full catalogue of real-time event payloads.
+  </Card>
+</CardGroup>

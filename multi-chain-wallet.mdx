@@ -1,0 +1,105 @@
+---
+title: "Multi-Chain Wallet: HSM-Managed Stablecoin Infrastructure"
+sidebarTitle: "Multi-Chain Wallet"
+description: "Strails-operated HSM-backed wallets that execute token transfers, swaps, and cross-chain bridging across Base, Ethereum, BNB Chain, Solana, and Bantu."
+---
+
+The **Multi-Chain Wallet** — also called the **Managed Wallet** — is a Strails-controlled wallet secured by a Hardware Security Module (HSM). It supports both ECDSA and EdDSA cryptographic signature schemes and follows [SLIP-0044](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki) HD wallet derivation for deterministic key management across networks.
+
+Strails uses this wallet as the execution layer for all API-initiated operations — token transfers, swaps, bridging, and gas payments — so you never need to manage private keys or maintain native token balances on behalf of your users.
+
+## Overview
+
+| Feature | Description |
+|---------|-------------|
+| **Control** | Strails-controlled — all transactions are managed by Strails on your behalf |
+| **Security** | HSM-backed key management; private keys never leave the HSM |
+| **Assets** | cNGN, USDC, USDT |
+| **Networks** | Base (primary), Ethereum, BNB Chain, Solana, Bantu |
+| **Purpose** | Transaction execution, gas fee payment, and cross-chain operations |
+
+## How It Works
+
+When you call an API endpoint, Strails routes the operation through the Multi-Chain Wallet:
+
+```
+User Request → Strails API → Multi-Chain Wallet → Blockchain
+```
+
+1. **You call an API endpoint** — for example, `/withdrawasset` or `/swap`.
+2. **Strails validates** the request, checks balances, and applies your fee configuration.
+3. **The Managed Wallet signs** the transaction using the HSM — no private key is ever exposed.
+4. **The signed transaction is broadcast** to the appropriate blockchain network.
+5. **A webhook delivers the result** to your configured endpoint once the transaction is confirmed.
+
+## Supported Networks
+
+| Network | Ticker | Notes |
+|---------|--------|-------|
+| **Base** | ETH | Primary network; lowest fees and fastest finality |
+| **Ethereum** | ETH | Supported for USDC and USDT operations |
+| **BNB Chain** | BNB | Supported for USDT operations |
+| **Solana** | SOL | Supported for USDC and USDT operations |
+| **Bantu** | XBN | Supported for cNGN operations |
+
+## What You Can Do
+
+### Token Transfers
+
+The Multi-Chain Wallet executes token transfers on your behalf when you call:
+
+- [`POST /withdrawasset`](/api-reference/transactions) — withdraw a user's tokens to an external wallet address.
+- [`POST /fintechtransfer`](/api-reference/transactions) — transfer fintech-owned tokens to a registered external wallet.
+
+### Swaps
+
+The Managed Wallet coordinates the on-chain swap execution when you call:
+
+- [`POST /swap`](/api-reference/transactions) — swap tokens within a user's Smart Wallet.
+- [`POST /swaptrigger`](/api-reference/transactions) — trigger an asynchronous swap between cNGN and USDC/USDT.
+
+### Cross-Chain Bridging
+
+For multi-chain operations, pass the target `network` parameter on [`POST /withdrawasset`](/api-reference/transactions). The Managed Wallet coordinates:
+
+- Locking or burning tokens on the source chain.
+- Minting or releasing tokens on the destination chain.
+- Delivering status updates to your webhook as the bridging progresses.
+
+## Security Model
+
+Strails uses AWS KMS as its HSM layer. The signing workflow keeps key material entirely within the hardware boundary:
+
+- **Keys never leave the HSM** — private keys are generated inside the HSM and cannot be exported.
+- **Full audit logging** — every signing request is logged with a tamper-evident audit trail.
+- **No direct key access** — neither external parties nor Strails staff can retrieve the raw private key.
+- **Automatic key rotation** — key rotation policies are enforced at the infrastructure level without service interruption.
+
+## Gas Fees
+
+<Note>
+  Strails pays all gas fees for Multi-Chain Wallet operations. You do not need to hold ETH, BNB, SOL, or any other native token to execute transfers, swaps, or bridging through the API.
+</Note>
+
+Gas is covered for:
+
+- User token withdrawals via `/withdrawasset`
+- Swap execution via `/swap` and `/swaptrigger`
+- Bridging on both source and destination chains
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Smart Wallet" icon="file-contract" href="/smart-wallet">
+    Owner-controlled smart contract wallets for user-facing custody
+  </Card>
+  <Card title="MPC Wallet" icon="shield-halved" href="/mpc-wallet">
+    Threshold-signing custody for the USDC/USDT FX settlement leg
+  </Card>
+  <Card title="Wallet Management API" icon="wallet" href="/api-reference/wallet">
+    API endpoints for wallet creation and management
+  </Card>
+  <Card title="Transactions API" icon="arrow-right-arrow-left" href="/api-reference/transactions">
+    Execute transfers, swaps, and bridging operations
+  </Card>
+</CardGroup>
