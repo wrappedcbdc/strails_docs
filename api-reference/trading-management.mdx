@@ -12,11 +12,11 @@ Execute trades against the Strails FX orderbook using one of three execution mod
 
 | Endpoint              | Method | Description                                                        |
 | --------------------- | ------ | ------------------------------------------------------------------ |
-| `/fx/quote`           | POST   | Generate a price quote matched against current orderbook liquidity |
-| `/fx/trade`           | POST   | Execute a trade using quote ID, direct params, or a targeted order |
-| `/fx/market-order`    | POST   | Submit an immediate market order at the current best price         |
-| `/fx/trades/status`   | GET    | Retrieve the current status and details of a single trade          |
-| `/fx/trades`          | GET    | List your fintech's trades with optional filters and pagination     |
+| [`/fx/quote`](#get-quote)           | POST   | Generate a price quote matched against current orderbook liquidity |
+| [`/fx/trade`](#execute-trade)           | POST   | Execute a trade using quote ID, direct params, or a targeted order |
+| [`/fx/market-order`](#create-market-order)    | POST   | Submit an immediate market order at the current best price         |
+| [`/fx/trades/status`](#get-trade-status)   | GET    | Retrieve the current status and details of a single trade          |
+| [`/fx/trades`](#list-trades)          | GET    | List your fintech's trades with optional filters and pagination     |
 
 ---
 

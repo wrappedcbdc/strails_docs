@@ -181,7 +181,7 @@ The table below lists the global error codes that apply across all endpoints:
 
 ## Registering Your Public Key
 
-Strails supports optional payload encryption for production integrations that handle PII, wallet addresses, or financial data. To opt in, register your Ed25519 public key with Strails using the `/storepublickey` endpoint. Once registered, Strails will use your public key to encrypt all response payloads - only your server can decrypt them.
+Strails supports optional payload encryption for production integrations that handle PII, wallet addresses, or financial data. To opt in, generate an X25519 keypair and register your 64-character hex public key with Strails using the `/storepublickey` endpoint. Once registered, Strails will use your public key to encrypt all response payloads and webhook bodies - only your server can decrypt them.
 
 ```bash
 POST /storepublickey
@@ -191,8 +191,18 @@ Content-Type: application/json
 
 ```json
 {
-  "data": "<hex-encoded-public-key>"
+  "data": "<64-hex-character X25519 public key>"
 }
 ```
 
+`/storepublickey` accepts `{ "data": "<64-hex-character X25519 public key>" }` or the AES-encrypted legacy envelope whose decrypted `data` is the same 64-hex key.
+
 A `200 OK` response confirms your key has been stored. See the [Encryption](/encryption) guide for full details on key generation, request encryption, and response decryption.
+
+### Platform public key
+
+Retrieve the Strails X25519 public key via `GET /getplatformpublickey`. Use it to seal requests to Strails with libsodium `crypto_box_seal`.
+
+### AES key (legacy)
+
+Call `GET /getaeskey` to retrieve your raw, unmasked AES key. You can use it to decrypt legacy AES-GCM payloads and to verify webhook signatures when no dedicated webhook secret is configured.
