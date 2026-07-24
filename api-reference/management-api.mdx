@@ -10,13 +10,16 @@ Use the Management API to configure the operational settings for your Strails in
 
 | Endpoint | Method | Description |
 |---|---|---|
-| `/regenerateapikey` | GET | Generate a new API key, immediately invalidating the old one |
-| `/setwebhook` | POST | Configure your webhook URL, secret, and event subscriptions |
-| `/togglewebhookstatus` | POST | Enable or disable webhook delivery without changing the URL |
-| `/getwebhook` | GET | Retrieve your current webhook configuration |
-| `/manageipallowlist` | POST | Add, remove, list, or check IP addresses on your allowlist |
-| `/updateonrampasset` | POST | Update a user's onramp asset preferences |
-| `/autosigning/config` | GET | Retrieve your auto-approval threshold for cNGN buying |
+| [`/regenerateapikey`](#get-regenerateapikey) | GET | Generate a new API key, immediately invalidating the old one |
+| [`/storepublickey`](#post-storepublickey) | POST | Store your X25519 public key for response and webhook encryption |
+| [`/getplatformpublickey`](#get-getplatformpublickey) | GET | Retrieve the platform X25519 public key used to encrypt requests |
+| [`/getaeskey`](#get-getaeskey) | GET | Retrieve your raw, unmasked AES key for legacy operations |
+| [`/setwebhook`](#post-setwebhook) | POST | Configure your webhook URL, optional secret, and event subscriptions |
+| [`/togglewebhookstatus`](#post-togglewebhookstatus) | POST | Enable or disable webhook delivery without changing the URL |
+| [`/getwebhook`](#get-getwebhook) | GET | Retrieve your current webhook configuration |
+| [`/manageipallowlist`](#post-manageipallowlist) | POST | Add, remove, list, or check IP addresses on your allowlist |
+| [`/updateonrampasset`](#post-updateonrampasset) | POST | Update a user's onramp asset preferences |
+| [`/autosigning/config`](#get-autosigningconfig) | GET | Retrieve your auto-approval threshold for cNGN buying |
 
 ---
 
@@ -234,6 +237,113 @@ curl --request GET \
     "hasSecret": true,
     "events": ["all"],
     "updatedAt": "2026-01-29T05:11:06.862Z"
+  }
+}
+```
+
+---
+
+## POST /storepublickey
+
+Register your X25519 public key with Strails. Once stored, Strails uses it to encrypt all response payloads and webhook bodies sent to your integration via libsodium `crypto_box_seal`.
+
+### Body parameters
+
+<ParamField body="data" type="string" required>
+  A 64-character hex X25519 public key, or the AES-encrypted legacy envelope whose decrypted `data` is the same 64-hex X25519 public key.
+</ParamField>
+
+### Request
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/storepublickey" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "data": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+  }'
+```
+
+### Response
+
+<ResponseField name="data.updatedAt" type="string">
+  ISO 8601 timestamp of when the public key was stored.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Public key stored successfully",
+  "data": {
+    "updatedAt": "2025-08-26T10:30:00.000Z"
+  }
+}
+```
+
+---
+
+## GET /getplatformpublickey
+
+Retrieve the Strails platform X25519 public key. Use this key to seal request payloads with libsodium `crypto_box_seal` so only Strails can decrypt them.
+
+### Request
+
+```bash
+curl --request GET \
+  --url "{{BASE_URL}}/getplatformpublickey" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response
+
+<ResponseField name="data.publicKey" type="string">
+  The 64-character hex Strails X25519 public key.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Platform public key retrieved successfully",
+  "data": {
+    "publicKey": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+  }
+}
+```
+
+---
+
+## GET /getaeskey
+
+Retrieve your raw, unmasked AES key. This key is used for legacy AES-GCM payload encryption and as a fallback for webhook signature verification when no dedicated webhook secret is configured.
+
+<Warning>
+  Treat your AES key as a sensitive secret. Do not log it, expose it in client-side code, or commit it to version control.
+</Warning>
+
+### Request
+
+```bash
+curl --request GET \
+  --url "{{BASE_URL}}/getaeskey" \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response
+
+<ResponseField name="data.aesKey" type="string">
+  Your raw AES key.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "AES key retrieved successfully",
+  "data": {
+    "aesKey": "your_aes_key_value"
   }
 }
 ```

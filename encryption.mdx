@@ -1,21 +1,23 @@
 ---
-title: "Strails Payload Encryption with Ed25519 and libsodium"
+title: "Strails Payload Encryption with X25519 and libsodium"
 sidebarTitle: "Encryption"
-description: "Learn how to encrypt Strails API request payloads and decrypt responses using Ed25519 key pairs and libsodium's sealed-box construction."
+description: "Learn how to encrypt Strails API request payloads and decrypt responses using X25519 key pairs and libsodium's sealed-box construction."
 ---
 
-Strails supports **Ed25519 payload encryption** using [libsodium](https://libsodium.gitbook.io/doc/)'s sealed-box (`crypto_box_seal`) construction. Encryption is optional on some endpoints, but you should enable it for any production integration that handles PII, wallet addresses, or financial data - an intercepted transport layer will not expose your payload contents.
+Strails supports **X25519 payload encryption** using [libsodium](https://libsodium.gitbook.io/doc/)'s sealed-box (`crypto_box_seal`) construction. Encryption is optional on some endpoints, but you should enable it for any production integration that handles PII, wallet addresses, or financial data - an intercepted transport layer will not expose your payload contents.
 
 ## Security Model
 
-Every encrypted exchange involves two key pairs. Both parties generate their own pair; each shares only their public key.
+Every encrypted exchange involves two X25519 key pairs. Both parties generate their own pair; each shares only their public key.
 
 | Party | Key pair | Purpose |
 |---|---|---|
-| **Fintech (you)** | Your Ed25519 key pair | Decrypt responses that Strails seals to your public key |
-| **Strails** | Strails Ed25519 key pair | Encrypt requests you send - seal them to Strails' public key |
+| **Fintech (you)** | Your X25519 key pair | Decrypt responses and webhooks that Strails seals to your public key |
+| **Strails** | Strails X25519 key pair | Encrypt requests you send - seal them to Strails' public key |
 
-Strails gives you its public key during onboarding. You generate your own key pair and register your public key with Strails so it can encrypt responses back to you.
+Strails exposes its public key via `GET /getplatformpublickey`. You generate your own X25519 key pair and register the 64-character hex public key with Strails via `POST /storepublickey` so it can encrypt responses and webhooks back to you.
+
+The stored key is a **raw X25519 public key** (not an Ed25519 signing key). It is used only for `crypto_box_seal`.
 
 ## Request Encryption Flow
 
@@ -26,7 +28,7 @@ To send an encrypted request:
     Construct the request body as documented for the endpoint - a plain JSON object.
   </Step>
   <Step title="Seal the payload">
-    Use the Strails Ed25519 public key to seal the payload with libsodium `crypto_box_seal`. This produces an opaque byte array that only Strails can unseal.
+    Use the Strails X25519 public key to seal the payload with libsodium `crypto_box_seal`. This produces an opaque byte array that only Strails can unseal.
   </Step>
   <Step title="Base64-encode and send">
     Base64-encode the sealed bytes and send the resulting string in the `payload` field of your request body.
@@ -158,7 +160,7 @@ console.log(data);
 
 ## Storing Your Public Key
 
-Register your public key with Strails by calling `POST /storepublickey`. Strails will use this key to encrypt all responses sent back to your integration.
+Register your public key with Strails by calling `POST /storepublickey`. `/storepublickey` accepts `{ "data": "<64-hex-character X25519 public key>" }` or the AES-encrypted legacy envelope whose decrypted `data` is the same 64-hex key. Strails will use this key to encrypt all responses and webhooks sent back to your integration.
 
 ```bash
 POST /storepublickey
@@ -168,11 +170,19 @@ Content-Type: application/json
 
 ```json
 {
-  "data": "<hex-encoded-public-key>"
+  "data": "<64-hex-character X25519 public key>"
 }
 ```
 
-A successful registration returns `200 OK`. After this, Strails will seal response payloads to your public key so only you can decrypt them.
+A successful registration returns `200 OK`. After this, Strails will seal response payloads and webhook bodies to your public key so only you can decrypt them.
+
+## Platform Public Key
+
+Retrieve the Strails X25519 public key via `GET /getplatformpublickey`. Use it to seal requests to Strails with libsodium `crypto_box_seal`.
+
+## AES Key (Legacy)
+
+Call `GET /getaeskey` to retrieve your raw, unmasked AES key. You can use it to decrypt legacy AES-GCM payloads and to verify webhook signatures when no dedicated webhook secret is configured.
 
 ## Best Practices
 
