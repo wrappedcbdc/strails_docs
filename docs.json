@@ -135,13 +135,12 @@
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://app.strails.io"
+      "href": "https://app.strails.co"
     }
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/wrappedcbdc",
-      "twitter": "https://twitter.com/strailsio"
+      "site": "https://strails.co"
     }
   }
 }
