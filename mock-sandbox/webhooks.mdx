@@ -1,0 +1,55 @@
+---
+title: Webhooks
+description: Webhook behavior, configuration, and signature verification in the Strails Mock Sandbox.
+---
+
+# Webhooks
+
+## Default Webhook Configuration
+
+| Setting | Default Value |
+|---------|---------------|
+| Webhook URL | `https://httpbin.org/post` |
+| Webhook Secret (HMAC key) | `sandbox-webhook-secret-do-not-use-in-production` |
+
+## Setting a Custom Webhook URL
+
+Fintechs can override the default webhook URL using the `setwebhook` endpoint:
+
+```http
+POST https://sandbox.stablesrail.io/v1/setwebhook
+Content-Type: application/json
+x-api-key: <sandbox-api-key>
+
+{
+  "url": "https://your-domain.com/webhook",
+  "enabled": true
+}
+```
+
+## Webhook Signature Verification
+
+Sandbox webhooks are signed with HMAC-SHA256 over the string `${timestamp}.${payload}`:
+
+```text
+signature = HMAC-SHA256(
+  key = "sandbox-webhook-secret-do-not-use-in-production",
+  message = "<ISO-8601-timestamp>.<JSON-payload>"
+)
+```
+
+The signature is sent in the `x-stablesrail-signature` header, and the timestamp is in `x-stablesrail-timestamp`.
+
+> The webhook secret is **global to the sandbox environment**. It is not per-fintech and does not use production `API_HMAC_SECRET` or provider secrets.
+
+## Sample Webhook Payload
+
+```json
+{
+  "event": "user.onboarded",
+  "environment": "sandbox",
+  "timestamp": "2026-07-29T14:45:00.000Z",
+  "userId": "usr-s-...",
+  "status": "completed"
+}
+```

@@ -1,0 +1,46 @@
+---
+title: Sync vs. Async Mode
+description: How to toggle synchronous and asynchronous behavior in the Strails Mock Sandbox.
+---
+
+# Sync vs. Async Mode
+
+By default, sandbox endpoints respond synchronously with a completed status. To simulate asynchronous processing and receive a webhook callback, use one of the following methods.
+
+## Option 1: Query Parameter
+
+Append `?mockMode=async` to the request URL:
+
+```http
+POST https://sandbox.stablesrail.io/v1/onboarduser?mockMode=async
+```
+
+## Option 2: HTTP Header
+
+Send the `x-mock-mode: async` header:
+
+```http
+POST https://sandbox.stablesrail.io/v1/onboarduser
+x-mock-mode: async
+```
+
+> The query parameter takes precedence over the header. If neither is provided, the request defaults to **sync** mode.
+
+## Async Response Example
+
+```json
+{
+  "status": "success",
+  "response_code": "00",
+  "message": "SUCCESS",
+  "data": {
+    "requestId": "req-s-a1b2c3d4e5f6g7h8i9j0",
+    "status": "processing",
+    "userHash": "usr-s-...",
+    "message": "User registration request has been submitted for processing",
+    "estimatedCompletionTime": "2-5 minutes"
+  }
+}
+```
+
+A webhook event is scheduled after a short delay (default ~3 seconds) to the configured webhook URL.

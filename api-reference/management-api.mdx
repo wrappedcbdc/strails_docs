@@ -8,18 +8,19 @@ Use the Management API to configure the operational settings for your Strails in
 
 ## Endpoints overview
 
-| Endpoint | Method | Description |
-|---|---|---|
-| [**`/regenerateapikey`**](#get-regenerateapikey) | GET | Generate a new API key, immediately invalidating the old one |
-| [**`/storepublickey`**](#post-storepublickey) | POST | Store your X25519 public key for response and webhook encryption |
-| [**`/getplatformpublickey`**](#get-getplatformpublickey) | GET | Retrieve the platform X25519 public key used to encrypt requests |
-| [**`/getaeskey`**](#get-getaeskey) | GET | Retrieve your raw, unmasked AES key for legacy operations |
-| [**`/setwebhook`**](#post-setwebhook) | POST | Configure your webhook URL, optional secret, and event subscriptions |
-| [**`/togglewebhookstatus`**](#post-togglewebhookstatus) | POST | Enable or disable webhook delivery without changing the URL |
-| [**`/getwebhook`**](#get-getwebhook) | GET | Retrieve your current webhook configuration |
-| [**`/manageipallowlist`**](#post-manageipallowlist) | POST | Add, remove, list, or check IP addresses on your allowlist |
-| [**`/updateonrampasset`**](#post-updateonrampasset) | POST | Update a user's onramp asset preferences |
-| [**`/autosigning/config`**](#get-autosigningconfig) | GET | Retrieve your auto-approval threshold for cNGN buying |
+| Section | Endpoint | Method | Description |
+|---|---|---|---|
+| [Regenerate API Key](#get-/regenerateapikey) | `/regenerateapikey` | GET | Generate a new API key, immediately invalidating the old one |
+| [Store Public Key](#post-/storepublickey) | `/storepublickey` | POST | Store your X25519 public key for response and webhook encryption |
+| [Get Platform Public Key](#get-/getplatformpublickey) | `/getplatformpublickey` | GET | Retrieve the platform X25519 public key used to encrypt requests |
+| [Get AES Key](#get-/getaeskey) | `/getaeskey` | GET | Retrieve your raw, unmasked AES key for legacy operations |
+| [Set Webhook](#post-/setwebhook) | `/setwebhook` | POST | Configure your webhook URL, optional secret, and event subscriptions |
+| [Toggle Webhook Status](#post-/togglewebhookstatus) | `/togglewebhookstatus` | POST | Enable or disable webhook delivery without changing the URL |
+| [Get Webhook](#get-/getwebhook) | `/getwebhook` | GET | Retrieve your current webhook configuration |
+| [Manage IP Allowlist](#post-/manageipallowlist) | `/manageipallowlist` | POST | Add, remove, list, or check IP addresses on your allowlist |
+| [Update Onramp Asset](#post-/updateonrampasset) | `/updateonrampasset` | POST | Update a user's onramp asset preferences |
+| [Auto Signing Config](#get-/autosigning/config) | `/autosigning/config` | GET | Retrieve your auto-approval threshold for cNGN buying |
+| [Create Sandbox API Key](#post-/createsandboxapikey) | `/createsandboxapikey` | POST | Create a sandbox-only API key for mock environment testing |
 
 ---
 
@@ -613,5 +614,52 @@ curl --request GET \
     "maxDailyAmount": "100000000",
     "restrictToFintech": true
   }
+}
+```
+
+---
+
+## POST /createsandboxapikey
+
+Create a sandbox-only API key for testing against the mock sandbox environment. This key is separate from your production API key and can only be used with sandbox endpoints.
+
+### Request
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/createsandboxapikey" \
+  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "Content-Type: application/json"
+```
+
+### Response
+
+<ResponseField name="data.apiKey" type="string">
+  The newly created sandbox API key. Store this value securely - it is only returned once.
+</ResponseField>
+
+<ResponseField name="data.fintechId" type="string">
+  The fintech ID associated with the sandbox key.
+</ResponseField>
+
+<ResponseField name="data.createdAt" type="string">
+  ISO 8601 timestamp of when the sandbox API key was created.
+</ResponseField>
+
+<ResponseField name="data.note" type="string">
+  Reminder that this key is valid only for the mock sandbox environment.
+</ResponseField>
+
+```json
+{
+    "status": "Success",
+    "response_code": "00",
+    "message": "Sandbox API key created successfully",
+    "data": {
+        "apiKey": "sandbox_4cda698e926f4ee2b0baa",
+        "fintechId": "fintech-Id",
+        "createdAt": "2026-07-29T16:52:49.420Z",
+        "note": "This key is valid only for the mock sandbox environment."
+    }
 }
 ```

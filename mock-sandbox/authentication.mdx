@@ -1,0 +1,62 @@
+---
+title: Authentication
+description: How to create and use sandbox API keys for the Strails Mock Sandbox environment.
+---
+
+# Authentication
+
+## Creating a Sandbox API Key
+
+Sandbox keys are created using the production `createsandboxapikey` endpoint with a **production API key**:
+
+```http
+POST https://sandbox.stablesrail.io/v1/createsandboxapikey
+Content-Type: application/json
+x-api-key: <production-api-key>
+
+{
+  "fintechName": "Example Fintech"
+}
+```
+
+Response:
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Sandbox API key created successfully",
+  "data": {
+    "apiKey": "sandbox_3fe455526c844f91886ea",
+    "fintechId": "c8fe1911-d292-4f84-aa88-e34ceeea5b65",
+    "createdAt": "2026-07-29T14:39:03.804Z",
+    "note": "This key is valid only for the mock sandbox environment."
+  }
+}
+```
+
+> The returned API key must be saved immediately; it is shown only once.
+
+## Using a Sandbox API Key
+
+Include the key in the `x-api-key` header on every request to the sandbox:
+
+```http
+POST https://sandbox.stablesrail.io/v1/onboarduser
+Content-Type: application/json
+x-api-key: sandbox_3fe455526c844f91886ea
+
+{
+  "bvn": "12345678901"
+}
+```
+
+## Validation Behavior
+
+The sandbox validates the **full API key** against the `sandboxApiKeys` Firestore collection. Keys that:
+
+- Are missing or do not start with `sandbox_`
+- Are not registered in Firestore
+- Have been revoked or expired
+
+will receive a `401 Unauthorized` response.

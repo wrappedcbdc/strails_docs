@@ -8,17 +8,17 @@ The Wallet Management API gives you full control over the three wallet types in 
 
 ## Endpoints Overview
 
-| Endpoint | Method | Description |
-|---|---|---|
-| [**`/getfintechwallet`**](#retrieve-the-fintech-wallet) | GET | Retrieve your Smart Wallet details and all registered External Wallets |
-| [**`/addexternalwallet`**](#add-an-external-wallet) | POST | Register a new external wallet on your fintech account |
-| [**`/updateexternalwalletstatus`**](#update-external-wallet-status) | PUT | Activate or deactivate a registered external wallet |
-| [**`/removeexternalwallet`**](#remove-an-external-wallet) | DELETE | Remove an external wallet from your fintech account |
-| [**`/listuserwallets`**](#retrieve-user-wallets) | POST | Retrieve all wallets for a specific end-user, including balances |
-| [**`/migrateuserwallets`**](#migrate-user-wallets) | POST | Provision default wallets for users created before automated wallet provisioning |
-| [**`/balance/multi`**](#fintech-system-wallet-balance) | GET | Get your fintech Smart Wallet balance across EVM networks |
-| [**`/balance/address`**](#balance-for-a-specific-address) | POST | Get token balance for any specific EVM address across networks |
-| [**`/balance/user/:userId`**](#end-user-balance) | GET | Get an end-user's wallet balances |
+| Section | Endpoint | Method | Description |
+|---|---|---|---|
+| [Retrieve the Fintech Wallet](#retrieve-the-fintech-wallet) | `/getfintechwallet` | GET | Retrieve your Smart Wallet details and all registered External Wallets |
+| [Add an External Wallet](#add-an-external-wallet) | `/addexternalwallet` | POST | Register a new external wallet on your fintech account |
+| [Update External Wallet Status](#update-external-wallet-status) | `/updateexternalwalletstatus` | PUT | Activate or deactivate a registered external wallet |
+| [Remove an External Wallet](#remove-an-external-wallet) | `/removeexternalwallet` | DELETE | Remove an external wallet from your fintech account |
+| [Retrieve User Wallets](#retrieve-user-wallets) | `/listuserwallets` | POST | Retrieve all wallets for a specific end-user, including balances |
+| [Migrate User Wallets](#migrate-user-wallets) | `/migrateuserwallets` | POST | Provision default wallets for users created before automated wallet provisioning |
+| [Fintech System Wallet Balance](#fintech-system-wallet-balance) | `/balance/multi` | GET | Get your fintech Smart Wallet balance across EVM networks |
+| [Balance for a Specific Address](#balance-for-a-specific-address) | `/balance/address` | POST | Get token balance for any specific EVM address across networks |
+| [End User Balance](#end-user-balance) | `/balance/user/:userId` | GET | Get an end-user's wallet balances |
 
 ---
 

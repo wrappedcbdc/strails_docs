@@ -71,6 +71,23 @@
         ]
       },
       {
+        "tab": "Sandbox",
+        "icon": "flask",
+        "groups": [
+          {
+            "group": "Mock Sandbox",
+            "icon": "flask",
+            "pages": [
+              "mock-sandbox/index",
+              "mock-sandbox/authentication",
+              "mock-sandbox/sync-async",
+              "mock-sandbox/webhooks",
+              "mock-sandbox/common-test-values"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API Reference",
         "icon": "code",
         "groups": [

@@ -1,0 +1,42 @@
+---
+title: Common Test Values
+description: Sample values and constraints for testing Strails Mock Sandbox endpoints.
+---
+
+# Common Test Values
+
+## BVN
+
+The production `onboarduser` endpoint requires an 11-digit Nigerian BVN. The sandbox accepts the same format but does not validate it against a real identity service.
+
+| Field | Sample Value | Constraints |
+|-------|--------------|-------------|
+| `bvn` | `12345678901` | 11 digits, numeric only |
+
+## Onboard User Request
+
+```http
+POST https://sandbox.stablesrail.io/v1/onboarduser
+Content-Type: application/json
+x-api-key: <sandbox-api-key>
+
+{
+  "bvn": "12345678901",
+  "firstName": "Sandbox",
+  "lastName": "User",
+  "email": "sandbox@example.com"
+}
+```
+
+## Wallet / Transaction Amounts
+
+The sandbox assumes cNGN has **6 decimals**. Example raw values:
+
+| Human Amount | Raw Value (6 decimals) |
+|--------------|------------------------|
+| 1,000 cNGN   | `1000000000` |
+| 500 cNGN     | `500000000` |
+
+## Wallet Addresses
+
+Sandbox addresses are generated deterministically per request. Use them only for integration testing; they have no on-chain balance.

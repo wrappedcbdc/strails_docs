@@ -8,15 +8,15 @@ Use the Fee Management API to configure the fee structures applied to your users
 
 ## Endpoints overview
 
-| Endpoint | Method | Description |
-|---|---|---|
-| [**`/getwithdrawalhistory`**](#get-getwithdrawalhistory) | GET | Retrieve paginated history of all fintech fee withdrawals |
-| [**`/feewithdrawal`**](#post-feewithdrawal) | POST | Request withdrawal of accumulated fees to a bank account |
-| [**`/getaccumulatedfees`**](#get-getaccumulatedfees) | GET | Get a summary of accumulated fees and available withdrawal balance |
-| [**`/managefees`**](#put-managefees) | PUT | Configure onramp and offramp fee percentages, caps, and toggles |
-| [**`/getfees`**](#get-getfees) | GET | Retrieve the current fee configuration and example calculations |
-| [**`/fees/strails/preview`**](#post-feesstrailspreview) | POST | Preview the Strails platform fee for a given amount and transaction type |
-| [**`/verifywithdrawal`**](#post-verifywithdrawal) | POST | Check the status or outcome of a previously submitted withdrawal |
+| Section | Endpoint | Method | Description |
+|---|---|---|---|
+| [Withdrawal History](#get-/getwithdrawalhistory) | `/getwithdrawalhistory` | GET | Retrieve paginated history of all fintech fee withdrawals |
+| [Fee Withdrawal](#post-/feewithdrawal) | `/feewithdrawal` | POST | Request withdrawal of accumulated fees to a bank account |
+| [Accumulated Fees](#get-/getaccumulatedfees) | `/getaccumulatedfees` | GET | Get a summary of accumulated fees and available withdrawal balance |
+| [Manage Fees](#put-/managefees) | `/managefees` | PUT | Configure onramp and offramp fee percentages, caps, and toggles |
+| [Get Fees](#get-/getfees) | `/getfees` | GET | Retrieve the current fee configuration and example calculations |
+| [Strails Fee Preview](#post-/fees/strails/preview) | `/fees/strails/preview` | POST | Preview the Strails platform fee for a given amount and transaction type |
+| [Verify Withdrawal](#post-/verifywithdrawal) | `/verifywithdrawal` | POST | Check the status or outcome of a previously submitted withdrawal |
 
 ---
 

@@ -8,23 +8,23 @@ The Transactions API handles every financial operation in Strails. You can fund 
 
 ## Endpoints Overview
 
-| Endpoint | Method | Description |
-|---|---|---|
-| [**`/cngnonramp`**](#user-onramp) | POST | Fund a user wallet by converting Naira to cNGN or a supported token |
-| [**`/cngnofframp`**](#user-offramp) | POST | Convert a user's cNGN back to Naira and pay out to their bank account |
-| [**`/getfintechvirtualaccount`**](#fintech-onramp) | GET | Retrieve the persistent virtual bank account attached to your fintech |
-| [**`/initiateofframp`**](#fintech-offramp) | POST | Convert cNGN from your fintech Smart Wallet to Naira |
-| [**`/withdrawasset`**](#user-token-withdrawal) | POST | Withdraw tokens from a user wallet to an external wallet |
-| [**`/fintechtransfer`**](#fintech-token-withdrawal) | POST | Withdraw tokens from your fintech Smart Wallet to a registered external wallet |
-| [**`/cngnonrampstatus`**](#cngn-onramp-status) | POST | Check the current status of a user onramp request |
-| [**`/cngnofframpstatus`**](#cngn-offramp-status) | POST | Check the current status of a user offramp request |
-| [**`/getofframpstatus`**](#fintech-offramp-status) | GET | Check the current status of a fintech offramp request |
-| [**`/deposits`**](#list-deposits) | GET | List deposit transactions with filtering and pagination |
-| [**`/payouts`**](#list-payouts) | GET | List payout transactions with filtering and pagination |
-| [**`/transactions`**](#list-transactions) | GET | List all transactions (deposits and payouts) with filtering and pagination |
-| [**`/swaptrigger`**](#swap-trigger) | POST | Trigger an asynchronous swap for a specific wallet address |
-| [**`/swap`**](#user-swap) | POST | Request a token swap on a user's default Smart Wallet |
-| [**`/swapstatus`**](#swap-status) | GET | Get the status of an asynchronous swap request |
+| Section | Endpoint | Method | Description |
+|---|---|---|---|
+| [User Onramp](#user-onramp) | `/cngnonramp` | POST | Fund a user wallet by converting Naira to cNGN or a supported token |
+| [User Offramp](#user-offramp) | `/cngnofframp` | POST | Convert a user's cNGN back to Naira and pay out to their bank account |
+| [Fintech Onramp](#fintech-onramp) | `/getfintechvirtualaccount` | GET | Retrieve the persistent virtual bank account attached to your fintech |
+| [Fintech Offramp](#fintech-offramp) | `/initiateofframp` | POST | Convert cNGN from your fintech Smart Wallet to Naira |
+| [User Token Withdrawal](#user-token-withdrawal) | `/withdrawasset` | POST | Withdraw tokens from a user wallet to an external wallet |
+| [Fintech Token Withdrawal](#fintech-token-withdrawal) | `/fintechtransfer` | POST | Withdraw tokens from your fintech Smart Wallet to a registered external wallet |
+| [cNGN Onramp Status](#cngn-onramp-status) | `/cngnonrampstatus` | POST | Check the current status of a user onramp request |
+| [cNGN Offramp Status](#cngn-offramp-status) | `/cngnofframpstatus` | POST | Check the current status of a user offramp request |
+| [Fintech Offramp Status](#fintech-offramp-status) | `/getofframpstatus` | GET | Check the current status of a fintech offramp request |
+| [List Deposits](#list-deposits) | `/deposits` | GET | List deposit transactions with filtering and pagination |
+| [List Payouts](#list-payouts) | `/payouts` | GET | List payout transactions with filtering and pagination |
+| [List Transactions](#list-transactions) | `/transactions` | GET | List all transactions (deposits and payouts) with filtering and pagination |
+| [Swap Trigger](#swap-trigger) | `/swaptrigger` | POST | Trigger an asynchronous swap for a specific wallet address |
+| [User Swap](#user-swap) | `/swap` | POST | Request a token swap on a user's default Smart Wallet |
+| [Swap Status](#swap-status) | `/swapstatus` | GET | Get the status of an asynchronous swap request |
 
 ---
 
