@@ -8,13 +8,13 @@ The User Management API lets you register end-users on Strails using their Bank 
 
 ## Endpoints Overview
 
-| Endpoint | Method | Description |
-|---|---|---|
-| [**`/onboarduser`**](#post-onboarduser) | POST | Initiate BVN-based KYC and create a new user account. |
-| [**`/onboardstatus`**](#post-onboardstatus) | POST | Check the current status of a pending onboarding request. |
-| [**`/getuserdetails`**](#post-getuserdetails) | POST | Retrieve a user's full profile, wallets, and virtual accounts. |
-| [**`/manageuserstatus`**](#post-manageuserstatus) | POST | Activate or deactivate a user account with an audit reason. |
-| [**`/listfintechusers`**](#post-listfintechusers) | POST | Retrieve a paginated list of all users belonging to your fintech. |
+| Section | Endpoint | Method | Description |
+|---|---|---|---|
+| [Onboard User](#post-/onboarduser) | `/onboarduser` | POST | Initiate BVN-based KYC and create a new user account. |
+| [Onboard Status](#post-/onboardstatus) | `/onboardstatus` | POST | Check the current status of a pending onboarding request. |
+| [Get User Details](#post-/getuserdetails) | `/getuserdetails` | POST | Retrieve a user's full profile, wallets, and virtual accounts. |
+| [Manage User Status](#post-/manageuserstatus) | `/manageuserstatus` | POST | Activate or deactivate a user account with an audit reason. |
+| [List Fintech Users](#post-/listfintechusers) | `/listfintechusers` | POST | Retrieve a paginated list of all users belonging to your fintech. |
 
 ---
 

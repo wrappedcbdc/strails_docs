@@ -8,23 +8,23 @@ The Transactions API handles every financial operation in Strails. You can fund 
 
 ## Endpoints Overview
 
-| Endpoint | Method | Description |
-|---|---|---|
-| [**`/cngnonramp`**](#user-onramp) | POST | Fund a user wallet by converting Naira to cNGN or a supported token |
-| [**`/cngnofframp`**](#user-offramp) | POST | Convert a user's cNGN back to Naira and pay out to their bank account |
-| [**`/getfintechvirtualaccount`**](#fintech-onramp) | GET | Retrieve the persistent virtual bank account attached to your fintech |
-| [**`/initiateofframp`**](#fintech-offramp) | POST | Convert cNGN from your fintech Smart Wallet to Naira |
-| [**`/withdrawasset`**](#user-token-withdrawal) | POST | Withdraw tokens from a user wallet to an external wallet |
-| [**`/fintechtransfer`**](#fintech-token-withdrawal) | POST | Withdraw tokens from your fintech Smart Wallet to a registered external wallet |
-| [**`/cngnonrampstatus`**](#cngn-onramp-status) | POST | Check the current status of a user onramp request |
-| [**`/cngnofframpstatus`**](#cngn-offramp-status) | POST | Check the current status of a user offramp request |
-| [**`/getofframpstatus`**](#fintech-offramp-status) | GET | Check the current status of a fintech offramp request |
-| [**`/deposits`**](#list-deposits) | GET | List deposit transactions with filtering and pagination |
-| [**`/payouts`**](#list-payouts) | GET | List payout transactions with filtering and pagination |
-| [**`/transactions`**](#list-transactions) | GET | List all transactions (deposits and payouts) with filtering and pagination |
-| [**`/swaptrigger`**](#swap-trigger) | POST | Trigger an asynchronous swap for a specific wallet address |
-| [**`/swap`**](#user-swap) | POST | Request a token swap on a user's default Smart Wallet |
-| [**`/swapstatus`**](#swap-status) | GET | Get the status of an asynchronous swap request |
+| Section | Endpoint | Method | Description |
+|---|---|---|---|
+| [User Onramp](#user-onramp) | `/cngnonramp` | POST | Fund a user wallet by converting Naira to cNGN or a supported token |
+| [User Offramp](#user-offramp) | `/cngnofframp` | POST | Convert a user's cNGN back to Naira and pay out to their bank account |
+| [Fintech Onramp](#fintech-onramp) | `/getfintechvirtualaccount` | GET | Retrieve the persistent virtual bank account attached to your fintech |
+| [Fintech Offramp](#fintech-offramp) | `/initiateofframp` | POST | Convert cNGN from your fintech Smart Wallet to Naira |
+| [User Token Withdrawal](#user-token-withdrawal) | `/withdrawasset` | POST | Withdraw tokens from a user wallet to an external wallet |
+| [Fintech Token Withdrawal](#fintech-token-withdrawal) | `/fintechtransfer` | POST | Withdraw tokens from your fintech Smart Wallet to a registered external wallet |
+| [cNGN Onramp Status](#cngn-onramp-status) | `/cngnonrampstatus` | POST | Check the current status of a user onramp request |
+| [cNGN Offramp Status](#cngn-offramp-status) | `/cngnofframpstatus` | POST | Check the current status of a user offramp request |
+| [Fintech Offramp Status](#fintech-offramp-status) | `/getofframpstatus` | GET | Check the current status of a fintech offramp request |
+| [List Deposits](#list-deposits) | `/deposits` | GET | List deposit transactions with filtering and pagination |
+| [List Payouts](#list-payouts) | `/payouts` | GET | List payout transactions with filtering and pagination |
+| [List Transactions](#list-transactions) | `/transactions` | GET | List all transactions (deposits and payouts) with filtering and pagination |
+| [Swap Trigger](#swap-trigger) | `/swaptrigger` | POST | Trigger an asynchronous swap for a specific wallet address |
+| [User Swap](#user-swap) | `/swap` | POST | Request a token swap on a user's default Smart Wallet |
+| [Swap Status](#swap-status) | `/swapstatus` | GET | Get the status of an asynchronous swap request |
 
 ---
 
@@ -49,7 +49,7 @@ Creates a temporary Smart Wallet and a bank transfer instruction so your end-use
 ```bash
 curl --request POST \
   --url "https://api.strails.io/cngnonramp" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "userId": "user_uniqueID",
@@ -179,7 +179,7 @@ Converts cNGN held in a user's Smart Wallet to Naira and initiates a bank transf
 ```bash
 curl --request POST \
   --url "https://api.strails.io/cngnofframp" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "userId": "user_uniqueID",
@@ -271,7 +271,7 @@ For full virtual account management (including per-user virtual accounts and fee
 ```bash
 curl --request GET \
   --url "https://api.strails.io/getfintechvirtualaccount" \
-  --header "Authorization: Bearer YOUR_API_KEY"
+  --header "x-api-key: YOUR_API_KEY"
 ```
 
 ```json Response
@@ -307,7 +307,7 @@ Converts cNGN from your fintech Smart Wallet to Naira and initiates a payout to 
 ```bash
 curl --request POST \
   --url "https://api.strails.io/initiateofframp" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "amount": 1000000,
@@ -378,7 +378,7 @@ Withdraws a token from a user's internal Smart Wallet to an external destination
 ```bash
 curl --request POST \
   --url "https://api.strails.io/withdrawasset" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "userId": "user_uniqueID",
@@ -495,7 +495,7 @@ Transfers tokens from your fintech Smart Wallet to a registered external wallet.
 ```bash
 curl --request POST \
   --url "https://api.strails.io/fintechtransfer" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "destinationAddress": "0xExternalRegisteredAddress",
@@ -576,7 +576,7 @@ Returns the current status of a user onramp request, including virtual account d
 ```bash
 curl --request POST \
   --url "https://api.strails.io/cngnonrampstatus" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "walletAddress": "0xGeneratedWalletAddress"
@@ -641,7 +641,7 @@ Returns the current status of a user offramp request, including on-chain token t
 ```bash
 curl --request POST \
   --url "https://api.strails.io/cngnofframpstatus" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "requestId": "uuid"
@@ -693,7 +693,7 @@ Returns the current status of a fintech offramp request initiated via `/initiate
 ```bash
 curl --request GET \
   --url "https://api.strails.io/getofframpstatus?requestId=uuid" \
-  --header "Authorization: Bearer YOUR_API_KEY"
+  --header "x-api-key: YOUR_API_KEY"
 ```
 
 <ParamField query="requestId" type="string" required>
@@ -745,7 +745,7 @@ Returns a paginated list of deposit transactions. Filter by type (`fintech_depos
 ```bash
 curl --request GET \
   --url "https://api.strails.io/deposits?type=fintech_deposit&status=completed&limit=20&offset=0" \
-  --header "Authorization: Bearer YOUR_API_KEY"
+  --header "x-api-key: YOUR_API_KEY"
 ```
 
 <ParamField query="type" type="string">
@@ -827,7 +827,7 @@ Returns a paginated list of payout transactions. Filter by type (`fintech_offram
 ```bash
 curl --request GET \
   --url "https://api.strails.io/payouts?type=fintech_offramp&status=completed&limit=10&offset=0" \
-  --header "Authorization: Bearer YOUR_API_KEY"
+  --header "x-api-key: YOUR_API_KEY"
 ```
 
 <ParamField query="type" type="string">
@@ -911,7 +911,7 @@ Returns a paginated list of all transactions - both deposits and payouts - with 
 ```bash
 curl --request GET \
   --url "https://api.strails.io/transactions?direction=in&status=completed&limit=50&offset=0" \
-  --header "Authorization: Bearer YOUR_API_KEY"
+  --header "x-api-key: YOUR_API_KEY"
 ```
 
 <ParamField query="direction" type="string">
@@ -1002,7 +1002,7 @@ Queues an asynchronous token swap for a specific wallet address. The swap is pro
 ```bash
 curl --request POST \
   --url "https://api.strails.io/swaptrigger" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "walletAddress": "0xGeneratedWalletAddress",
@@ -1087,7 +1087,7 @@ Requests a token swap on a user's default Smart Wallet. Primarily used for USDC 
 ```bash
 curl --request POST \
   --url "https://api.strails.io/swap" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "sellToken": "USDC",
@@ -1189,7 +1189,7 @@ Returns the current status of an asynchronous swap request. Use the `requestId` 
 ```bash
 curl --request GET \
   --url "https://api.strails.io/swapstatus?requestId=swap-a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
-  --header "Authorization: Bearer YOUR_API_KEY"
+  --header "x-api-key: YOUR_API_KEY"
 ```
 
 <ParamField query="requestId" type="string" required>

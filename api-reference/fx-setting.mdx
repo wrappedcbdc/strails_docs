@@ -10,15 +10,15 @@ Configure your fintech's FX infrastructure by registering an MPC vault, enabling
 
 ## Endpoints Overview
 
-| Endpoint                        | Method | Description                                                    |
-| ------------------------------- | ------ | -------------------------------------------------------------- |
-| [**`/fx/mpc/register`**](#register-mpc-vault)              | POST   | Register MPC vault configuration for FX trading operations     |
-| [**`/fx/settings`**](#get-fx-settings)                  | GET    | Retrieve complete FX settings including MPC vault and wallets  |
-| [**`/fx/auto-signing/enable`**](#enable-auto-signing)       | POST   | Enable automatic transaction signing for FX trades            |
-| [**`/fx/auto-signing/disable`**](#disable-auto-signing)      | POST   | Disable automatic transaction signing                         |
-| [**`/fx/auto-signing/threshold`**](#set-auto-signing-threshold)    | POST   | Set the USD threshold for auto-signing transactions           |
-| [**`/fx/auto-signing/status`**](#get-auto-signing-status)       | GET    | Retrieve auto-signing configuration and today's statistics    |
-| [**`/fx/auto-signing/stats`**](#get-auto-signing-stats)        | GET    | Retrieve auto-signing statistics over a rolling period        |
+| Section | Endpoint                        | Method | Description                                                    |
+| ------------------------------- | ------------------------------- | ------ | -------------------------------------------------------------- |
+| [Register MPC Vault](#register-mpc-vault)              | `/fx/mpc/register`              | POST   | Register MPC vault configuration for FX trading operations     |
+| [Get FX Settings](#get-fx-settings)                  | `/fx/settings`                  | GET    | Retrieve complete FX settings including MPC vault and wallets  |
+| [Enable Auto Signing](#enable-auto-signing)       | `/fx/auto-signing/enable`       | POST   | Enable automatic transaction signing for FX trades            |
+| [Disable Auto Signing](#disable-auto-signing)      | `/fx/auto-signing/disable`      | POST   | Disable automatic transaction signing                         |
+| [Set Auto Signing Threshold](#set-auto-signing-threshold)    | `/fx/auto-signing/threshold`    | POST   | Set the USD threshold for auto-signing transactions           |
+| [Get Auto Signing Status](#get-auto-signing-status)       | `/fx/auto-signing/status`       | GET    | Retrieve auto-signing configuration and today's statistics    |
+| [Get Auto Signing Stats](#get-auto-signing-stats)        | `/fx/auto-signing/stats`        | GET    | Retrieve auto-signing statistics over a rolling period        |
 
 ---
 
