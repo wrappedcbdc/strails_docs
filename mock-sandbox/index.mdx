@@ -10,12 +10,10 @@ The Strails **Mock Sandbox** is a lightweight, isolated testing environment that
 - Test request/response formats and error handling.
 - Receive asynchronous webhook callbacks without exposing production secrets or funds.
 
-The sandbox is exposed through a dedicated Firebase Hosting site and a single Cloud Function (`mockapigateway`).
-
 | Environment | Base URL |
 |-------------|----------|
 | Test        | `https://sandbox.stablesrail.io` |
-| Production  | `https://sandbox.strails.io` |
+| Production  | `https://api.strails.io` |
 
 All endpoints are mounted under `/v1`:
 
@@ -26,7 +24,6 @@ POST https://sandbox.stablesrail.io/v1/onboarduser
 ### Important Notes
 
 - **No real funds**: The sandbox does not interact with mainnet, testnet, or any custodial account.
-- **Firestore-backed keys**: Sandbox API keys are stored in `sandboxApiKeys` collection, keyed by `fintechId`.
-- **No production secrets**: The sandbox uses its own parameter defaults (`SANDBOX_*`) and does not bind production `defineSecret` values.
+- **No production secrets**: The sandbox uses its own parameter defaults (`SANDBOX_*`) and does not bind production values.
 - **Webhook URL**: If a custom webhook is not configured, events are sent to the default `https://httpbin.org/post`.
 - **Async mode**: Use `?mockMode=async` or `x-mock-mode: async` to trigger delayed webhook callbacks.

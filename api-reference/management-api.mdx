@@ -93,7 +93,7 @@ For details on verifying the HMAC signature included with every webhook delivery
 ```bash
 curl --request POST \
   --url "{{BASE_URL}}/setwebhook" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "webhookUrl": "https://your-domain.com/webhook",
@@ -157,7 +157,7 @@ Enable or disable webhook delivery without modifying the registered URL or signi
 ```bash
 curl --request POST \
   --url "{{BASE_URL}}/togglewebhookstatus" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "enabled": true
@@ -202,7 +202,7 @@ Retrieve your current webhook configuration, including the registered URL (parti
 ```bash
 curl --request GET \
   --url "{{BASE_URL}}/getwebhook" \
-  --header "Authorization: Bearer YOUR_API_KEY"
+  --header "x-api-key: YOUR_API_KEY"
 ```
 
 ### Response
@@ -259,7 +259,7 @@ Register your X25519 public key with Strails. Once stored, Strails uses it to en
 ```bash
 curl --request POST \
   --url "{{BASE_URL}}/storepublickey" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "data": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
@@ -294,7 +294,7 @@ Retrieve the Strails platform X25519 public key. Use this key to seal request pa
 ```bash
 curl --request GET \
   --url "{{BASE_URL}}/getplatformpublickey" \
-  --header "Authorization: Bearer YOUR_API_KEY"
+  --header "x-api-key: YOUR_API_KEY"
 ```
 
 ### Response
@@ -329,7 +329,7 @@ Retrieve your raw, unmasked AES key. This key is used for legacy AES-GCM payload
 ```bash
 curl --request GET \
   --url "{{BASE_URL}}/getaeskey" \
-  --header "Authorization: Bearer YOUR_API_KEY"
+  --header "x-api-key: YOUR_API_KEY"
 ```
 
 ### Response
@@ -382,7 +382,7 @@ Manage the set of IP addresses permitted to make API requests on behalf of your 
 ```bash
 curl --request POST \
   --url "{{BASE_URL}}/manageipallowlist" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{ "action": "list" }'
 ```
@@ -408,7 +408,7 @@ curl --request POST \
 ```bash
 curl --request POST \
   --url "{{BASE_URL}}/manageipallowlist" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "action": "add",
@@ -437,7 +437,7 @@ curl --request POST \
 ```bash
 curl --request POST \
   --url "{{BASE_URL}}/manageipallowlist" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "action": "remove",
@@ -465,7 +465,7 @@ curl --request POST \
 ```bash
 curl --request POST \
   --url "{{BASE_URL}}/manageipallowlist" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{ "action": "check" }'
 ```
@@ -528,7 +528,7 @@ Update the onramp asset preferences for a specific user on your platform. Use th
 ```bash
 curl --request POST \
   --url "{{BASE_URL}}/updateonrampasset" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
     "userId": "user_hash",
@@ -577,7 +577,7 @@ Retrieve the auto-approval threshold configuration assigned to your fintech acco
 ```bash
 curl --request GET \
   --url "{{BASE_URL}}/autosigning/config" \
-  --header "Authorization: Bearer YOUR_API_KEY"
+  --header "x-api-key: YOUR_API_KEY"
 ```
 
 ### Response
@@ -628,7 +628,7 @@ Create a sandbox-only API key for testing against the mock sandbox environment. 
 ```bash
 curl --request POST \
   --url "{{BASE_URL}}/createsandboxapikey" \
-  --header "Authorization: Bearer YOUR_API_KEY" \
+  --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json"
 ```
 
