@@ -525,7 +525,8 @@ curl --request POST \
 
 ```json Response
 {
-  "code": "00",
+  "status": "Success",
+  "response_code": "00",
   "message": "Transfer completed successfully",
   "data": {
     "requestId": "req_uuid_12345",
@@ -544,7 +545,13 @@ curl --request POST \
       "remainingBalance": "3000000"
     },
     "executedAt": "2026-03-21T10:30:00Z",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "feeBreakdown": {
+      "requestedAmount": "5000000",
+      "totalFee": "0.15",
+      "netAmount": "4999999.85",
+      "usedFintechOverride": false
+    }
   }
 }
 ```
