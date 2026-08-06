@@ -39,7 +39,7 @@ Register your MPC vault configuration to enable FX trading. This step is require
     ```bash
     curl --request POST \
       --url https://api.strails.io/fx/mpc/register \
-      --header "Authorization: Bearer <API_KEY>" \
+      --header "x-api-key: <API_KEY>" \
       --header "Content-Type: application/json" \
       --data '{
         "mpcVaultApiKey": "your-mpc-vault-api-key",
@@ -152,7 +152,7 @@ Retrieve your fintech's complete FX configuration after Strails admin approval. 
     ```bash
     curl --request GET \
       --url https://api.strails.io/fx/settings \
-      --header "Authorization: Bearer <API_KEY>"
+      --header "x-api-key: <API_KEY>"
     ```
   </Tab>
 
@@ -264,7 +264,7 @@ Enable automatic transaction signing for FX trades. When enabled, any trade whos
     ```bash
     curl --request POST \
       --url https://api.strails.io/fx/auto-signing/enable \
-      --header "Authorization: Bearer <API_KEY>" \
+      --header "x-api-key: <API_KEY>" \
       --header "Content-Type: application/json" \
       --data '{}'
     ```
@@ -316,7 +316,7 @@ Disable automatic transaction signing. After disabling, all FX trades will requi
     ```bash
     curl --request POST \
       --url https://api.strails.io/fx/auto-signing/disable \
-      --header "Authorization: Bearer <API_KEY>" \
+      --header "x-api-key: <API_KEY>" \
       --header "Content-Type: application/json" \
       --data '{}'
     ```
@@ -353,7 +353,7 @@ Set the USD value threshold for automatic signing. Trades at or below this thres
     ```bash
     curl --request POST \
       --url https://api.strails.io/fx/auto-signing/threshold \
-      --header "Authorization: Bearer <API_KEY>" \
+      --header "x-api-key: <API_KEY>" \
       --header "Content-Type: application/json" \
       --data '{
         "usdThreshold": "10000"
@@ -401,7 +401,7 @@ Retrieve the current auto-signing configuration alongside today's signing statis
     ```bash
     curl --request GET \
       --url https://api.strails.io/fx/auto-signing/status \
-      --header "Authorization: Bearer <API_KEY>"
+      --header "x-api-key: <API_KEY>"
     ```
   </Tab>
 
@@ -489,7 +489,7 @@ Retrieve daily auto-signing statistics over a rolling window of days, along with
     ```bash
     curl --request GET \
       --url "https://api.strails.io/fx/auto-signing/stats?days=7" \
-      --header "Authorization: Bearer <API_KEY>"
+      --header "x-api-key: <API_KEY>"
     ```
 
     <ParamField query="days" type="number">
