@@ -247,10 +247,12 @@ curl --request POST \
 
 ```json Insufficient balance
 {
-  "status": "Error",
-  "response_code": "05",
-  "message": "Insufficient balance",
-  "error": "User wallet has insufficient cNGN balance for this offramp"
+  "status": "Failed",
+  "response_code": "01",
+  "message": "Insufficient wallet balance",
+  "data": [
+    “error”: “Insufficient total balance across all networks. Required: 20000 CNGN, Available: 320.000000 CNGN across 36 network(s)”
+  ]
 }
 ```
 
