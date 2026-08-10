@@ -236,15 +236,6 @@ curl --request POST \
 }
 ```
 
-```json User not found
-{
-  "status": "Error",
-  "response_code": "02",
-  "message": "User not found",
-  "error": "No verified user found with the provided userId"
-}
-```
-
 ```json Insufficient balance
 {
   "status": "Failed",
@@ -255,6 +246,28 @@ curl --request POST \
   ]
 }
 ```
+
+```json Insufficient balance
+{
+  "status": "Failed",
+  "response_code": "02",
+  "message": "No funded wallet found for user",
+  "data": [
+    “error”: “User has no funds available across any supported networks”
+  ]
+}
+```
+
+```json User not found
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "User not found",
+  "error": "No verified user found with the provided userId"
+}
+```
+
+
 
 ---
 
