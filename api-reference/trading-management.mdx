@@ -50,8 +50,12 @@ Generate a price quote by matching your requested cNGN amount against live order
       Trade direction. Use `"sell"` to exchange cNGN for the quote currency, or `"buy"` to acquire cNGN by spending the quote currency.
     </ParamField>
 
-    <ParamField body="cngnAmount" type="string" required>
-      The cNGN amount to trade, expressed as a human-readable decimal (e.g., `"50000"` means 50,000 cNGN). Minimum is 1,000 cNGN.
+    <ParamField body="cngnAmount" type="string">
+      The cNGN amount to trade, expressed as a human-readable decimal (e.g., `"50000"` means 50,000 cNGN). Provide this **or** `tokenAmount`, not both. Minimum is 1,000 cNGN.
+    </ParamField>
+
+    <ParamField body="tokenAmount" type="string">
+      The pair-currency amount to trade, expressed as a human-readable decimal (e.g., `"37.04"` for USDC or `"37.04"` for USDT). Use this when you want the quote denominated in the pair token instead of cNGN. Provide this **or** `cngnAmount`, not both.
     </ParamField>
   </Tab>
 
