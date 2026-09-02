@@ -1,0 +1,133 @@
+---
+title: "Strails Skill for AI Coding Tools"
+sidebarTitle: "Skills"
+description: "Install the Strails API skill so Claude Code and other AI coding tools write correct Strails integrations, covering endpoints, amount formats, webhook handlers and FX flows."
+---
+
+The **Strails API skill** packages these pages into a form AI coding tools load
+on demand. Once it is installed, your assistant writes Strails calls against
+the real endpoint contracts instead of guessing at them. It knows that
+`/cngnofframp` takes Naira while `/initiateofframp` takes the smallest token
+unit, that webhook signatures cover `timestamp + "." + body`, and that FX
+trades are polled rather than pushed.
+
+<Card title="wrappedcbdc/strails-skill" icon="github" href="https://github.com/wrappedcbdc/strails-skill">
+  Source, releases and the packaged `strails-api.skill` bundle. Installs as a
+  Claude Code plugin in two commands. See [Install](#install).
+</Card>
+
+## What you get
+
+The skill is one always-loaded overview plus fourteen reference files that load
+only when the task calls for them.
+
+<CardGroup cols={2}>
+  <Card title="Correct amount handling" icon="coins">
+    Four formats are in play: Naira, kobo, human-readable token units and
+    smallest units. The skill routes each endpoint to the right one.
+  </Card>
+  <Card title="Endpoint routing" icon="signs-post">
+    A capability map that resolves a request like "let a user withdraw to their
+    bank" to the right endpoint family in one step.
+  </Card>
+  <Card title="Working webhook handlers" icon="tower-broadcast">
+    Raw-body HMAC verification, replay rejection, timing-safe comparison, and
+    the full list of 22 event types.
+  </Card>
+  <Card title="FX and wallet flows" icon="arrow-trend-up">
+    Orderbook, quotes, escrow settlement, MPC signing, and the three wallet
+    types with their custody rules.
+  </Card>
+</CardGroup>
+
+## Install
+
+<Tabs>
+  <Tab title="Claude Code">
+    The repository doubles as its own plugin marketplace, so installing takes
+    two commands. No cloning, no copying files:
+
+    ```bash
+    claude plugin marketplace add wrappedcbdc/strails-skill
+    claude plugin install strails-api@strails
+    ```
+
+    The same thing works inside a session: `/plugin marketplace add
+    wrappedcbdc/strails-skill`, then `/plugin install strails-api@strails`.
+
+    Restart Claude Code afterwards. The skill then picks itself up whenever you
+    mention Strails, cNGN, `api.strails.io`, or paste a Strails endpoint.
+
+    | Command | What it does |
+    |---|---|
+    | `claude plugin list` | Show installed plugins and their status |
+    | `claude plugin details strails-api` | List components and projected token cost |
+    | `claude plugin update strails-api` | Pull the latest published version |
+    | `claude plugin uninstall strails-api` | Remove it |
+
+    It installs for your user account by default, so it works in every project.
+    Add `--scope project` to commit it to the repository you are working in and
+    share it with your team, or `--scope local` to keep it to one checkout.
+  </Tab>
+  <Tab title="claude.ai">
+    Download `strails-api.skill` from the
+    [repository](https://github.com/wrappedcbdc/strails-skill), then upload it
+    under **Settings** -> **Capabilities** -> **Skills**.
+  </Tab>
+  <Tab title="Other tools">
+    The skill is plain Markdown: `skills/strails-api/SKILL.md` plus
+    `skills/strails-api/references/*.md`. Any assistant that reads repository
+    context can use it. Copy the directory into your project and point your
+    tool at it.
+  </Tab>
+</Tabs>
+
+## Using it
+
+You do not need to name the skill. Describe the task and it loads the
+reference files that apply:
+
+```text
+Write a Node handler that onboards a user with their BVN, polls until
+verification completes, then creates a ₦5,000 onramp with auto-swap to USDC.
+```
+
+```text
+Our offramp webhook fires but the signature check fails every time. Here is
+our Express handler. What's wrong?
+```
+
+<Tip>
+  Ask the assistant to state the amount format it is using for each endpoint it
+  calls. Mixing Naira with smallest units is the most common Strails
+  integration bug, and asking makes the assumption visible before you ship.
+</Tip>
+
+## Keeping it current
+
+The skill tracks this documentation. When endpoints change here, update the
+skill sources and rebuild:
+
+```bash
+python3 build.py           # validate, then write strails-api.skill
+python3 build.py --check   # validate only
+```
+
+The build stops if `SKILL.md` is missing its `name` or `description`
+frontmatter, if `name` does not match the directory it sits in, if a reference
+file is orphaned or missing, if the plugin and marketplace manifests disagree,
+or if an example URL leaves off the `/v1` prefix.
+
+Claude Code ships its own validator for the plugin manifests, worth running
+alongside the build:
+
+```bash
+claude plugin validate . --strict
+```
+
+<Note>
+  The skill is a convenience layer over these pages, not a replacement for
+  them. This documentation stays the source of truth. If the two ever disagree,
+  trust the [API reference](/api-reference/index) and
+  [open an issue](https://github.com/wrappedcbdc/strails-skill/issues).
+</Note>

@@ -52,6 +52,13 @@
               "testing-scenarios",
               "troubleshooting"
             ]
+          },
+          {
+            "group": "Tools",
+            "icon": "toolbox",
+            "pages": [
+              "skills"
+            ]
           }
         ]
       },
@@ -140,6 +147,10 @@
   },
   "navbar": {
     "links": [
+      {
+        "label": "AI Skill",
+        "href": "https://github.com/wrappedcbdc/strails-skill"
+      },
       {
         "label": "Postman Collection",
         "href": "https://github.com/wrappedcbdc/strails-docs/blob/main/postman-collection.json"
