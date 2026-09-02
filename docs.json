@@ -57,7 +57,8 @@
             "group": "Tools",
             "icon": "toolbox",
             "pages": [
-              "skills"
+              "skills",
+              "mcp-server"
             ]
           }
         ]
