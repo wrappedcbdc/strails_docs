@@ -27,7 +27,7 @@ Strails includes the following headers on every webhook POST request.
 
 | Header | Description |
 |---|---|
-| `X-Strails-Signature` | HMAC-SHA256 hex digest of the raw request body, signed with your webhook secret. Verify this before processing the payload. |
+| `X-Strails-Signature` | HMAC-SHA256 hex digest over `X-Strails-Timestamp` + `"."` + the raw request body, signed with your webhook secret. Verify this before processing the payload - see [HMAC Signatures](/hmac-signatures). |
 | `X-Strails-Timestamp` | ISO 8601 timestamp of when the request was sent. Use this alongside the signature to prevent replay attacks. |
 | `X-Webhook-ID` | Unique UUID for this specific delivery attempt. Use it to deduplicate retried deliveries. |
 | `X-Strails-Event` | The event type name, matching the `eventType` field in the body (e.g., `"payments.confirmed"`). |
@@ -824,6 +824,10 @@ Fired when an offramp fails at any stage in the pipeline - whether during the on
 </Accordion>
 
 ---
+
+<Note>
+  **FX trades do not emit webhook events.** None of the 22 events above cover the orderbook or trading flow, so track trade settlement by polling [`GET /fx/trades/status`](/api-reference/trading-management#get-trade-status) until the trade reaches `completed`, `expired`, or `failed`.
+</Note>
 
 ## Retry behaviour
 

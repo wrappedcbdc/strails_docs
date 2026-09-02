@@ -127,10 +127,17 @@ app.post('/webhooks/strails', express.raw({ type: 'application/json' }), async (
     .update(`${timestamp}.${rawBody}`)
     .digest('hex');
 
-  const isValid = crypto.timingSafeEqual(
-    Buffer.from(signature, 'hex'),
-    Buffer.from(expected,  'hex')
-  );
+  // timingSafeEqual throws when the buffers differ in length, so guard it -
+  // an uncaught throw here returns 500 and Strails will retry the delivery
+  let isValid = false;
+  try {
+    isValid = crypto.timingSafeEqual(
+      Buffer.from(signature, 'hex'),
+      Buffer.from(expected,  'hex')
+    );
+  } catch {
+    isValid = false;
+  }
 
   if (!isValid) {
     return res.status(401).send('Invalid signature');
@@ -153,7 +160,8 @@ Register your webhook URL and secret by calling `POST /setwebhook`:
 {
   "webhookUrl": "https://your-domain.com/webhooks/strails",
   "secret": "your_webhook_secret_key",
-  "enabled": true
+  "enabled": true,
+  "events": ["all"]
 }
 ```
 

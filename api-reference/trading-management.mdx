@@ -32,7 +32,7 @@ Generate a price quote by matching your requested cNGN amount against live order
   <Tab title="Request">
     ```bash
     curl --request POST \
-      --url https://api.strails.io/fx/quote \
+      --url https://api.strails.io/v1/fx/quote \
       --header "x-api-key: <API_KEY>" \
       --header "Content-Type: application/json" \
       --data '{
@@ -130,7 +130,7 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
 
     ```bash
     curl --request POST \
-      --url https://api.strails.io/fx/trade \
+      --url https://api.strails.io/v1/fx/trade \
       --header "x-api-key: <API_KEY>" \
       --header "Content-Type: application/json" \
       --data '{
@@ -153,7 +153,7 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
 
     ```bash
     curl --request POST \
-      --url https://api.strails.io/fx/trade \
+      --url https://api.strails.io/v1/fx/trade \
       --header "x-api-key: <API_KEY>" \
       --header "Content-Type: application/json" \
       --data '{
@@ -186,7 +186,7 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
 
     ```bash
     curl --request POST \
-      --url https://api.strails.io/fx/trade \
+      --url https://api.strails.io/v1/fx/trade \
       --header "x-api-key: <API_KEY>" \
       --header "Content-Type: application/json" \
       --data '{
@@ -270,7 +270,7 @@ Submit an immediate market order that executes at the current best available pri
   <Tab title="Request">
     ```bash
     curl --request POST \
-      --url https://api.strails.io/fx/market-order \
+      --url https://api.strails.io/v1/fx/market-order \
       --header "x-api-key: <API_KEY>" \
       --header "Content-Type: application/json" \
       --data '{
@@ -354,7 +354,7 @@ Retrieve the full details and current status of a single trade. Poll this endpoi
   <Tab title="Request">
     ```bash
     curl --request GET \
-      --url "https://api.strails.io/fx/trades/status?tradeId=trade_abc123" \
+      --url "https://api.strails.io/v1/fx/trades/status?tradeId=trade_abc123" \
       --header "x-api-key: <API_KEY>"
     ```
 
@@ -434,7 +434,7 @@ List your fintech's FX trades with optional filters. Results are paginated using
   <Tab title="Request">
     ```bash
     curl --request GET \
-      --url "https://api.strails.io/fx/trades?status=completed&limit=50" \
+      --url "https://api.strails.io/v1/fx/trades?status=completed&limit=50" \
       --header "x-api-key: <API_KEY>"
     ```
 

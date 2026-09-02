@@ -61,26 +61,43 @@ See [Webhook Events](/api-reference/webhook-events) for payload details.
 
 ## Amount Formats
 
-The API uses **different amount formats** depending on the operation type.
+The API uses **four** amount formats. Which one applies is a property of the individual endpoint, so check [Payload Formats](/payload-formats#amount-formatting) before sending an amount.
 
-### Fiat Operations (Onramp / Offramp / Virtual Accounts)
+### Naira (onramp / offramp / virtual accounts)
 
-Amounts are in **Naira** (main currency unit):
+Plain Naira, the main currency unit:
 
 ```json
-{
-  "amount": 5000    // = ₦5,000 (NOT 5000 kobo)
-}
+{ "amount": 5000 }
 ```
 
-**Examples:**
-- Create virtual account: `"amount": 5000` -> User pays ₦5,000
-- Onramp: `"amount": 200` -> Costs ₦203 (with fees)
-- Offramp: `"amount": 3000` -> User receives ₦3,000 in bank
+`5000` means ₦5,000, not 5,000 kobo.
 
-### Token Operations (Blockchain Transfers / Balances)
+- Create virtual account: `"amount": 5000` -> user pays ₦5,000
+- Onramp: `"amount": 200` -> costs ₦203 with fees
+- Offramp: `"amount": 3000` -> user receives ₦3,000 in their bank
 
-Amounts use the **smallest unit (wei format)** with token decimals:
+### Kobo (Fee Management endpoints only)
+
+Every endpoint under [Fee Management](/api-reference/fee-management-api) - `/feewithdrawal`, `/getaccumulatedfees`, `/getwithdrawalhistory`, `/fees/strails/preview`, and `capFee` on `/managefees` - is denominated in **kobo**:
+
+```json
+{ "amount": 50000 }
+```
+
+`50000` means ₦500.00.
+
+### Human-readable token units
+
+`/withdrawasset`, `/swap`, `/swaptrigger`, and all FX price and amount fields take the token amount as a person would write it:
+
+```json
+{ "amount": 100.50 }
+```
+
+### Smallest unit (wei format)
+
+`/fintechtransfer`, `/initiateofframp`, on-chain balances, and the `amount` field returned by blockchain status endpoints use the smallest unit:
 
 | Token | Decimals | Example |
 |-------|----------|---------|
@@ -89,18 +106,10 @@ Amounts use the **smallest unit (wei format)** with token decimals:
 | USDT | 6 | `1000000` = 1 USDT |
 | DAI | 18 | `1000000000000000000` = 1 DAI |
 
-**JavaScript conversion (token operations only):**
-
-```javascript
-// Blockchain response -> Display
-const displayAmount = Number("500000000") / 1e6; // = 500 cNGN
-
-// User input -> Blockchain request
-const rawAmount = String(Math.floor(123.45 * 1e6)); // = "123450000"
-```
+Use the string-based helpers in [Payload Formats](/payload-formats#helper-functions) to convert - `amount * 1e6` in plain JavaScript loses precision on large balances and overflows entirely at 18 decimals.
 
 <Warning>
-**Key takeaway:** Fiat endpoints use regular Naira amounts. Only blockchain/token operations use wei format with decimals.
+**Key takeaway:** there is no single rule that covers "fiat" or "blockchain" endpoints. `/cngnofframp` takes Naira while `/initiateofframp` takes smallest units; `/withdrawasset` takes human-readable token units while `/fintechtransfer` takes smallest units. Look up the endpoint.
 </Warning>
 
 ## Response Format
@@ -111,7 +120,7 @@ All API responses follow a consistent structure.
 
 ```json
 {
-  "status": "success",
+  "status": "Success",
   "response_code": "00",
   "message": "Operation completed successfully",
   "data": { "requestId": "req_abc123" }
@@ -122,12 +131,16 @@ All API responses follow a consistent structure.
 
 ```json
 {
-  "status": "error",
+  "status": "Error",
   "response_code": "01",
   "message": "Validation error: Invalid amount",
   "error": { "field": "amount", "reason": "Must be greater than 0" }
 }
 ```
+
+<Warning>
+  The casing of `status` is not stable across endpoints - you will see `Success`/`success`, `Error`/`error`, and `Failed`. Branch on `response_code` and the HTTP status instead, and use `status` for display only.
+</Warning>
 
 ### Response Codes
 

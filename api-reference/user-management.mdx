@@ -10,17 +10,17 @@ The User Management API lets you register end-users on Strails using their Bank 
 
 | Section | Endpoint | Method | Description |
 |---|---|---|---|
-| [Onboard User](#post-/onboarduser) | `/onboarduser` | POST | Initiate BVN-based KYC and create a new user account. |
-| [Onboard Status](#post-/onboardstatus) | `/onboardstatus` | POST | Check the current status of a pending onboarding request. |
-| [Get User Details](#post-/getuserdetails) | `/getuserdetails` | POST | Retrieve a user's full profile, wallets, and virtual accounts. |
-| [Manage User Status](#post-/manageuserstatus) | `/manageuserstatus` | POST | Activate or deactivate a user account with an audit reason. |
-| [List Fintech Users](#post-/listfintechusers) | `/listfintechusers` | POST | Retrieve a paginated list of all users belonging to your fintech. |
+| [Onboard User](#post-onboarduser) | `/onboarduser` | POST | Initiate BVN-based KYC and create a new user account. |
+| [Onboard Status](#post-onboardstatus) | `/onboardstatus` | POST | Check the current status of a pending onboarding request. |
+| [Get User Details](#post-getuserdetails) | `/getuserdetails` | POST | Retrieve a user's full profile, wallets, and virtual accounts. |
+| [Manage User Status](#post-manageuserstatus) | `/manageuserstatus` | POST | Activate or deactivate a user account with an audit reason. |
+| [List Fintech Users](#post-listfintechusers) | `/listfintechusers` | POST | Retrieve a paginated list of all users belonging to your fintech. |
 
 ---
 
 ### POST /onboarduser
 
-Initiates onboarding for a new user by submitting their 11-digit BVN for identity verification. The request is processed asynchronously - use the returned `requestId` to poll `/onboardstatus` or wait for the `user_registration` webhook event.
+Initiates onboarding for a new user by submitting their 11-digit BVN for identity verification. The request is processed asynchronously - use the returned `requestId` to poll `/onboardstatus`, or wait for the [`user.onboarded`](/api-reference/webhook-events) webhook event.
 
 ```bash
 curl -X POST https://beta.stablesrail.io/v1/onboarduser \
@@ -36,6 +36,10 @@ curl -X POST https://beta.stablesrail.io/v1/onboarduser \
 <ParamField body="bvn" type="string" required>
   The user's 11-digit Bank Verification Number. Must be exactly 11 numeric digits and must not belong to an existing Strails user.
 </ParamField>
+
+<Note>
+  `bvn` is the **only** field this endpoint accepts. Identity details (names, phone, date of birth) are resolved from the BVN record, and the user's identifier is issued by Strails and returned as `userHash` - do not supply your own `userId`.
+</Note>
 
 #### Response
 
@@ -91,7 +95,7 @@ curl -X POST https://beta.stablesrail.io/v1/onboarduser \
 
 ### POST /onboardstatus
 
-Checks the current status of a pending user onboarding request using the `requestId` returned by `/onboarduser`. Poll this endpoint until `status` is `"completed"` or `"failed"`, or handle the `user_registration` webhook event instead.
+Checks the current status of a pending user onboarding request using the `requestId` returned by `/onboarduser`. Poll this endpoint until `status` is `"completed"` or `"failed"`, or handle the [`user.onboarded`](/api-reference/webhook-events) webhook event instead.
 
 ```bash
 curl -X POST https://beta.stablesrail.io/v1/onboardstatus \
