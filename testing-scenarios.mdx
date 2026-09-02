@@ -4,7 +4,11 @@ sidebarTitle: "Testing"
 description: "Step-by-step sandbox test scenarios for API connection, user onboarding, onramp, offramp, IP allowlist, and FX trading with ready-to-run curl commands."
 ---
 
-The Strails sandbox environment lets you exercise every API endpoint with real request/response cycles without touching live funds. Use your **sandbox API key** (issued during onboarding) and the base URL `https://beta.stablesrail.io/v1/` for all test requests. Sandbox state is isolated from production - you can freely create users, trigger transactions, and inspect webhook payloads without consequence.
+The Strails **test environment** lets you exercise every API endpoint with real request/response cycles without touching live funds. Use your normal API key and the base URL `https://beta.stablesrail.io/v1/` for all requests on this page. Test state is isolated from production - you can freely create users, trigger transactions, and inspect webhook payloads.
+
+<Note>
+  This page covers the **test environment** (`beta.stablesrail.io`), which runs the real staged backend with your normal API key. That is different from the [Mock Sandbox](/mock-sandbox/index) (`sandbox.stablesrail.io`), a fully isolated mock that performs no blockchain, KYC, or payment-provider calls and requires a separate `sandbox_`-prefixed key.
+</Note>
 
 ## Required Headers
 
@@ -13,7 +17,7 @@ Include these three headers on every request:
 ```bash
 Content-Type: application/json
 Accept: */*
-x-api-key: YOUR_SANDBOX_API_KEY
+x-api-key: YOUR_API_KEY
 ```
 
 <Warning>
@@ -34,7 +38,7 @@ Verify that your API key is valid and your IP is reachable by fetching your fint
 curl -X GET "https://beta.stablesrail.io/v1/getfintechwallet" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY"
+  -H "x-api-key: YOUR_API_KEY"
 ```
 
 **Expected response:**
@@ -45,17 +49,25 @@ curl -X GET "https://beta.stablesrail.io/v1/getfintechwallet" \
   "response_code": "00",
   "message": "Fintech wallet retrieved successfully",
   "data": {
-    "walletAddress": "0xYourFintechWalletAddress",
-    "balances": {
-      "cNGN": "0",
-      "USDC": "0",
-      "USDT": "0"
-    }
+    "fintechId": "fintech_abc123",
+    "fintechName": "Example Fintech Ltd",
+    "smartWallet": {
+      "address": "0x69E4eA33BF7E2f6bAE7F1DEF247534C0aD3515C3",
+      "owner": "0x684f5f118ed7d0e00b1c0a27dcdce6e37cf652e1",
+      "deployed": true,
+      "saltVersion": "v2"
+    },
+    "externalWallets": [],
+    "totalUsers": 0
   }
 }
 ```
 
-If you receive a `401`, double-check that you are sending `x-api-key` (all lowercase) and that your sandbox key is correct. If you receive a `403`, add your IP to the allowlist - see **Test Scenario 5** below.
+<Note>
+  For token balances, call [`GET /balance/multi`](/api-reference/wallet#fintech-system-wallet-balance) - `/getfintechwallet` returns wallet configuration, not balances.
+</Note>
+
+If you receive a `401`, double-check that you are sending `x-api-key` (all lowercase) and that your key is correct. If you receive a `403`, add your IP to the allowlist - see **Test Scenario 5** below.
 
 ### User Onboarding
 
@@ -67,12 +79,8 @@ Onboard a test user with a BVN, then poll for the onboarding result.
 curl -X POST "https://beta.stablesrail.io/v1/onboarduser" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -H "x-api-key: YOUR_API_KEY" \
   -d '{
-    "firstName": "Adebayo",
-    "lastName": "Ogundimu",
-    "email": "adebayo@example.com",
-    "phoneNumber": "+2348012345678",
     "bvn": "12345678901"
   }'
 ```
@@ -83,25 +91,27 @@ curl -X POST "https://beta.stablesrail.io/v1/onboarduser" \
 {
   "status": "Success",
   "response_code": "00",
-  "message": "User onboarding initiated",
+  "message": "User registration initiated",
   "data": {
-    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933",
-    "status": "processing"
+    "requestId": "7898f29e-10a6-4b2b-9496-f4ee50549fd4",
+    "status": "processing",
+    "userHash": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933",
+    "estimatedCompletionTime": "2-5 minutes"
   }
 }
 ```
 
-Save the `userId` - you will need it in every subsequent call.
+Save the `requestId` - you need it to poll status. The `userHash` becomes the `userId` you pass to every subsequent call once onboarding completes.
 
-**Step 2 - Check onboarding status:**
+**Step 2 - Check onboarding status** (keyed by `requestId`, not `userId`):
 
 ```bash
 curl -X POST "https://beta.stablesrail.io/v1/onboardstatus" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -H "x-api-key: YOUR_API_KEY" \
   -d '{
-    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933"
+    "requestId": "7898f29e-10a6-4b2b-9496-f4ee50549fd4"
   }'
 ```
 
@@ -111,11 +121,12 @@ curl -X POST "https://beta.stablesrail.io/v1/onboardstatus" \
 {
   "status": "Success",
   "response_code": "00",
-  "message": "User onboarding status retrieved",
+  "message": "User registration completed successfully",
   "data": {
+    "type": "user_registration",
     "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933",
     "status": "completed",
-    "bvnStatus": "verified"
+    "createdAt": "2026-01-18T19:33:39.945Z"
   }
 }
 ```
@@ -130,13 +141,17 @@ Create a cNGN onramp request, then retrieve the temporary virtual account for th
 curl -X POST "https://beta.stablesrail.io/v1/cngnonramp" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -H "x-api-key: YOUR_API_KEY" \
   -d '{
     "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933",
     "amount": 5000,
-    "currency": "NGN"
+    "assetSwap": "USDC",
+    "autoSwap": false,
+    "sweepToOfframp": false
   }'
 ```
+
+`amount` is in **Naira** - `5000` means ₦5,000.
 
 **Expected response:**
 
@@ -144,23 +159,30 @@ curl -X POST "https://beta.stablesrail.io/v1/cngnonramp" \
 {
   "status": "Success",
   "response_code": "00",
-  "message": "Onramp request created",
+  "message": "cNGN request submitted successfully",
   "data": {
-    "requestId": "req_abc123",
-    "status": "pending"
+    "requestId": "f16c0e3c-0c0f-473f-91f7-ab2b85bc9117",
+    "walletAddress": "0xF94384E5792F44fDF231A56cea4f4C14d998e58c",
+    "status": "requested",
+    "autoSwapEnabled": false,
+    "feeBreakdown": {
+      "baseAmount": 5000,
+      "totalFee": 75,
+      "totalAmount": 5075
+    }
   }
 }
 ```
 
-**Step 2 - Retrieve the virtual account:**
+**Step 2 - Retrieve the virtual account** using the `requestId` from step 1:
 
 ```bash
 curl -X POST "https://beta.stablesrail.io/v1/getvirtualaccount" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -H "x-api-key: YOUR_API_KEY" \
   -d '{
-    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933"
+    "requestId": "f16c0e3c-0c0f-473f-91f7-ab2b85bc9117"
   }'
 ```
 
@@ -170,16 +192,26 @@ curl -X POST "https://beta.stablesrail.io/v1/getvirtualaccount" \
 {
   "status": "Success",
   "response_code": "00",
-  "message": "Virtual account retrieved",
+  "message": "Virtual account retrieved successfully",
   "data": {
-    "accountNumber": "9876543210",
-    "accountName": "Adebayo Ogundimu - Strails",
-    "bankName": "Wema Bank",
-    "bankCode": "035",
-    "expiresAt": "2023-12-07T11:00:00Z"
+    "virtualAccount": {
+      "accountNumber": "9876543210",
+      "accountName": "Adebayo Ogundimu - Strails",
+      "bankName": "Wema Bank",
+      "amount": 5075,
+      "baseAmount": 5000,
+      "feeAmount": 75,
+      "totalAmountWithFee": 5075
+    },
+    "status": "created",
+    "expiresAt": "2026-04-10T11:30:00Z"
   }
 }
 ```
+
+<Warning>
+  Show the user `totalAmountWithFee`, not `baseAmount` - transferring the base amount leaves the deposit short by the fee.
+</Warning>
 
 <Note>
   Virtual accounts expire after **30 minutes**. Simulate the bank transfer before the `expiresAt` timestamp, or create a new onramp request.
@@ -197,15 +229,17 @@ Burn cNGN and send the equivalent Naira to a bank account.
 curl -X POST "https://beta.stablesrail.io/v1/cngnofframp" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -H "x-api-key: YOUR_API_KEY" \
   -d '{
     "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933",
     "amount": 2000,
-    "bankCode": "058",
     "accountNumber": "0123456789",
-    "accountName": "Adebayo Ogundimu"
+    "bankCode": "058",
+    "ticker": "CNGN"
   }'
 ```
+
+`amount` is in **Naira**, and `ticker` is required. Look up `bankCode` values with `POST /getbankscode`.
 
 **Expected response:**
 
@@ -213,10 +247,11 @@ curl -X POST "https://beta.stablesrail.io/v1/cngnofframp" \
 {
   "status": "Success",
   "response_code": "00",
-  "message": "Offramp request initiated",
+  "message": "Vault return token transfer completed, payout processing initiated",
   "data": {
     "requestId": "req_def456",
-    "status": "pending"
+    "status": "payout_pending",
+    "stage": "payout"
   }
 }
 ```
@@ -227,7 +262,7 @@ curl -X POST "https://beta.stablesrail.io/v1/cngnofframp" \
 curl -X POST "https://beta.stablesrail.io/v1/cngnofframpstatus" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -H "x-api-key: YOUR_API_KEY" \
   -d '{
     "requestId": "req_def456"
   }'
@@ -239,11 +274,20 @@ curl -X POST "https://beta.stablesrail.io/v1/cngnofframpstatus" \
 {
   "status": "Success",
   "response_code": "00",
-  "message": "Offramp status retrieved",
+  "message": "Vault return status retrieved successfully",
   "data": {
     "requestId": "req_def456",
     "status": "completed",
-    "payoutReference": "PAY_GHI789"
+    "stage": "completed",
+    "tokenTransfer": {
+      "status": "confirmed",
+      "transactionHash": "0x..."
+    },
+    "payout": {
+      "status": "completed",
+      "reference": "PAY_GHI789",
+      "attempts": 1
+    }
   }
 }
 ```
@@ -258,7 +302,7 @@ Add and remove IP addresses from your allowlist. Only IPs on the allowlist can c
 curl -X POST "https://beta.stablesrail.io/v1/manageipallowlist" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -H "x-api-key: YOUR_API_KEY" \
   -d '{
     "action": "add",
     "ipAddress": "102.88.108.96"
@@ -285,7 +329,7 @@ curl -X POST "https://beta.stablesrail.io/v1/manageipallowlist" \
 curl -X POST "https://beta.stablesrail.io/v1/manageipallowlist" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -H "x-api-key: YOUR_API_KEY" \
   -d '{
     "action": "remove",
     "ipAddress": "102.88.108.96"
@@ -320,13 +364,15 @@ Get a live exchange rate for a cNGN/USDC or cNGN/USDT pair, then execute the tra
 curl -X POST "https://beta.stablesrail.io/v1/fx/quote" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -H "x-api-key: YOUR_API_KEY" \
   -d '{
     "pair": "CNGN-USDC",
     "side": "sell",
-    "amount": "500000000"
+    "cngnAmount": "50000"
   }'
 ```
+
+`cngnAmount` is a **human-readable decimal** - `"50000"` means 50,000 cNGN, and the minimum is 1,000 cNGN. FX endpoints do not use wei format.
 
 **Expected response:**
 
@@ -334,15 +380,17 @@ curl -X POST "https://beta.stablesrail.io/v1/fx/quote" \
 {
   "status": "Success",
   "response_code": "00",
-  "message": "Quote generated",
+  "message": "Quote generated successfully",
   "data": {
-    "quoteId": "quote_jkl012",
-    "pair": "CNGN-USDC",
-    "side": "sell",
-    "inputAmount": "500000000",
-    "outputAmount": "312500",
-    "rate": "0.000625",
-    "expiresAt": "2023-12-07T10:35:00Z"
+    "quote": {
+      "quoteId": "quote_jkl012",
+      "pair": "CNGN-USDC",
+      "side": "sell",
+      "cngnAmount": "50000",
+      "usdcAmount": "37.04",
+      "price": "1350.00",
+      "expiresAt": "2026-05-01T10:35:00.000Z"
+    }
   }
 }
 ```
@@ -353,12 +401,14 @@ curl -X POST "https://beta.stablesrail.io/v1/fx/quote" \
 curl -X POST "https://beta.stablesrail.io/v1/fx/trade" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
-  -H "x-api-key: YOUR_SANDBOX_API_KEY" \
+  -H "x-api-key: YOUR_API_KEY" \
   -d '{
     "quoteId": "quote_jkl012",
-    "userId": "77aefb50d96d0a63bfb913a00a07e361dc63ed1e43696e2d7d9c17b1d6630933"
+    "idempotencyKey": "test_trade_001"
   }'
 ```
+
+FX trades are executed by the fintech account that owns the API key - there is no `userId` on this endpoint.
 
 **Expected response:**
 
@@ -369,15 +419,20 @@ curl -X POST "https://beta.stablesrail.io/v1/fx/trade" \
   "message": "Trade initiated",
   "data": {
     "tradeId": "trade_mno345",
-    "status": "locked",
-    "pair": "CNGN-USDC",
-    "inputAmount": "500000000",
-    "outputAmount": "312500"
+    "status": "pending",
+    "lockId": "lock_abc123",
+    "expiresAt": "2026-05-01T10:40:00.000Z"
   }
 }
 ```
 
-The trade moves through `locked` -> `signing` -> `settling` -> `completed`. Monitor progress via your configured webhook or by polling the trade status endpoint.
+The trade moves through `pending` -> `locked` -> `signing` -> `settling` -> `completed`. FX trades emit no webhook events, so track progress by polling:
+
+```bash
+curl -X GET "https://beta.stablesrail.io/v1/fx/trades/status?tradeId=trade_mno345" \
+  -H "Accept: */*" \
+  -H "x-api-key: YOUR_API_KEY"
+```
 
 </Steps>
 
@@ -396,7 +451,7 @@ To use the collection:
    | Variable | Value |
    |---|---|
    | `BASE_URL` | `https://beta.stablesrail.io/v1` |
-   | `API_KEY` | Your sandbox API key |
+   | `API_KEY` | Your test-environment API key |
 
 4. Select your new environment from the environment dropdown before sending any request.
 

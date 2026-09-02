@@ -27,18 +27,29 @@ This guide walks you through a complete Strails integration, from your first API
 
     ```json
     {
-      "status": "success",
+      "status": "Success",
       "response_code": "00",
       "message": "Fintech wallet retrieved successfully",
       "data": {
-        "smartWallet": "0x1234...abcd",
-        "mpcVault": "0x5678...efgh",
-        "managedWallet": "0xabcd...1234"
+        "fintechId": "fintech_abc123",
+        "fintechName": "Example Fintech Ltd",
+        "smartWallet": {
+          "address": "0x69E4eA33BF7E2f6bAE7F1DEF247534C0aD3515C3",
+          "owner": "0x684f5f118ed7d0e00b1c0a27dcdce6e37cf652e1",
+          "deployed": true,
+          "saltVersion": "v2"
+        },
+        "externalWallets": [],
+        "totalUsers": 0
       }
     }
     ```
 
-    If you see your three wallet addresses, your API key is valid and you are connected to the test environment. Save these addresses - you will reference them throughout the integration.
+    If you see your Smart Wallet address, your API key is valid and you are connected to the test environment. Save `data.smartWallet.address` - you will reference it throughout the integration. See [Wallet Management](/api-reference/wallet#retrieve-the-fintech-wallet) for the full response schema.
+
+    <Note>
+      This endpoint returns your Smart Wallet and registered external wallets only. Your MPC Vault token wallets are returned by [`GET /fx/settings`](/api-reference/fx-setting) once MPC registration is approved, and Managed Wallets are provisioned per user - retrieve them with [`POST /listuserwallets`](/api-reference/wallet#retrieve-user-wallets).
+    </Note>
 
     <Warning>
       The header name must be `x-api-key` in lowercase. Headers named `X-API-Key` or `api-key` will return `401 Unauthorized`.
@@ -65,37 +76,54 @@ This guide walks you through a complete Strails integration, from your first API
     const crypto  = require('crypto');
 
     const app = express();
-    app.use(express.json());
 
-    app.post('/webhooks/strails', (req, res) => {
+    // express.raw - NOT express.json. The signature is computed over the raw
+    // bytes, so parsing and re-serialising the body will break verification.
+    app.post('/webhooks/strails', express.raw({ type: 'application/json' }), (req, res) => {
       const signature = req.headers['x-strails-signature'];
-      const timestamp  = req.headers['x-strails-timestamp'];
-      const payload    = JSON.stringify(req.body);
+      const timestamp = req.headers['x-strails-timestamp'];
+      const rawBody   = req.body.toString('utf-8');
 
-      // Reject requests that are more than 5 minutes old
-      const age = Date.now() / 1000 - Number(timestamp);
-      if (age > 300) {
-        return res.status(401).send('Timestamp too old');
+      if (!signature || !timestamp) {
+        return res.status(400).send('Missing signature headers');
       }
 
-      // Verify HMAC-SHA256 signature
+      // X-Strails-Timestamp is ISO 8601, so parse it as a date - not as a number
+      const ageSeconds = (Date.now() - new Date(timestamp).getTime()) / 1000;
+      if (ageSeconds > 300) {
+        return res.status(400).send('Timestamp too old');
+      }
+
       const expected = crypto
-        .createHmac('sha256', process.env.WEBHOOK_SECRET)
-        .update(`${timestamp}.${payload}`)
+        .createHmac('sha256', process.env.STRAILS_WEBHOOK_SECRET)
+        .update(`${timestamp}.${rawBody}`)
         .digest('hex');
 
-      if (signature !== expected) {
+      let isValid = false;
+      try {
+        isValid = crypto.timingSafeEqual(
+          Buffer.from(signature, 'hex'),
+          Buffer.from(expected,  'hex')
+        );
+      } catch {
+        isValid = false; // length mismatch
+      }
+      if (!isValid) {
         return res.status(401).send('Invalid signature');
       }
 
       // Acknowledge immediately - process asynchronously
-      res.status(200).send('OK');
+      res.sendStatus(200);
 
-      const { event, data } = req.body;
-      console.log(`Received event: ${event}`, data);
+      const { eventType, payload } = JSON.parse(rawBody);
+      console.log(`Received event: ${eventType}`, payload);
       // Update your database, notify users, trigger downstream logic
     });
     ```
+
+    <Note>
+      Deduplicate on the `X-Webhook-ID` header - a retried delivery repeats the same event. Full verification details and a Python version are on the [HMAC Signatures](/hmac-signatures) page.
+    </Note>
 
     <Tip>
       Return `200 OK` before doing any processing. If your handler takes too long to respond, Strails will retry the delivery, causing duplicate events.
@@ -112,52 +140,59 @@ This guide walks you through a complete Strails integration, from your first API
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
-        "bvn": "12345678901",
-        "userId": "user_uniqueID",
-        "email": "user@example.com",
-        "phoneNumber": "+2348012345678"
+        "bvn": "12345678901"
       }'
     ```
+
+    <Note>
+      `bvn` is the only field this endpoint accepts. The user's identity is resolved from the BVN record and Strails issues the user identifier itself - you do not supply one.
+    </Note>
 
     **Response:**
 
     ```json
     {
-      "status": "success",
+      "status": "Success",
       "response_code": "00",
-      "message": "User onboarding initiated",
+      "message": "User registration initiated",
       "data": {
-        "userId": "user_uniqueID",
-        "status": "pending_verification",
-        "requestId": "req_xyz789"
+        "requestId": "7898f29e-10a6-4b2b-9496-f4ee50549fd4",
+        "status": "processing",
+        "userHash": "user_uniqueID",
+        "estimatedCompletionTime": "2-5 minutes"
       }
     }
     ```
 
-    **Check onboarding status:**
+    **Check onboarding status** by posting the `requestId` you just received:
 
     ```bash
-    curl -X GET "https://beta.stablesrail.io/v1/onboardstatus?userId=user_uniqueID" \
-      -H "x-api-key: YOUR_API_KEY"
+    curl -X POST https://beta.stablesrail.io/v1/onboardstatus \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "requestId": "7898f29e-10a6-4b2b-9496-f4ee50549fd4"
+      }'
     ```
 
     **Successful verification response:**
 
     ```json
     {
-      "status": "success",
+      "status": "Success",
       "response_code": "00",
+      "message": "User registration completed successfully",
       "data": {
+        "type": "user_registration",
         "userId": "user_uniqueID",
-        "status": "verified",
-        "bvnVerified": true,
-        "createdAt": "2026-04-10T10:00:00Z"
+        "status": "completed",
+        "createdAt": "2026-01-18T19:33:39.945Z"
       }
     }
     ```
 
     <Info>
-      BVN verification typically completes in 2-5 seconds. If the status is still `pending_verification`, wait a few seconds and poll again. You can also listen for the `user.verified` webhook event instead of polling.
+      Poll until `status` is `"completed"` or `"failed"`, or listen for the [`user.onboarded`](/api-reference/webhook-events) webhook event instead of polling. Once complete, use the returned `userId` for every subsequent call for this user.
     </Info>
   </Step>
 
@@ -170,7 +205,7 @@ This guide walks you through a complete Strails integration, from your first API
     |---|---|---|---|
     | `false` | - | `false` | NGN deposited -> cNGN minted to user wallet. No swap. |
     | `true` | `"USDC"` or `"USDT"` | `false` | NGN deposited -> cNGN minted -> auto-swapped to `assetSwap` token via fx orders in Strails orderbook. |
-    | `true` | `"USDC"` or `"USDT"` | `true` | NGN deposited -> cNGN minted -> auto-swapped -> USDC/USDT immediately sent to offramp (payout to bank). |
+    | `true` | `"USDC"` or `"USDT"` | `true` | NGN deposited -> cNGN minted -> auto-swapped -> swept to the user's default Smart Wallet. When set, `destinationAssetSwap` is ignored. |
 
     **Initiate the onramp:**
 
@@ -257,7 +292,7 @@ This guide walks you through a complete Strails integration, from your first API
 
     ```json
     {
-      "status": "success",
+      "status": "Success",
       "response_code": "00",
       "data": {
         "requestId": "f16c0e3c-0c0f-473f-91f7-ab2b85bc9117",
@@ -281,23 +316,32 @@ This guide walks you through a complete Strails integration, from your first API
     **Get the list of supported banks:**
 
     ```bash
-    curl -X GET https://beta.stablesrail.io/v1/getbankscode \
-      -H "x-api-key: YOUR_API_KEY"
+    curl -X POST https://beta.stablesrail.io/v1/getbankscode \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json"
     ```
 
     **Response:**
 
     ```json
     {
-      "status": "success",
+      "status": "Success",
       "response_code": "00",
-      "data": [
-        { "bankCode": "058", "bankName": "GTBank" },
-        { "bankCode": "044", "bankName": "Access Bank" },
-        { "bankCode": "033", "bankName": "UBA" }
-      ]
+      "message": "Banks retrieved successfully",
+      "data": {
+        "countryCode": "NG",
+        "banks": [
+          { "bank_name": "GTBank", "bank_code": "058" },
+          { "bank_name": "Access Bank", "bank_code": "044" },
+          { "bank_name": "UBA", "bank_code": "033" }
+        ]
+      }
     }
     ```
+
+    <Note>
+      `/getbankscode` is a `POST` endpoint that takes no request body. Cache the result - the bank list changes rarely and the call counts against your rate limit.
+    </Note>
 
     **Initiate the offramp:**
 
@@ -340,7 +384,7 @@ This guide walks you through a complete Strails integration, from your first API
       }'
     ```
 
-    Listen for the `offramp.completed` webhook event to confirm the bank transfer has settled. Store the `requestId` from every offramp so you can query its status if the user disputes a withdrawal.
+    Listen for the [`vault.return.payout.completed`](/api-reference/webhook-events) webhook event to confirm the bank transfer has settled - a user offramp emits `vault.return.transfer.confirmed` first (cNGN moved on-chain), then `vault.return.payout.completed`. Store the `requestId` from every offramp so you can query its status if the user disputes a withdrawal.
   </Step>
 
   <Step title="Execute an FX Trade">
@@ -349,16 +393,16 @@ This guide walks you through a complete Strails integration, from your first API
     **Create an orderbook entry:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/fx/orders \
+    curl -X POST https://beta.stablesrail.io/v1/fx/limit-order \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
-        "orderType": "sell",
-        "baseCurrency": "cNGN",
-        "quoteCurrency": "USDC",
-        "price": "1350000",
-        "minAmount": "500000000",
-        "maxAmount": "2000000000"
+        "pair": "CNGN-USDC",
+        "side": "sell",
+        "price": "1350.00",
+        "spread": 0.5,
+        "minAmount": "1000",
+        "maxAmount": "100000"
       }'
     ```
 
@@ -366,22 +410,34 @@ This guide walks you through a complete Strails integration, from your first API
 
     ```json
     {
-      "status": "success",
+      "status": "Success",
       "response_code": "00",
+      "message": "Limit order created successfully",
       "data": {
         "orderId": "order_abc123",
-        "status": "active",
-        "price": "1350000",
-        "availableLiquidity": "2000000000"
+        "pair": "CNGN-USDC",
+        "side": "sell",
+        "price": "1350.00",
+        "spread": 0.5,
+        "minAmount": "1000.00",
+        "maxAmount": "100000.00",
+        "availableLiquidity": "95000.00",
+        "status": "active"
       }
     }
     ```
 
-    **Get an FX quote:**
+    **Get an FX quote** (`POST`, with the cNGN amount as a human-readable decimal):
 
     ```bash
-    curl -X GET "https://beta.stablesrail.io/v1/fx/quote?baseCurrency=cNGN&quoteCurrency=USDC&amount=1000000000" \
-      -H "x-api-key: YOUR_API_KEY"
+    curl -X POST https://beta.stablesrail.io/v1/fx/quote \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "pair": "CNGN-USDC",
+        "side": "sell",
+        "cngnAmount": "50000"
+      }'
     ```
 
     The quote response includes a `quoteId` and is valid for **5 minutes**. Pass the `quoteId` directly to the trade endpoint.
@@ -393,15 +449,19 @@ This guide walks you through a complete Strails integration, from your first API
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
-        "quoteId": "quote_xyz789",
-        "quoteCurrency": "USDC"
+        "quoteId": "quote_7f3a9d2c-8e41-4b29-9a1c-5d8e7f2b3a9c",
+        "idempotencyKey": "trade_20260501_001"
       }'
     ```
 
-    After execution, tokens from both sides are held in escrow. Settlement completes automatically and Strails fires a `fx.trade.settled` webhook event when both sides' balances are updated.
+    After execution, tokens from both sides are held in escrow and settlement completes automatically.
+
+    <Warning>
+      FX trades do **not** emit webhook events. Poll [`GET /fx/trades/status?tradeId=...`](/api-reference/trading-management#get-trade-status) until the trade reaches `completed`, `expired`, or `failed`. The lock window is 5 minutes.
+    </Warning>
 
     <Tip>
-      All FX amounts (`price`, `minAmount`, `maxAmount`) use the smallest-unit (wei) format. See [Amount Formats](/core-concepts#amount-formats) for the conversion formulas.
+      FX amounts are human-readable decimals, not wei - `"price": "1350.00"` means 1,350 cNGN per USDC and `"minAmount": "1000"` means 1,000 cNGN. See [Orderbook Management](/api-reference/orderbook-management) and [Trading Management](/api-reference/trading-management) for every field.
     </Tip>
   </Step>
 </Steps>
@@ -430,6 +490,6 @@ Post a limit order on the FX orderbook -> wait for a match -> confirm the trade 
 | `401 Unauthorized` on every request | Check that your header is named `x-api-key` (lowercase) and that the key value is correct. |
 | IP not in allowlist error | Add your server's public IP via `/manageipallowlist` or contact support to add it for you. |
 | `429 Too Many Requests` | Implement exponential backoff. Contact [support@strails.io](mailto:support@strails.io) if you need a higher rate limit. |
-| BVN verification returns `failed` | Confirm the BVN is exactly 11 digits and that the user details match what is on record with the NIBSS. |
-| Transaction stuck in `pending` for more than 10 minutes | Query `/cngnonrampstatus` with the `requestId`, then try `GET /v1/manualstatusrecovery?requestId=YOUR_REQUEST_ID`. Contact support if the issue persists. |
+| BVN verification returns `failed` | Confirm the BVN is exactly 11 numeric digits with no spaces or hyphens, and that it is not already registered to another Strails user. A `failed` record cannot be retried - submit a fresh `/onboarduser` request. |
+| Transaction stuck in `pending` for more than 10 minutes | Query `/cngnonrampstatus` with the `requestId`, then call `POST /manualstatusrecovery` with `{"requestId": "..."}` to trigger a reconciliation check. Contact support if the issue persists. |
 | Webhooks not arriving | Confirm your URL is HTTPS, returns `200 OK`, and is publicly reachable. Check your HMAC verification logic for off-by-one errors in the signature string. |

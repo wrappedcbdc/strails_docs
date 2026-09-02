@@ -92,7 +92,7 @@ curl -X POST https://beta.stablesrail.io/v1/getuserdetails \
 |-------|---------|
 | `fintech.user.deposit.received` | Deposit landed on the virtual account |
 | `fintech.user.deposit.funding.completed` | BVN validation passed; cNGN minted to user's wallet |
-| `fintech.user.deposit.funding.refunded` | Deposit refunded due to BVN name mismatch |
+| `fintech.user.deposit.refunded` | Deposit refunded due to BVN name mismatch |
 
 Wait for `fintech.user.deposit.funding.completed` before crediting the user's in-app balance.
 
@@ -186,7 +186,7 @@ The `feeBreakdown` field in the `/cngnonramp` response shows an itemised breakdo
 | `fintech.virtual_account.deposit.received` | Fintech permanent account received a NGN deposit |
 | `fintech.user.deposit.received` | User permanent account received a NGN deposit |
 | `fintech.user.deposit.funding.completed` | Deposit passed BVN validation; cNGN minted successfully |
-| `fintech.user.deposit.funding.refunded` | Deposit refunded due to BVN name mismatch or amount error |
+| `fintech.user.deposit.refunded` | Deposit refunded due to BVN name mismatch or amount error |
 
 ## Related
 

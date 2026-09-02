@@ -30,7 +30,7 @@ Returns your fintech's Smart Wallet configuration and the complete list of regis
 
 ```bash
 curl --request GET \
-  --url "https://api.strails.io/getfintechwallet" \
+  --url "https://api.strails.io/v1/getfintechwallet" \
   --header "x-api-key: YOUR_API_KEY"
 ```
 
@@ -101,7 +101,7 @@ Registers an external wallet address on your fintech account. External wallets c
 
 ```bash
 curl --request POST \
-  --url "https://api.strails.io/addexternalwallet" \
+  --url "https://api.strails.io/v1/addexternalwallet" \
   --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
@@ -204,7 +204,7 @@ Activates or deactivates a registered external wallet. Inactive wallets cannot r
 
 ```bash
 curl --request PUT \
-  --url "https://api.strails.io/updateexternalwalletstatus" \
+  --url "https://api.strails.io/v1/updateexternalwalletstatus" \
   --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
@@ -263,7 +263,7 @@ Permanently removes an external wallet from your fintech account. This action ca
 
 ```bash
 curl --request DELETE \
-  --url "https://api.strails.io/removeexternalwallet" \
+  --url "https://api.strails.io/v1/removeexternalwallet" \
   --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
@@ -307,7 +307,7 @@ Returns all wallets provisioned for a specific end-user, including their current
 
 ```bash
 curl --request POST \
-  --url "https://api.strails.io/listuserwallets" \
+  --url "https://api.strails.io/v1/listuserwallets" \
   --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
@@ -322,7 +322,11 @@ curl --request POST \
 <ResponseField name="data" type="object">
   <Expandable title="data fields">
     <ResponseField name="wallets" type="array">
-      Array of wallet objects. Each wallet contains `walletAddress`, `status` (`smart_wallet` or `multi_chain`), `createdAt`, `owner`, `tokenBuy`, `blockchain`, and `balances`.
+      Array of wallet objects. Each wallet contains `walletAddress`, `status`, `createdAt`, `owner`, `tokenBuy`, `blockchain`, and `balances`.
+
+      <Note>
+        On this endpoint `status` carries the **wallet type** - `smart_wallet` or `multi_chain` - not an active/inactive state. Every user has a primary EVM Smart Wallet on Base plus multi-chain wallets on Bantu and Solana.
+      </Note>
     </ResponseField>
     <ResponseField name="count" type="number">Total number of wallets returned.</ResponseField>
     <ResponseField name="userId" type="string">The user ID used to retrieve the wallets.</ResponseField>
@@ -407,7 +411,7 @@ Provisions default wallets for end-users who were created before automated walle
 
 ```bash
 curl --request POST \
-  --url "https://api.strails.io/migrateuserwallets" \
+  --url "https://api.strails.io/v1/migrateuserwallets" \
   --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
@@ -467,7 +471,7 @@ Returns your fintech's own Smart Wallet token balance across one or more EVM net
 
 ```bash
 curl --request GET \
-  --url "https://api.strails.io/balance/multi?token=CNGN&networks=base,eth,bsc" \
+  --url "https://api.strails.io/v1/balance/multi?token=CNGN&networks=base,eth,bsc" \
   --header "x-api-key: YOUR_API_KEY"
 ```
 
@@ -531,7 +535,7 @@ Returns the token balance for any arbitrary EVM address across one or more netwo
 
 ```bash
 curl --request POST \
-  --url "https://api.strails.io/balance/address" \
+  --url "https://api.strails.io/v1/balance/address" \
   --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
@@ -591,7 +595,7 @@ Returns the token balances across all wallets provisioned for a specific end-use
 
 ```bash
 curl --request GET \
-  --url "https://api.strails.io/balance/user/abc123?token=CNGN" \
+  --url "https://api.strails.io/v1/balance/user/abc123?token=CNGN" \
   --header "x-api-key: YOUR_API_KEY"
 ```
 
