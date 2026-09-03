@@ -8,7 +8,7 @@ This guide walks you through a complete Strails integration, from your first API
 
 <Info>
   **Before you start, make sure you have:**
-  - A Strails **API key** (contact [support@strails.io](mailto:support@strails.io) to obtain one)
+  - A Strails **API key** (contact [support@strails.co](mailto:support@strails.co) to obtain one)
   - An **HTTPS webhook endpoint** you control (use [webhook.site](https://webhook.site) or [ngrok](https://ngrok.com) during development)
   - A **test BVN** (11-digit Nigerian BVN) for user onboarding tests
 </Info>
@@ -18,7 +18,7 @@ This guide walks you through a complete Strails integration, from your first API
     Verify your API key and confirm you can reach the staging environment by retrieving your fintech wallet.
 
     ```bash
-    curl -X GET https://beta.stablesrail.io/v1/getfintechwallet \
+    curl -X GET https://api.strails.io/v1/getfintechwallet \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -60,7 +60,7 @@ This guide walks you through a complete Strails integration, from your first API
     Register your webhook URL so Strails can notify you when asynchronous operations complete. This is strongly recommended before you proceed - without it you will need to poll every status endpoint manually.
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/setwebhook \
+    curl -X POST https://api.strails.io/v1/setwebhook \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -136,7 +136,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Initiate onboarding:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/onboarduser \
+    curl -X POST https://api.strails.io/v1/onboarduser \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -167,11 +167,11 @@ This guide walks you through a complete Strails integration, from your first API
     **Check onboarding status** by posting the `requestId` you just received:
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/onboardstatus \
+    curl -X POST https://api.strails.io/v1/onboardstatus \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
-        "requestId": "7898f29e-10a6-4b2b-9496-f4ee50549fd4"
+        "requestId": "user_uniqueID"
       }'
     ```
 
@@ -210,7 +210,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Initiate the onramp:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/cngnonramp \
+    curl -X POST https://api.strails.io/v1/cngnonramp \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -248,7 +248,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Retrieve the virtual account details to show your user:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/getvirtualaccount \
+    curl -X POST https://api.strails.io/v1/getvirtualaccount \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -280,7 +280,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Check the onramp status after payment:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/cngnonrampstatus \
+    curl -X POST https://api.strails.io/v1/cngnonrampstatus \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -316,7 +316,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Get the list of supported banks:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/getbankscode \
+    curl -X POST https://api.strails.io/v1/getbankscode \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -346,7 +346,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Initiate the offramp:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/cngnofframp \
+    curl -X POST https://api.strails.io/v1/cngnofframp \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -376,7 +376,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Check the offramp status:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/cngnofframpstatus \
+    curl -X POST https://api.strails.io/v1/cngnofframpstatus \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -393,7 +393,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Create an orderbook entry:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/fx/limit-order \
+    curl -X POST https://api.strails.io/v1/fx/limit-order \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -430,7 +430,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Get an FX quote** (`POST`, with the cNGN amount as a human-readable decimal):
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/fx/quote \
+    curl -X POST https://api.strails.io/v1/fx/quote \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -445,7 +445,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Execute the trade:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/fx/trade \
+    curl -X POST https://api.strails.io/v1/fx/trade \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -479,7 +479,7 @@ Post a limit order on the FX orderbook -> wait for a match -> confirm the trade 
 
 ## Testing Tips
 
-- **Use Postman:** Import the Strails Postman collection, set `BASE_URL` to `https://beta.stablesrail.io/v1` and `API_KEY` to your key, then run the collection to exercise all endpoints.
+- **Use Postman:** Import the Strails Postman collection, set `BASE_URL` to `https://api.strails.io/v1` and `API_KEY` to your key, then run the collection to exercise all endpoints.
 - **Start small:** Test onramp and offramp flows with amounts between ₦100 and ₦500 before increasing transaction sizes.
 - **Inspect webhooks locally:** Use [webhook.site](https://webhook.site) for a hosted listener, or [ngrok](https://ngrok.com) to tunnel to your local machine during development.
 

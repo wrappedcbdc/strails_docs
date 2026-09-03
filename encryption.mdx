@@ -189,8 +189,8 @@ Call `GET /getaeskey` to retrieve your raw, unmasked AES key. You can use it to 
 - **Never expose your private key.** Keep it out of client-side code, logs, environment files committed to source control, and any network call.
 - **Use a dedicated secrets manager.** Store your private key in AWS Secrets Manager, HashiCorp Vault, or an equivalent service - not in a plain `.env` file.
 - **Rotate keys periodically.** Generate a new key pair on a regular schedule, register the new public key with Strails, and retire the old private key from your secrets manager.
-- **Test encryption in staging first.** Validate your encrypt/decrypt round-trip against `https://beta.stablesrail.io/v1/` before enabling it in production.
+- **Test encryption in staging first.** Validate your encrypt/decrypt round-trip against `https://api.strails.io/v1/` before enabling it in production.
 
 <Note>
-  Contact [support@strails.io](mailto:support@strails.io) to receive the current Strails public key, register your own public key, or get help troubleshooting encryption issues.
+  Contact [support@strails.co](mailto:support@strails.co) to receive the current Strails public key, register your own public key, or get help troubleshooting encryption issues.
 </Note>

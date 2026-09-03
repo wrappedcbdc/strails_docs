@@ -23,7 +23,7 @@ The User Management API lets you register end-users on Strails using their Bank 
 Initiates onboarding for a new user by submitting their 11-digit BVN for identity verification. The request is processed asynchronously - use the returned `requestId` to poll `/onboardstatus`, or wait for the [`user.onboarded`](/api-reference/webhook-events) webhook event.
 
 ```bash
-curl -X POST https://beta.stablesrail.io/v1/onboarduser \
+curl -X POST https://api.strails.io/v1/onboarduser \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_SECRET_API_KEY" \
   -d '{
@@ -98,7 +98,7 @@ curl -X POST https://beta.stablesrail.io/v1/onboarduser \
 Checks the current status of a pending user onboarding request using the `requestId` returned by `/onboarduser`. Poll this endpoint until `status` is `"completed"` or `"failed"`, or handle the [`user.onboarded`](/api-reference/webhook-events) webhook event instead.
 
 ```bash
-curl -X POST https://beta.stablesrail.io/v1/onboardstatus \
+curl -X POST https://api.strails.io/v1/onboardstatus \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_SECRET_API_KEY" \
   -d '{
@@ -149,7 +149,7 @@ Once `status` is `"completed"`, use the `userId` from the response to call `/get
 Retrieves the full profile for a verified user, including their personal details pulled from BVN verification, all multi-chain wallet addresses provisioned by Strails, and any virtual accounts assigned to them.
 
 ```bash
-curl -X POST https://beta.stablesrail.io/v1/getuserdetails \
+curl -X POST https://api.strails.io/v1/getuserdetails \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_SECRET_API_KEY" \
   -d '{
@@ -218,7 +218,7 @@ curl -X POST https://beta.stablesrail.io/v1/getuserdetails \
 Activates or deactivates a user account. When deactivating, you must supply a `reason` - this is recorded in the audit trail. Deactivated users cannot initiate transactions or receive deposits until reactivated.
 
 ```bash
-curl -X POST https://beta.stablesrail.io/v1/manageuserstatus \
+curl -X POST https://api.strails.io/v1/manageuserstatus \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_SECRET_API_KEY" \
   -d '{
@@ -284,7 +284,7 @@ curl -X POST https://beta.stablesrail.io/v1/manageuserstatus \
 Returns a paginated list of all users belonging to your fintech, with summary wallet and virtual account information for each. Use `limit` and `offset` to page through large user sets, and `status` to filter by account state.
 
 ```bash
-curl -X POST https://beta.stablesrail.io/v1/listfintechusers \
+curl -X POST https://api.strails.io/v1/listfintechusers \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_SECRET_API_KEY" \
   -d '{
