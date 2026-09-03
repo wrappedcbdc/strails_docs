@@ -4,7 +4,7 @@ sidebarTitle: "Testing"
 description: "Step-by-step sandbox test scenarios for API connection, user onboarding, onramp, offramp, IP allowlist, and FX trading with ready-to-run curl commands."
 ---
 
-The Strails sandbox environment lets you exercise every API endpoint with real request/response cycles without touching live funds. Use your **sandbox API key** (issued during onboarding) and the base URL `https://beta.stablesrail.io/v1/` for all test requests. Sandbox state is isolated from production - you can freely create users, trigger transactions, and inspect webhook payloads without consequence.
+The Strails sandbox environment lets you exercise every API endpoint with real request/response cycles without touching live funds. Use your **sandbox API key** (issued during onboarding) and the base URL `https://api.strails.io/v1/` for all test requests. Sandbox state is isolated from production - you can freely create users, trigger transactions, and inspect webhook payloads without consequence.
 
 ## Required Headers
 
@@ -31,7 +31,7 @@ Work through the scenarios below in order. Each builds on the data returned by t
 Verify that your API key is valid and your IP is reachable by fetching your fintech wallet details.
 
 ```bash
-curl -X GET "https://beta.stablesrail.io/v1/getfintechwallet" \
+curl -X GET "https://api.strails.io/v1/getfintechwallet" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY"
@@ -64,7 +64,7 @@ Onboard a test user with a BVN, then poll for the onboarding result.
 **Step 1 - Submit the onboarding request:**
 
 ```bash
-curl -X POST "https://beta.stablesrail.io/v1/onboarduser" \
+curl -X POST "https://api.strails.io/v1/onboarduser" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY" \
@@ -96,7 +96,7 @@ Save the `userId` - you will need it in every subsequent call.
 **Step 2 - Check onboarding status:**
 
 ```bash
-curl -X POST "https://beta.stablesrail.io/v1/onboardstatus" \
+curl -X POST "https://api.strails.io/v1/onboardstatus" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY" \
@@ -127,7 +127,7 @@ Create a cNGN onramp request, then retrieve the temporary virtual account for th
 **Step 1 - Initiate an onramp:**
 
 ```bash
-curl -X POST "https://beta.stablesrail.io/v1/cngnonramp" \
+curl -X POST "https://api.strails.io/v1/cngnonramp" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY" \
@@ -155,7 +155,7 @@ curl -X POST "https://beta.stablesrail.io/v1/cngnonramp" \
 **Step 2 - Retrieve the virtual account:**
 
 ```bash
-curl -X POST "https://beta.stablesrail.io/v1/getvirtualaccount" \
+curl -X POST "https://api.strails.io/v1/getvirtualaccount" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY" \
@@ -194,7 +194,7 @@ Burn cNGN and send the equivalent Naira to a bank account.
 **Step 1 - Initiate an offramp:**
 
 ```bash
-curl -X POST "https://beta.stablesrail.io/v1/cngnofframp" \
+curl -X POST "https://api.strails.io/v1/cngnofframp" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY" \
@@ -224,7 +224,7 @@ curl -X POST "https://beta.stablesrail.io/v1/cngnofframp" \
 **Step 2 - Poll for offramp status:**
 
 ```bash
-curl -X POST "https://beta.stablesrail.io/v1/cngnofframpstatus" \
+curl -X POST "https://api.strails.io/v1/cngnofframpstatus" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY" \
@@ -255,7 +255,7 @@ Add and remove IP addresses from your allowlist. Only IPs on the allowlist can c
 **Add an IP:**
 
 ```bash
-curl -X POST "https://beta.stablesrail.io/v1/manageipallowlist" \
+curl -X POST "https://api.strails.io/v1/manageipallowlist" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY" \
@@ -282,7 +282,7 @@ curl -X POST "https://beta.stablesrail.io/v1/manageipallowlist" \
 **Remove an IP:**
 
 ```bash
-curl -X POST "https://beta.stablesrail.io/v1/manageipallowlist" \
+curl -X POST "https://api.strails.io/v1/manageipallowlist" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY" \
@@ -317,7 +317,7 @@ Get a live exchange rate for a cNGN/USDC or cNGN/USDT pair, then execute the tra
 **Step 1 - Request a quote:**
 
 ```bash
-curl -X POST "https://beta.stablesrail.io/v1/fx/quote" \
+curl -X POST "https://api.strails.io/v1/fx/quote" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY" \
@@ -350,7 +350,7 @@ curl -X POST "https://beta.stablesrail.io/v1/fx/quote" \
 **Step 2 - Execute the trade:**
 
 ```bash
-curl -X POST "https://beta.stablesrail.io/v1/fx/trade" \
+curl -X POST "https://api.strails.io/v1/fx/trade" \
   -H "Content-Type: application/json" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_SANDBOX_API_KEY" \

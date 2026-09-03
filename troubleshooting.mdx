@@ -214,7 +214,7 @@ These error code strings appear in the `error` field of a failed response and in
 
     1. Call the relevant status endpoint (e.g. `/cngnofframpstatus`, `/onboardstatus`) with the `requestId` to get the latest status and any error detail.
     2. If the status has not changed after 10 minutes, call **`POST /manualstatusrecovery`** with the `requestId`. This endpoint triggers a manual reconciliation check on the backend.
-    3. If the transaction is still stuck after a manual recovery attempt, contact [support@strails.io](mailto:support@strails.io) with the `requestId` and timestamp.
+    3. If the transaction is still stuck after a manual recovery attempt, contact [support@strails.co](mailto:support@strails.co) with the `requestId` and timestamp.
 
   </Accordion>
 
@@ -305,5 +305,5 @@ Use these values when querying list endpoints with the `type`, `status`, `side`,
 ---
 
 <Info>
-  If you cannot resolve an issue using this guide, email the Strails support team at [support@strails.io](mailto:support@strails.io) with your `requestId`, the full request payload (redact your API key), and the timestamp of the failed call.
+  If you cannot resolve an issue using this guide, email the Strails support team at [support@strails.co](mailto:support@strails.co) with your `requestId`, the full request payload (redact your API key), and the timestamp of the failed call.
 </Info>

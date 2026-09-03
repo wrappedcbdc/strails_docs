@@ -9,7 +9,7 @@ Before switching from the Strails staging environment to production, work throug
 ## 1. Credentials & Environment
 
 - [ ] You have received a **production API key** from Strails via the secure onboarding process.
-- [ ] You have switched your base URL from `https://beta.stablesrail.io/v1/` to `https://api.strails.io/v1/` in every service and configuration file that calls the Strails API.
+- [ ] You have switched your base URL from `https://sandbox.strails.io/v1/` to `https://api.strails.io/v1/` in every service and configuration file that calls the Strails API.
 - [ ] Your production API key is stored in a **secret manager** (AWS Secrets Manager, GCP Secret Manager, HashiCorp Vault, or equivalent) and is not present in source control, `.env` files committed to git, or CI/CD logs.
 - [ ] If your production API key was ever shared, emailed in plaintext, or accidentally exposed, you have **regenerated it** before going live.
 
@@ -71,10 +71,10 @@ Run all of the following flows at least once against the production environment 
 - [ ] You have **logging** in place that records every Strails API request and response, including `requestId` values, HTTP status codes, and response times.
 - [ ] You have **alerting** configured to notify your on-call team when API error rates exceed a threshold or when critical webhook events stop arriving.
 - [ ] You have a **runbook** documenting how to handle `429 Too Many Requests` responses - at minimum, implement exponential backoff with jitter and document how to request a rate limit increase.
-- [ ] You know how to reach Strails support: [support@strails.io](mailto:support@strails.io).
+- [ ] You know how to reach Strails support: [support@strails.co](mailto:support@strails.co).
 
 ---
 
 <Note>
-  If any item above is unchecked or unclear, do not switch traffic to production yet. Contact [support@strails.io](mailto:support@strails.io) and a member of the Strails team will help you resolve the blocker before you go live.
+  If any item above is unchecked or unclear, do not switch traffic to production yet. Contact [support@strails.co](mailto:support@strails.co) and a member of the Strails team will help you resolve the blocker before you go live.
 </Note>

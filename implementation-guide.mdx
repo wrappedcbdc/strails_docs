@@ -8,7 +8,7 @@ This guide walks you through a complete Strails integration, from your first API
 
 <Info>
   **Before you start, make sure you have:**
-  - A Strails **API key** (contact [support@strails.io](mailto:support@strails.io) to obtain one)
+  - A Strails **API key** (contact [support@strails.co](mailto:support@strails.co) to obtain one)
   - An **HTTPS webhook endpoint** you control (use [webhook.site](https://webhook.site) or [ngrok](https://ngrok.com) during development)
   - A **test BVN** (11-digit Nigerian BVN) for user onboarding tests
 </Info>
@@ -18,7 +18,7 @@ This guide walks you through a complete Strails integration, from your first API
     Verify your API key and confirm you can reach the staging environment by retrieving your fintech wallet.
 
     ```bash
-    curl -X GET https://beta.stablesrail.io/v1/getfintechwallet \
+    curl -X GET https://api.strails.io/v1/getfintechwallet \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json"
     ```
@@ -49,7 +49,7 @@ This guide walks you through a complete Strails integration, from your first API
     Register your webhook URL so Strails can notify you when asynchronous operations complete. This is strongly recommended before you proceed - without it you will need to poll every status endpoint manually.
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/setwebhook \
+    curl -X POST https://api.strails.io/v1/setwebhook \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -108,7 +108,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Initiate onboarding:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/onboarduser \
+    curl -X POST https://api.strails.io/v1/onboarduser \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -137,7 +137,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Check onboarding status:**
 
     ```bash
-    curl -X GET "https://beta.stablesrail.io/v1/onboardstatus?userId=user_uniqueID" \
+    curl -X GET "https://api.strails.io/v1/onboardstatus?userId=user_uniqueID" \
       -H "x-api-key: YOUR_API_KEY"
     ```
 
@@ -175,7 +175,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Initiate the onramp:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/cngnonramp \
+    curl -X POST https://api.strails.io/v1/cngnonramp \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -213,7 +213,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Retrieve the virtual account details to show your user:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/getvirtualaccount \
+    curl -X POST https://api.strails.io/v1/getvirtualaccount \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -245,7 +245,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Check the onramp status after payment:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/cngnonrampstatus \
+    curl -X POST https://api.strails.io/v1/cngnonrampstatus \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -281,7 +281,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Get the list of supported banks:**
 
     ```bash
-    curl -X GET https://beta.stablesrail.io/v1/getbankscode \
+    curl -X GET https://api.strails.io/v1/getbankscode \
       -H "x-api-key: YOUR_API_KEY"
     ```
 
@@ -302,7 +302,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Initiate the offramp:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/cngnofframp \
+    curl -X POST https://api.strails.io/v1/cngnofframp \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -332,7 +332,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Check the offramp status:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/cngnofframpstatus \
+    curl -X POST https://api.strails.io/v1/cngnofframpstatus \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -349,7 +349,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Create an orderbook entry:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/fx/orders \
+    curl -X POST https://api.strails.io/v1/fx/orders \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -380,7 +380,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Get an FX quote:**
 
     ```bash
-    curl -X GET "https://beta.stablesrail.io/v1/fx/quote?baseCurrency=cNGN&quoteCurrency=USDC&amount=1000000000" \
+    curl -X GET "https://api.strails.io/v1/fx/quote?baseCurrency=cNGN&quoteCurrency=USDC&amount=1000000000" \
       -H "x-api-key: YOUR_API_KEY"
     ```
 
@@ -389,7 +389,7 @@ This guide walks you through a complete Strails integration, from your first API
     **Execute the trade:**
 
     ```bash
-    curl -X POST https://beta.stablesrail.io/v1/fx/trade \
+    curl -X POST https://api.strails.io/v1/fx/trade \
       -H "x-api-key: YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -429,7 +429,7 @@ Post a limit order on the FX orderbook -> wait for a match -> confirm the trade 
 |---|---|
 | `401 Unauthorized` on every request | Check that your header is named `x-api-key` (lowercase) and that the key value is correct. |
 | IP not in allowlist error | Add your server's public IP via `/manageipallowlist` or contact support to add it for you. |
-| `429 Too Many Requests` | Implement exponential backoff. Contact [support@strails.io](mailto:support@strails.io) if you need a higher rate limit. |
+| `429 Too Many Requests` | Implement exponential backoff. Contact [support@strails.co](mailto:support@strails.co) if you need a higher rate limit. |
 | BVN verification returns `failed` | Confirm the BVN is exactly 11 digits and that the user details match what is on record with the NIBSS. |
 | Transaction stuck in `pending` for more than 10 minutes | Query `/cngnonrampstatus` with the `requestId`, then try `GET /v1/manualstatusrecovery?requestId=YOUR_REQUEST_ID`. Contact support if the issue persists. |
 | Webhooks not arriving | Confirm your URL is HTTPS, returns `200 OK`, and is publicly reachable. Check your HMAC verification logic for off-by-one errors in the signature string. |

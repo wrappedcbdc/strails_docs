@@ -25,7 +25,7 @@ The account never expires, accepts any deposit amount, and automatically mints c
 ### Retrieve Your Account Details
 
 ```bash
-curl -X GET https://beta.stablesrail.io/v1/getfintechvirtualaccount \
+curl -X GET https://api.strails.io/v1/getfintechvirtualaccount \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -63,7 +63,7 @@ Each user automatically receives a permanent virtual account after BVN verificat
 User permanent account details are included in the `/getuserdetails` response:
 
 ```bash
-curl -X POST https://beta.stablesrail.io/v1/getuserdetails \
+curl -X POST https://api.strails.io/v1/getuserdetails \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"userId": "user_uniqueID"}'
@@ -109,7 +109,7 @@ Create a temporary virtual account on demand for a specific payment amount. Thes
 Call [`POST /cngnonramp`](/api-reference/transactions) to generate the account and receive the payment details:
 
 ```bash
-curl -X POST https://beta.stablesrail.io/v1/cngnonramp \
+curl -X POST https://api.strails.io/v1/cngnonramp \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -140,7 +140,7 @@ curl -X POST https://beta.stablesrail.io/v1/cngnonramp \
 Use [`POST /getvirtualaccount`](/api-reference/virtual-accounts) with the `requestId` to retrieve the bank account number and current status:
 
 ```bash
-curl -X POST https://beta.stablesrail.io/v1/getvirtualaccount \
+curl -X POST https://api.strails.io/v1/getvirtualaccount \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"requestId": "uuid"}'

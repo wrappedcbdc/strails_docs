@@ -6,7 +6,7 @@ description: "Get up and running with the Strails API in minutes"
 Get started with the Strails API in a few minutes. Choose the integration path that matches your use case.
 
 <Info>
-**Need credentials?** Contact [support@strails.io](mailto:support@strails.io) to start onboarding and receive your API key. See [Authentication](/authentication) for details on API keys, headers, and rate limits.
+**Need credentials?** Contact [support@strails.co](mailto:support@strails.co) to start onboarding and receive your API key. See [Authentication](/authentication) for details on API keys, headers, and rate limits.
 </Info>
 
 ## Base URL
@@ -14,7 +14,7 @@ Get started with the Strails API in a few minutes. Choose the integration path t
 All requests are made to the test environment during integration:
 
 ```
-https://beta.stablesrail.io/v1/
+https://api.strails.io/v1/
 ```
 
 ## Fintech Partner Integration
@@ -24,7 +24,7 @@ For platforms integrating Strails into their services (payment processors, excha
 **Test your API connection** by retrieving your fintech wallet:
 
 ```bash
-curl -X GET https://beta.stablesrail.io/v1/getfintechwallet \
+curl -X GET https://api.strails.io/v1/getfintechwallet \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json"
 ```
@@ -61,7 +61,7 @@ For applications serving individual users (wallet apps, DeFi interfaces, consume
 **Onboard your first user** with BVN verification:
 
 ```bash
-curl -X POST https://beta.stablesrail.io/v1/onboarduser \
+curl -X POST https://api.strails.io/v1/onboarduser \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
