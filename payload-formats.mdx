@@ -46,7 +46,7 @@ Every successful response wraps its payload in the same envelope:
 
 | Field | Type | Description |
 |---|---|---|
-| `status` | string | `"Success"` or `"Error"` |
+| `status` | string | Human-readable outcome label. Casing is not stable - see the warning below |
 | `response_code` | string | Two-digit code - see table below |
 | `message` | string | Human-readable description of the result |
 | `data` | object | Endpoint-specific payload; `null` on some errors |
@@ -65,6 +65,16 @@ Every successful response wraps its payload in the same envelope:
 }
 ```
 
+<Warning>
+  **Do not branch your code on the `status` string.** Across endpoint families you will see `"Success"`, `"success"`, `"Error"`, `"error"`, and `"Failed"`. Treat `response_code` (below) together with the HTTP status as the source of truth for control flow, and normalise `status` to lowercase only for display or logging.
+
+  ```javascript
+  function isSuccess(httpStatus, body) {
+    return body?.response_code === "00" && httpStatus >= 200 && httpStatus < 300;
+  }
+  ```
+</Warning>
+
 ### Response Code Table
 
 | Code | Status | HTTP Code | Description |
@@ -75,6 +85,10 @@ Every successful response wraps its payload in the same envelope:
 | `03` | `UNAUTHORIZED` | 401 / 403 | Authentication failed or access denied |
 | `04` | `RATE_LIMITED` | 429 | You have exceeded the allowed request rate |
 | `05` | `INTERNAL_ERROR` | 500 | An unexpected server-side error occurred |
+
+<Note>
+  `response_code` is always one of these two-digit codes. It never carries the HTTP status code (`"400"`, `"429"`, ...).
+</Note>
 
 ## Pagination Format
 
@@ -113,28 +127,43 @@ All list endpoints return a standard pagination object inside `data`:
 Control pagination with the `limit` and `offset` query parameters:
 
 ```bash
-GET /gettransactions?limit=50&offset=100
+GET /transactions?limit=50&offset=100
 ```
+
+<Note>
+  FX trade listings are the one exception: `GET /fx/trades` uses cursor pagination via `startAfter` (the last `tradeId` of the previous page) instead of `limit`/`offset`.
+</Note>
 
 ## Amount Formatting
 
-Strails uses different amount representations depending on whether the operation is fiat-based or token-based. Read this section carefully - using the wrong format is one of the most common integration mistakes.
+Strails uses **three** amount representations, and the correct one depends on the individual endpoint - not on whether the operation "feels" fiat or on-chain. Sending the wrong one is the single most common integration mistake, so check this table before you send any amount.
 
-### Fiat Operations
+| Format | Meaning | Endpoints that use it |
+|---|---|---|
+| **Naira** | Plain Naira, integer or decimal. `5000` = ₦5,000 | `/cngnonramp`, `/cngnofframp`, and all virtual-account amounts (`amount`, `baseAmount`, `totalAmountWithFee`, `feeBreakdown.*`) |
+| **Kobo** | Smallest NGN unit. `50000` = ₦500.00 | Every Fee Management endpoint: `/feewithdrawal`, `/getwithdrawalhistory`, `/getaccumulatedfees`, `/fees/strails/preview`, and `capFee` on `/managefees` |
+| **Human-readable token units** | The token amount as a person would write it. `100.50` = 100.50 USDC | `/withdrawasset`, `/swap`, `/swaptrigger`, and every FX field: `price`, `minAmount`, `maxAmount`, `cngnAmount`, `tokenAmount` |
+| **Smallest token unit (wei)** | Multiply by `10^decimals`. `5000000` = 5.0 cNGN | `/fintechtransfer`, `/initiateofframp`, on-chain balances, and the `amount` returned by blockchain status endpoints such as `/cngnonrampstatus` |
 
-Onramp and offramp endpoints that deal directly with Nigerian Naira accept and return amounts as **plain Naira values** - regular integers or decimals.
+<Warning>
+  Two pairs of endpoints look symmetrical but are not:
 
-```json
-{
-  "amount": 5000
-}
-```
+  - `/cngnofframp` takes **Naira** (`5000` = ₦5,000); `/initiateofframp` takes the **smallest token unit** (`5000000` = 5.0 cNGN).
+  - `/withdrawasset` takes **human-readable token units** (`100` = 100 cNGN); `/fintechtransfer` takes the **smallest token unit** (`5000000` = 5.0 cNGN).
 
-The value `5000` means ₦5,000. There is no kobo conversion on fiat endpoints.
+  Requests are accepted either way - the amount is simply wrong by a factor of a million.
+</Warning>
 
-### Token Operations
+### Token decimals
 
-Blockchain endpoints (transfers, swaps, FX trades, asset withdrawals) require amounts in the **smallest token unit**, equivalent to the wei format in Ethereum. You must multiply the human-readable amount by `10^decimals` before sending.
+Used whenever you convert to or from the smallest unit:
+
+| Token | Decimals | Example: 1 token in smallest unit |
+|---|---|---|
+| cNGN | 6 | `1000000` |
+| USDC | 6 | `1000000` |
+| USDT | 6 | `1000000` |
+| DAI | 18 | `1000000000000000000` |
 
 ```json
 {
@@ -143,13 +172,6 @@ Blockchain endpoints (transfers, swaps, FX trades, asset withdrawals) require am
 ```
 
 The value `5000000000` means 5,000 cNGN (6 decimals -> `5000 x 10^6`).
-
-| Token | Decimals | Example: 1 token in smallest unit |
-|---|---|---|
-| cNGN | 6 | `1000000` |
-| USDC | 6 | `1000000` |
-| USDT | 6 | `1000000` |
-| DAI | 18 | `1000000000000000000` |
 
 ### Helper Functions
 
@@ -160,22 +182,33 @@ Use these functions to convert between display amounts and the values the API ex
     ```javascript
     /**
      * Convert a human-readable token amount to smallest unit.
-     * @param {number} amount  - Display amount (e.g. 500)
-     * @param {number} decimals - Token decimals (e.g. 6 for cNGN/USDC/USDT)
+     * Works on the string form so 18-decimal tokens (DAI) never overflow
+     * Number.MAX_SAFE_INTEGER, which `amount * 10 ** decimals` would.
+     * @param {string|number} amount - Display amount (e.g. 500 or "500.25")
+     * @param {number} decimals      - Token decimals (e.g. 6 for cNGN/USDC/USDT)
      * @returns {string} Amount as a string to avoid floating-point issues
      */
     function toSmallestUnit(amount, decimals) {
-      return (BigInt(Math.round(amount * 10 ** decimals))).toString();
+      const [whole, frac = ""] = String(amount).split(".");
+      if (frac.length > decimals) {
+        throw new RangeError(`${amount} has more than ${decimals} decimal places`);
+      }
+      return (BigInt(whole) * 10n ** BigInt(decimals) + BigInt((frac + "0".repeat(decimals)).slice(0, decimals) || "0")).toString();
     }
 
     /**
-     * Convert smallest unit back to a human-readable amount.
-     * @param {string|number} raw - Raw amount from API
-     * @param {number} decimals   - Token decimals
-     * @returns {number}
+     * Convert smallest unit back to a human-readable decimal string.
+     * Returns a string, not a Number - an 18-decimal balance loses precision
+     * as a JS Number.
+     * @param {string|number|bigint} raw - Raw amount from API
+     * @param {number} decimals          - Token decimals
+     * @returns {string}
      */
     function fromSmallestUnit(raw, decimals) {
-      return Number(raw) / 10 ** decimals;
+      const padded = String(raw).padStart(decimals + 1, "0");
+      const whole = padded.slice(0, -decimals);
+      const frac = padded.slice(-decimals).replace(/0+$/, "");
+      return frac ? `${whole}.${frac}` : whole;
     }
 
     // Format a Naira amount for display
@@ -187,8 +220,8 @@ Use these functions to convert between display amounts and the values the API ex
     }
 
     // Examples
-    toSmallestUnit(500, 6);        // "500000000"  - 500 cNGN
-    fromSmallestUnit(500000000, 6); // 500
+    toSmallestUnit(500, 6);         // "500000000"  - 500 cNGN
+    fromSmallestUnit(500000000, 6); // "500"
     formatNaira(5000);              // "₦5,000.00"
     ```
   </Tab>
@@ -336,7 +369,7 @@ The virtual account format uses `notify`, `notifyType`, and a PascalCase `Data` 
 
 | Field Type | Expected Format | Example |
 |---|---|---|
-| User ID | 64-character hex string | `77aefb50d96d0a63...` |
+| User ID | Opaque string issued by Strails - typically a 64-character hex hash. Always store and echo back the exact value returned by `/onboardstatus`; never construct one | `77aefb50d96d0a63...` |
 | Email | Valid RFC 5321 email | `user@example.com` |
 | Phone | Nigerian international format | `+2348012345678` |
 | BVN | Exactly 11 numeric digits | `12345678901` |
@@ -347,9 +380,9 @@ The virtual account format uses `notify`, `notifyType`, and a PascalCase `Data` 
 
 | Field Type | Format | Notes |
 |---|---|---|
-| Fiat amount | Integer or decimal | Naira value - no kobo conversion |
-| Token amount | Integer string | Smallest unit (wei); use `BigInt` in JS |
-| Percentage | Decimal 0-1 | `0.1` represents 10% |
+| Fiat amount | Integer or decimal | Naira on onramp/offramp/virtual accounts; **kobo** on all Fee Management endpoints |
+| Token amount | Integer string, or decimal string | Smallest unit (wei) or human-readable, per endpoint - see [Amount Formatting](#amount-formatting). Use `BigInt` in JS for smallest-unit values |
+| Percentage | Percent value | `1.5` represents 1.5% (e.g. `percentageFee`, `strailsFeePercentage`, `spread`) |
 
 ### DateTime Fields
 

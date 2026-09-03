@@ -10,13 +10,13 @@ Use the Fee Management API to configure the fee structures applied to your users
 
 | Section | Endpoint | Method | Description |
 |---|---|---|---|
-| [Withdrawal History](#get-/getwithdrawalhistory) | `/getwithdrawalhistory` | GET | Retrieve paginated history of all fintech fee withdrawals |
-| [Fee Withdrawal](#post-/feewithdrawal) | `/feewithdrawal` | POST | Request withdrawal of accumulated fees to a bank account |
-| [Accumulated Fees](#get-/getaccumulatedfees) | `/getaccumulatedfees` | GET | Get a summary of accumulated fees and available withdrawal balance |
-| [Manage Fees](#put-/managefees) | `/managefees` | PUT | Configure onramp and offramp fee percentages, caps, and toggles |
-| [Get Fees](#get-/getfees) | `/getfees` | GET | Retrieve the current fee configuration and example calculations |
-| [Strails Fee Preview](#post-/fees/strails/preview) | `/fees/strails/preview` | POST | Preview the Strails platform fee for a given amount and transaction type |
-| [Verify Withdrawal](#post-/verifywithdrawal) | `/verifywithdrawal` | POST | Check the status or outcome of a previously submitted withdrawal |
+| [Withdrawal History](#get-getwithdrawalhistory) | `/getwithdrawalhistory` | GET | Retrieve paginated history of all fintech fee withdrawals |
+| [Fee Withdrawal](#post-feewithdrawal) | `/feewithdrawal` | POST | Request withdrawal of accumulated fees to a bank account |
+| [Accumulated Fees](#get-getaccumulatedfees) | `/getaccumulatedfees` | GET | Get a summary of accumulated fees and available withdrawal balance |
+| [Manage Fees](#put-managefees) | `/managefees` | PUT | Configure onramp and offramp fee percentages, caps, and toggles |
+| [Get Fees](#get-getfees) | `/getfees` | GET | Retrieve the current fee configuration and example calculations |
+| [Strails Fee Preview](#post-feesstrailspreview) | `/fees/strails/preview` | POST | Preview the Strails platform fee for a given amount and transaction type |
+| [Verify Withdrawal](#post-verifywithdrawal) | `/verifywithdrawal` | POST | Check the status or outcome of a previously submitted withdrawal |
 
 ---
 
@@ -210,7 +210,7 @@ curl --request POST \
 </ResponseField>
 
 <ResponseField name="data.amount" type="number">
-  The withdrawal amount that was submitted.
+  The withdrawal amount that was submitted, in **kobo**.
 </ResponseField>
 
 <ResponseField name="data.status" type="string">
@@ -272,23 +272,23 @@ curl --request GET \
 ### Response
 
 <ResponseField name="data.summary.totalAccumulatedFees" type="number">
-  Total fees earned across all transactions since account creation.
+  Total fees earned across all transactions since account creation, in **kobo**.
 </ResponseField>
 
 <ResponseField name="data.summary.onrampFees" type="number">
-  Fees earned specifically from onramp (fiat-to-crypto) transactions.
+  Fees earned specifically from onramp (fiat-to-crypto) transactions, in **kobo**.
 </ResponseField>
 
 <ResponseField name="data.summary.offrampFees" type="number">
-  Fees earned specifically from offramp (crypto-to-fiat) transactions.
+  Fees earned specifically from offramp (crypto-to-fiat) transactions, in **kobo**.
 </ResponseField>
 
 <ResponseField name="data.summary.collectedFees" type="number">
-  Fees that have been fully collected and settled.
+  Fees that have been fully collected and settled, in **kobo**.
 </ResponseField>
 
 <ResponseField name="data.summary.pendingFees" type="number">
-  Fees that are accrued but not yet finalized.
+  Fees that are accrued but not yet finalized, in **kobo**.
 </ResponseField>
 
 <ResponseField name="data.summary.transactionCount" type="number">
@@ -296,11 +296,11 @@ curl --request GET \
 </ResponseField>
 
 <ResponseField name="data.summary.pendingWithdrawals" type="number">
-  Total amount currently locked in pending withdrawal requests.
+  Total amount currently locked in pending withdrawal requests, in **kobo**.
 </ResponseField>
 
 <ResponseField name="data.summary.availableForWithdrawal" type="number">
-  Net balance you can withdraw right now (collected fees minus pending withdrawals).
+  Net balance you can withdraw right now, in **kobo** (collected fees minus pending withdrawals). In the example below, `100000` is ₦1,000.00. Compare `/feewithdrawal` amounts against this figure, not against `totalAccumulatedFees`.
 </ResponseField>
 
 <ResponseField name="data.details" type="object">
@@ -311,10 +311,10 @@ curl --request GET \
       Currency in which fees are denominated (e.g., `"NGN"`).
     </ResponseField>
     <ResponseField name="minimumWithdrawal" type="number">
-      Minimum amount required to submit a withdrawal request.
+      Minimum amount required to submit a withdrawal request, in **kobo** (`1000` = ₦10.00).
     </ResponseField>
     <ResponseField name="maximumWithdrawal" type="number">
-      Maximum amount allowed per withdrawal request.
+      Maximum amount allowed per withdrawal request, in **kobo** (`10000000` = ₦100,000.00).
     </ResponseField>
   </Expandable>
 </ResponseField>

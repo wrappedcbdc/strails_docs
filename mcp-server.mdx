@@ -1,0 +1,135 @@
+---
+title: "MCP Server"
+sidebarTitle: "MCP Server"
+description: "Connect AI agents to Strails through the hosted MCP server. Onboard users, run onramps and offramps, trade on the FX orderbook and manage your fintech account, all through 62 agent-ready tools."
+---
+
+The **Strails MCP server** exposes the full Strails API as tools that AI agents
+can call directly. It speaks the Model Context Protocol over streamable HTTP,
+so any MCP-compatible client (Claude Code, your own agent framework, or any
+other MCP host) can integrate with Strails without writing API client code.
+
+The server covers the entire surface of this documentation: user onboarding and
+KYC, virtual accounts, customer and corporate onramps and offramps, wallets and
+balances, swaps, the FX orderbook and trading engine, fees, transaction history
+and account management.
+
+<Info>
+**Need credentials?** Contact [support@strails.io](mailto:support@strails.io)
+to receive your API key. See [Authentication](/authentication) for details.
+</Info>
+
+## Endpoint
+
+```text
+https://mcp.strails.io/mcp
+```
+
+Authentication uses your Strails API key as the bearer token. The server
+validates it against the Strails API and makes every upstream call with your
+key, so one server safely serves many fintechs.
+
+## Connect
+
+<Tabs>
+  <Tab title="Claude Code">
+
+    ```bash
+    claude mcp add --transport http strails https://mcp.strails.io/mcp \
+      --header "Authorization: Bearer YOUR_STRAILS_API_KEY"
+    ```
+
+    Run `claude mcp list` to verify the connection, then ask for something
+    like "list my users" or "show the CNGN-USDC orderbook" to see the tools
+    in action.
+  </Tab>
+  <Tab title="Other MCP clients">
+    Any client that supports streamable HTTP with custom headers can connect:
+
+    ```json
+    {
+      "mcpServers": {
+        "strails": {
+          "type": "http",
+          "url": "https://mcp.strails.io/mcp",
+          "headers": { "Authorization": "Bearer YOUR_STRAILS_API_KEY" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Self-host">
+    The server is open source. Run your own instance with
+    [uv](https://docs.astral.sh/uv/) or Docker:
+
+    ```bash
+    uv sync --locked
+    STRAILS_API_KEY=YOUR_STRAILS_API_KEY uv run strails-mcp --no-auth
+    # or: docker build -t strails-mcp . && docker run -p 8000:8000 strails-mcp
+    ```
+
+    The MCP endpoint is then at `http://localhost:8000/mcp`. `STRAILS_ENV`
+    selects the upstream environment (`sandbox`, `staging`, `production`).
+  </Tab>
+</Tabs>
+
+## How agents work with the tools
+
+<CardGroup cols={2}>
+  <Card title="Confirm-gated mutations" icon="shield-check">
+    Every tool that moves money or changes configuration first returns a
+    preview with amounts, fees and warnings. Nothing executes until the tool
+    is called again with `confirm=true`.
+  </Card>
+  <Card title="Correct amounts, always" icon="coins">
+    Pass human-readable amounts. The server converts to naira, kobo or
+    6-decimal smallest units per endpoint, and orderbook responses include
+    human-readable conversions next to raw values.
+  </Card>
+  <Card title="Async operations" icon="rotate">
+    Onramps, offramps, swaps and FX trades return a `requestId`. One tool,
+    `strails_get_operation_status`, polls the right status endpoint for any
+    of them.
+  </Card>
+  <Card title="Actionable errors" icon="circle-info">
+    Upstream failures come back with the Strails `response_code` and a
+    corrective hint the agent can act on, such as a rate-limit retry delay.
+  </Card>
+</CardGroup>
+
+## Tool overview
+
+The server exposes 62 tools. Highlights by area:
+
+| Area | What agents can do |
+|---|---|
+| Users and KYC | Onboard users with BVN, track onboarding, manage user status |
+| On/off-ramps | Customer onramps, customer and corporate offramps, withdrawals, transfers |
+| Bank accounts | List banks, verify and register NUBAN payout accounts |
+| Wallets | Balances, user wallets, external-wallet whitelisting, virtual accounts |
+| Swaps | Token swaps on user or onramp wallets |
+| FX orderbook | Quotes, trades, market and limit orders, book stats, auto-signing, MPC vault registration |
+| Fees | Fee configuration, previews, accumulated fees, withdrawals |
+| History | Deposits, payouts and combined transaction views |
+| Management | Webhooks, IP allowlist, API keys, encryption keys |
+
+## Resources and prompts
+
+Agents can also read these resources and follow these workflow prompts:
+
+- `strails://config/status`: server environment and auth mode
+- `strails://banks`: Nigerian banks with NIBSS codes
+- `strails://orderbook/{pair}`: live orderbook snapshot for `CNGN-USDC` or `CNGN-USDT`
+- `onboard_and_fund_user`: step-by-step runbook from BVN onboarding to a funded wallet
+- `corporate_offramp_runbook`: runbook from bank account registration to payout
+
+## Notes and limits
+
+- The server does not receive webhooks. Configure your own endpoint with
+  `strails_set_webhook` and verify signatures as described in
+  [HMAC signatures](/hmac-signatures).
+- X25519 encrypted-response mode is not supported by the MCP server. Do not
+  register a public key for the API key you use with it. See
+  [Encryption](/encryption) for what that mode does.
+- Production enforces the IP allowlist. Add the server's egress IP with
+  `strails_manage_ip_allowlist` before first use.

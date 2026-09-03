@@ -5,7 +5,7 @@ description: "Sample values and constraints for testing Strails Mock Sandbox end
 
 ## BVN
 
-The production `onboarduser` endpoint requires an 11-digit Nigerian BVN. The sandbox accepts the same format but does not validate it against a real identity service.
+The production `onboarduser` endpoint takes a single field - an 11-digit Nigerian BVN. The sandbox accepts the same body but does not validate the BVN against a real identity service.
 
 | Field | Sample Value | Constraints |
 |-------|--------------|-------------|
@@ -19,10 +19,7 @@ Content-Type: application/json
 x-api-key: <sandbox-api-key>
 
 {
-  "bvn": "12345678901",
-  "firstName": "Sandbox",
-  "lastName": "User",
-  "email": "sandbox@example.com"
+  "bvn": "12345678901"
 }
 ```
 

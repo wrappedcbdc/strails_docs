@@ -63,8 +63,8 @@ When you exceed a limit, the API returns `429 Too Many Requests`:
 
 ```json
 {
-  "status": "error",
-  "response_code": "429",
+  "status": "Error",
+  "response_code": "04",
   "message": "Too many requests. Please try again later.",
   "data": {
     "error": "Rate limit exceeded",
@@ -126,17 +126,17 @@ Respect the `retry_after` value (in seconds) before re-attempting the request.
 
 | Endpoint | Method | Rate limit | Notes |
 |---|---|---|---|
-| `/fx/orders` | POST | 30 rpm | Create orderbook order |
-| `/fx/orders/:orderId` | PATCH | 30 rpm | Update orderbook order |
-| `/fx/orders/:orderId` | DELETE | 30 rpm | Delete orderbook order |
-| `/fx/orders/my-orders` | GET | 100 rpm | List your orders |
+| `/fx/limit-order` | POST | 30 rpm | Create orderbook order |
+| `/fx/limit-order/update` | PUT | 30 rpm | Update orderbook order |
+| `/fx/limit-order/delete` | DELETE | 30 rpm | Delete orderbook order |
+| `/fx/limit-orders` | GET | 100 rpm | List your orders |
 | `/fx/orderbook` | GET | 100 rpm | Get public orderbook |
 | `/fx/orderbook/stats` | GET | 60 rpm | Orderbook statistics |
 | `/fx/orderbook-token` | GET | 30 rpm | Generate Firebase token |
-| `/fx/quote` | GET | 60 rpm | Generate trade quote |
+| `/fx/quote` | POST | 60 rpm | Generate trade quote |
 | `/fx/trade` | POST | 30 rpm | Execute trade |
 | `/fx/market-order` | POST | 30 rpm | Execute market order |
-| `/fx/trades/:tradeId` | GET | 60 rpm | Get trade status |
+| `/fx/trades/status` | GET | 60 rpm | Get trade status |
 | `/fx/trades` | GET | 100 rpm | List your trades |
 
 ## Error Handling
@@ -145,8 +145,8 @@ All errors follow a standard response shape:
 
 ```json
 {
-  "status": "error",
-  "response_code": "400",
+  "status": "Error",
+  "response_code": "01",
   "message": "Human-readable error message",
   "data": {
     "error": "Validation failed",
@@ -157,12 +157,16 @@ All errors follow a standard response shape:
 }
 ```
 
+<Warning>
+  `response_code` is always one of the two-digit envelope codes (`00`-`05`) documented in [Payload Formats](/payload-formats#response-code-table) - it is never the HTTP status code. Branch your error handling on `response_code` plus the HTTP status, and treat the `status` string as display text only: its casing varies between endpoint families (`Success`/`success`, `Error`/`error`/`Failed`).
+</Warning>
+
 The table below lists the global error codes that apply across all endpoints:
 
 | Code | HTTP status | Description |
 |---|---|---|
 | `AUTHENTICATION_FAILED` | 401 | Invalid or missing API key |
-| `AUTHORIZATION_FAILED` | 403 | Insufficient permissions |
+| `AUTHORIZATION_FAILED` | 403 | Caller IP is not on the allowlist, or the action is not permitted |
 | `VALIDATION_ERROR` | 400 | Invalid request parameters |
 | `NOT_FOUND` | 404 | Resource not found |
 | `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
@@ -176,7 +180,7 @@ The table below lists the global error codes that apply across all endpoints:
 
 1. **Store your API key securely.** Never commit it to version control or embed it in client-side code.
 2. **Use environment variables.** Load your key from `process.env.STRAILS_API_KEY` (Node.js) or equivalent - not from a hard-coded string.
-3. **Rotate your key regularly.** Use the [`/regenerateapikey`](/api-reference/management-api#generate-a-new-api-key) endpoint to issue a new key and revoke the old one on a regular schedule.
+3. **Rotate your key regularly.** Use the [`/regenerateapikey`](/api-reference/management-api#get-regenerateapikey) endpoint to issue a new key and revoke the old one on a regular schedule.
 4. **Always use HTTPS.** The Strails API does not accept plain HTTP connections. Every request must go over a secure TLS connection.
 
 ## Registering Your Public Key

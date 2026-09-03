@@ -27,7 +27,7 @@ Returns the full list of Nigerian banks currently supported for payout, along wi
 
 ```bash
 curl --request POST \
-  --url "https://api.strails.io/getbankscode" \
+  --url "https://api.strails.io/v1/getbankscode" \
   --header "x-api-key: YOUR_API_KEY"
 ```
 
@@ -76,7 +76,7 @@ Adds a Nigerian bank account to your fintech configuration and immediately verif
 
 ```bash
 curl --request POST \
-  --url "https://api.strails.io/addbankaccount" \
+  --url "https://api.strails.io/v1/addbankaccount" \
   --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
@@ -156,7 +156,7 @@ Updates the label or default status of an existing bank account. You cannot chan
 
 ```bash
 curl --request PUT \
-  --url "https://api.strails.io/updatebankaccount" \
+  --url "https://api.strails.io/v1/updatebankaccount" \
   --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
@@ -206,7 +206,7 @@ Permanently removes a bank account from your fintech configuration. This action 
 
 ```bash
 curl --request DELETE \
-  --url "https://api.strails.io/deletebankaccount?accountId=uuid-account-id" \
+  --url "https://api.strails.io/v1/deletebankaccount?accountId=uuid-account-id" \
   --header "x-api-key: YOUR_API_KEY"
 ```
 
@@ -243,7 +243,7 @@ Returns the details of a single bank account by its UUID.
 
 ```bash
 curl --request GET \
-  --url "https://api.strails.io/getbankaccounts?accountId=uuid-account-id" \
+  --url "https://api.strails.io/v1/getbankaccounts?accountId=uuid-account-id" \
   --header "x-api-key: YOUR_API_KEY"
 ```
 
@@ -308,7 +308,7 @@ Returns all bank accounts configured on your fintech account, along with a summa
 
 ```bash
 curl --request GET \
-  --url "https://api.strails.io/listbankaccounts" \
+  --url "https://api.strails.io/v1/listbankaccounts" \
   --header "x-api-key: YOUR_API_KEY"
 ```
 

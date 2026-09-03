@@ -29,17 +29,23 @@ curl -X GET https://api.strails.io/v1/getfintechwallet \
   -H "Content-Type: application/json"
 ```
 
-A successful response returns your wallet addresses:
+A successful response returns your Smart Wallet and any registered external wallets:
 
 ```json
 {
-  "status": "success",
+  "status": "Success",
   "response_code": "00",
   "message": "Fintech wallet retrieved successfully",
   "data": {
-    "smartWallet": "0x1234...abcd",
-    "mpcVault": "0x5678...efgh",
-    "managedWallet": "0xabcd...1234"
+    "fintechId": "fintech_abc123",
+    "fintechName": "Example Fintech Ltd",
+    "smartWallet": {
+      "address": "0x69E4eA33BF7E2f6bAE7F1DEF247534C0aD3515C3",
+      "owner": "0x684f5f118ed7d0e00b1c0a27dcdce6e37cf652e1",
+      "deployed": true
+    },
+    "externalWallets": [],
+    "totalUsers": 0
   }
 }
 ```
@@ -65,12 +71,11 @@ curl -X POST https://api.strails.io/v1/onboarduser \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "bvn": "12345678901",
-    "userId": "user_uniqueID",
-    "email": "user@example.com",
-    "phoneNumber": "+2348012345678"
+    "bvn": "12345678901"
   }'
 ```
+
+The response returns a `requestId` and the Strails-issued `userHash`. Poll [`POST /onboardstatus`](/api-reference/user-management#post-onboardstatus) with the `requestId` until verification completes.
 
 **What you can do next:**
 - Fund wallets via NGN bank transfer
