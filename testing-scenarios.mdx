@@ -425,7 +425,7 @@ FX trades are executed by the fintech account that owns the API key - there is n
 The trade moves through `pending` -> `locked` -> `signing` -> `settling` -> `completed`. FX trades emit no webhook events, so track progress by polling:
 
 ```bash
-curl -X GET "https://beta.stablesrail.io/v1/fx/trades/status?tradeId=trade_mno345" \
+curl -X GET "https://api.strails.io/v1/fx/trades/status?tradeId=trade_mno345" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_API_KEY"
 ```
@@ -446,7 +446,7 @@ To use the collection:
 
    | Variable | Value |
    |---|---|
-   | `BASE_URL` | `https://beta.stablesrail.io/v1` |
+   | `BASE_URL` | `https://api.strails.io/v1` |
    | `API_KEY` | Your test-environment API key |
 
 4. Select your new environment from the environment dropdown before sending any request.

@@ -2653,7 +2653,7 @@
   "variable": [
     {
       "key": "baseURL",
-      "value": "https://beta.stablesrail.io/v1"
+      "value": "https://api.strails.io/v1"
     }
   ]
 }
