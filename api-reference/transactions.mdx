@@ -25,6 +25,8 @@ The Transactions API handles every financial operation in Strails. You can fund 
 | [Swap Trigger](#swap-trigger) | `/swaptrigger` | POST | Trigger an asynchronous swap for a specific wallet address |
 | [User Swap](#user-swap) | `/swap` | POST | Request a token swap on a user's default Smart Wallet |
 | [Swap Status](#swap-status) | `/swapstatus` | GET | Get the status of an asynchronous swap request |
+| [Swap History](#swap-history) | `/swaphistory` | GET | List historical swap requests for your fintech |
+
 
 ---
 
@@ -1248,3 +1250,79 @@ curl --request GET \
   "error": "No swap request found with the provided requestId"
 }
 ```
+
+---
+
+## Swap History
+
+`GET /swaphistory`
+
+Returns a paginated list of historical swap requests for your fintech. Use this endpoint to reconcile completed, requested, and failed swaps without polling each `requestId` individually.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/v1/swaphistory?limit=20&offset=0" \
+  --header "x-api-key: YOUR_API_KEY"
+```
+
+<ParamField query="limit" type="number">
+  Maximum number of results to return. Defaults to `20`.
+</ParamField>
+
+<ParamField query="offset" type="number">
+  Pagination offset. Defaults to `0`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by swap status. One of `requested`, `completed`, or `failed`.
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  ISO 8601 start of the date range (e.g. `2026-01-01T00:00:00Z`).
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  ISO 8601 end of the date range (e.g. `2026-01-31T23:59:59Z`).
+</ParamField>
+
+```json Response
+{
+  "status": "success",
+  "message": "Swap history retrieved",
+  "requestId": "7365e207-4cb4-45ce-b2eb-135ddf55f6d5",
+  "data": {
+    "swaps": [
+      {
+        "requestId": "swap-d5eb87a7-00e5-4651-87e3-05a9efa7c5c8",
+        "type": "swap",
+        "status": "completed",
+        "sellToken": "USDC",
+        "buyToken": "CNGN",
+        "amountIn": "0.710696",
+        "amountOut": "2198.456643",
+        "executionRate": "1393",
+        "smartWalletAddress": "0x431890688290b1b7Ff9AB28ee3070c0aDF7b3422",
+        "txHash": "0x308b27309352f53ccd827a900cd1924c36394e8fd6c634cc6eb40b9b4358eds4",
+        "triggerType": "direct",
+        "createdAt": "2026-09-08T09:55:55.235Z",
+        "updatedAt": "2026-09-08T09:57:04.866Z"
+      }
+    ],
+    "pagination": {
+      "total": 29,
+      "limit": 20,
+      "offset": 0,
+      "hasMore": true
+    }
+  },
+  "version": "1.0.0"
+}
+```
+
+<ResponseField name="data.swaps" type="array">
+  List of swap records. Each entry contains the swap's `requestId`, `status`, `sellToken`, `buyToken`, `amountIn`, `amountOut`, `executionRate`, `smartWalletAddress`, `txHash`, `triggerType`, and timestamps.
+</ResponseField>
+
+<ResponseField name="data.pagination" type="object">
+  Pagination metadata including `total`, `limit`, `offset`, and `hasMore`.
+</ResponseField>
