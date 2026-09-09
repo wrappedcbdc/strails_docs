@@ -5,6 +5,14 @@ description: "Notable changes and additions to the Strails API and documentation
 
 Track new endpoints, breaking changes, and improvements to the Strails API and documentation.
 
+<Update label="2026-09-09" description="API">
+  **Swap History endpoint**
+
+  - Added `GET /swaphistory` to the [Transactions API](/api-reference/transactions#swap-history).
+  - Lists historical swap requests for a fintech with pagination and optional filtering by `status`, `startDate`, and `endDate`.
+  - Documented the new endpoint in the Transactions reference and updated the [Authentication rate-limits table](/authentication#transactions--asset-management) to include `/swaphistory` at **100 rpm**.
+</Update>
+
 <Update label="2026-07-30" description="Documentation">
   **Mock Sandbox documentation**
 
