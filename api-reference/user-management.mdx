@@ -1,10 +1,10 @@
 ---
 title: "User Management API: BVN Onboarding, KYC & Account Control"
 sidebarTitle: "User Management"
-description: "Onboard users via BVN verification, track onboarding status, retrieve user details, and manage account activation states for your fintech."
+description: "Onboard users via BVN verification, track onboarding status, retrieve user details, manage account activation states, and set external default wallets for your fintech."
 ---
 
-The User Management API lets you register end-users on Strails using their Bank Verification Number (BVN), track the async KYC process through to completion, fetch full user profiles including wallet addresses and virtual accounts, and control user account status. Because BVN verification is handled by an external identity provider, all onboarding requests are processed asynchronously - you receive a `requestId` immediately and poll or listen for the result.
+The User Management API lets you register end-users on Strails using their Bank Verification Number (BVN), track the async KYC process through to completion, fetch full user profiles including wallet addresses and virtual accounts, control user account status, and route a user's cNGN deliveries to an external default wallet. Because BVN verification is handled by an external identity provider, all onboarding requests are processed asynchronously - you receive a `requestId` immediately and poll or listen for the result.
 
 ## Endpoints Overview
 
@@ -15,6 +15,9 @@ The User Management API lets you register end-users on Strails using their Bank 
 | [Get User Details](#post-getuserdetails) | `/getuserdetails` | POST | Retrieve a user's full profile, wallets, and virtual accounts. |
 | [Manage User Status](#post-manageuserstatus) | `/manageuserstatus` | POST | Activate or deactivate a user account with an audit reason. |
 | [List Fintech Users](#post-listfintechusers) | `/listfintechusers` | POST | Retrieve a paginated list of all users belonging to your fintech. |
+| [Set User Default Wallet](#post-setuserdefaultwallet) | `/setuserdefaultwallet` | POST | Route a user's cNGN deliveries to an external wallet address. |
+| [Get User Default Wallet](#post-getuserdefaultwallet) | `/getuserdefaultwallet` | POST | Retrieve the external default wallet currently set for a user. |
+| [Remove User Default Wallet](#delete-removeuserdefaultwallet) | `/removeuserdefaultwallet` | DELETE | Clear the external default wallet and revert to the system smart wallet. |
 
 ---
 
@@ -381,3 +384,203 @@ curl -X POST https://api.strails.io/v1/listfintechusers \
 <ResponseField name="data.pagination.hasPreviousPage" type="boolean">
   `true` if the current `offset` is greater than `0`, meaning a previous page exists.
 </ResponseField>
+
+---
+
+## User Default Wallet
+
+By default, cNGN minted for a user is delivered to the Strails-managed smart wallet provisioned during onboarding. Setting an **external default wallet** redirects those deliveries to an address you control on behalf of the user - useful when the user self-custodies or when your fintech settles into its own treasury addresses.
+
+<Warning>
+  An external default wallet is a **delivery destination only**. Strails cannot sign for it, so platform operations that require custody - swaps, offramp, and escrow - do not operate on it. Funds that land there must be moved by whoever holds the keys.
+</Warning>
+
+---
+
+### POST /setuserdefaultwallet
+
+Sets or replaces the external default wallet for a user. Calling this endpoint again with a different address overwrites the existing configuration. The address must be valid for the specified blockchain.
+
+```bash
+curl -X POST https://api.strails.io/v1/setuserdefaultwallet \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "userId": "6376eea9b91a9cb4bd5dab096383b19e2437f59e31e9911952b2abed598de696",
+    "address": "0xc5422E03B8250917023501E4697c738E7427b540",
+    "blockchain": "base",
+    "label": "User payout wallet"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier of the user the wallet belongs to.
+</ParamField>
+
+<ParamField body="address" type="string" required>
+  The external wallet address that should receive the user's cNGN deliveries.
+</ParamField>
+
+<ParamField body="blockchain" type="string" required>
+  The blockchain network the address belongs to (e.g. `base`, `eth`, `bsc`).
+</ParamField>
+
+<ParamField body="label" type="string">
+  A human-readable name for the wallet (e.g. `User payout wallet`).
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Default wallet set successfully",
+  "data": {
+    "userId": "b6c71a03bde0cedf990e6bf76a343c0c9376139a4bc3212e47d4ffa16f6365b8",
+    "defaultWallet": {
+      "address": "0x52428ccd2529ff22d03c72a60aec877ca0a69308",
+      "blockchain": "base",
+      "type": "external",
+      "status": "active",
+      "label": "User payout wallet"
+    },
+    "note": "cNGN will be delivered to this wallet. Platform swaps/offramp do not operate on it."
+  }
+}
+```
+
+<ResponseField name="data.defaultWallet.type" type="string">
+  Always `external` for wallets registered through this endpoint.
+</ResponseField>
+
+<ResponseField name="data.defaultWallet.status" type="string">
+  Whether the wallet is currently receiving deliveries. `active` once set.
+</ResponseField>
+
+<ResponseField name="data.note" type="string">
+  Plain-language reminder of the delivery-only behaviour of external default wallets.
+</ResponseField>
+
+#### Error Responses
+
+```json
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "User not found",
+  "error": "No verified user found with the provided userId"
+}
+```
+
+```json
+{
+  "status": "Error",
+  "response_code": "01",
+  "message": "Validation error",
+  "error": "Invalid wallet address for the specified blockchain"
+}
+```
+
+---
+
+### POST /getuserdefaultwallet
+
+Retrieves the external default wallet currently configured for a user. Returns `defaultWallet: null` when no external wallet is set - in that case cNGN is delivered to the user's system smart wallet.
+
+```bash
+curl -X POST https://api.strails.io/v1/getuserdefaultwallet \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "userId": "6376eea9b91a9cb4bd5dab096383b19e2437f59e31e9911952b2abed598de696"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier of the user whose default wallet you want to retrieve.
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Default wallet retrieved successfully",
+  "data": {
+    "userId": "b6c71a03bde0cedf990e6bf76a343c0c9376139a4bc3212e47d4ffa16f6365b8",
+    "defaultWallet": null
+  }
+}
+```
+
+<ResponseField name="data.defaultWallet" type="object">
+  The configured external wallet. `null` if the user has no external default wallet.
+</ResponseField>
+
+#### Error Responses
+
+```json
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "User not found",
+  "error": "No verified user found with the provided userId"
+}
+```
+
+---
+
+### DELETE /removeuserdefaultwallet
+
+Clears the external default wallet for a user. Once removed, cNGN deliveries revert to the user's Strails-managed smart wallet.
+
+```bash
+curl -X DELETE https://api.strails.io/v1/removeuserdefaultwallet \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "userId": "6376eea9b91a9cb4bd5dab096383b19e2437f59e31e9911952b2abed598de696"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier of the user whose default wallet you want to clear.
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Default wallet removed successfully",
+  "data": {
+    "userId": "b6c71a03bde0cedf990e6bf76a343c0c9376139a4bc3212e47d4ffa16f6365b8",
+    "defaultWallet": null,
+    "note": "Funding reverts to the user's system smart wallet."
+  }
+}
+```
+
+<Note>
+  Removing a default wallet only changes where future deliveries go. Balances already sent to the external address remain there.
+</Note>
+
+#### Error Responses
+
+```json
+{
+  "status": "Error",
+  "response_code": "02",
+  "message": "User not found",
+  "error": "No verified user found with the provided userId"
+}
+```
