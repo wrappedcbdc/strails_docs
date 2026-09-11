@@ -5,6 +5,15 @@ description: "Notable changes and additions to the Strails API and documentation
 
 Track new endpoints, breaking changes, and improvements to the Strails API and documentation.
 
+<Update label="2026-09-11" description="API">
+  **User default wallet endpoints**
+
+  - Added `POST /setuserdefaultwallet`, `POST /getuserdefaultwallet`, and `DELETE /removeuserdefaultwallet` to the [User Management API](/api-reference/user-management#user-default-wallet).
+  - Fintechs can now route a user's cNGN deliveries to an external wallet address, read the current configuration, and revert to the user's system smart wallet.
+  - External default wallets are delivery destinations only - platform swaps and offramp do not operate on them.
+  - Documented rate limits for the new endpoints in the [Authentication guide](/authentication#user-management--authentication).
+</Update>
+
 <Update label="2026-09-09" description="API">
   **Swap History endpoint**
 
