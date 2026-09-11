@@ -406,7 +406,7 @@ curl -X POST https://api.strails.io/v1/setuserdefaultwallet \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_SECRET_API_KEY" \
   -d '{
-    "userId": "6376eea9b91a9cb4bd5dab096383b19e2437f59e31e9911952b2abed598de696",
+    "userId": "user_uniqueID",
     "address": "0xc5422E03B8250917023501E4697c738E7427b540",
     "blockchain": "base",
     "label": "User payout wallet"
@@ -439,7 +439,7 @@ curl -X POST https://api.strails.io/v1/setuserdefaultwallet \
   "response_code": "00",
   "message": "Default wallet set successfully",
   "data": {
-    "userId": "b6c71a03bde0cedf990e6bf76a343c0c9376139a4bc3212e47d4ffa16f6365b8",
+    "userId": "user_uniqueID",
     "defaultWallet": {
       "address": "0x52428ccd2529ff22d03c72a60aec877ca0a69308",
       "blockchain": "base",
@@ -495,7 +495,7 @@ curl -X POST https://api.strails.io/v1/getuserdefaultwallet \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_SECRET_API_KEY" \
   -d '{
-    "userId": "6376eea9b91a9cb4bd5dab096383b19e2437f59e31e9911952b2abed598de696"
+    "userId": "user_uniqueID"
   }'
 ```
 
@@ -513,7 +513,7 @@ curl -X POST https://api.strails.io/v1/getuserdefaultwallet \
   "response_code": "00",
   "message": "Default wallet retrieved successfully",
   "data": {
-    "userId": "b6c71a03bde0cedf990e6bf76a343c0c9376139a4bc3212e47d4ffa16f6365b8",
+    "userId": "user_uniqueID",
     "defaultWallet": null
   }
 }
@@ -545,7 +545,7 @@ curl -X DELETE https://api.strails.io/v1/removeuserdefaultwallet \
   -H "Content-Type: application/json" \
   -H "x-api-key: YOUR_SECRET_API_KEY" \
   -d '{
-    "userId": "6376eea9b91a9cb4bd5dab096383b19e2437f59e31e9911952b2abed598de696"
+    "userId": "user_uniqueID"
   }'
 ```
 
@@ -563,7 +563,7 @@ curl -X DELETE https://api.strails.io/v1/removeuserdefaultwallet \
   "response_code": "00",
   "message": "Default wallet removed successfully",
   "data": {
-    "userId": "b6c71a03bde0cedf990e6bf76a343c0c9376139a4bc3212e47d4ffa16f6365b8",
+    "userId": "user_uniqueID",
     "defaultWallet": null,
     "note": "Funding reverts to the user's system smart wallet."
   }
@@ -574,13 +574,3 @@ curl -X DELETE https://api.strails.io/v1/removeuserdefaultwallet \
   Removing a default wallet only changes where future deliveries go. Balances already sent to the external address remain there.
 </Note>
 
-#### Error Responses
-
-```json
-{
-  "status": "Error",
-  "response_code": "02",
-  "message": "User not found",
-  "error": "No verified user found with the provided userId"
-}
-```
