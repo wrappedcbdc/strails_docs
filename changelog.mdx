@@ -5,6 +5,16 @@ description: "Notable changes and additions to the Strails API and documentation
 
 Track new endpoints, breaking changes, and improvements to the Strails API and documentation.
 
+<Update label="2026-09-14" description="Documentation">
+  **User default wallet cross-references**
+
+  - Documented the scope of external default wallets: they apply to virtual account deposit mints, `/cngnonramp`, and `sweepToOfframp` only. Swaps, offramp, and escrow continue to run against the Strails-managed wallet.
+  - Clarified cNGN delivery destinations in the [Virtual Accounts guide](/virtual-accounts-guide#account-types), the [`sweepToOfframp` parameter and auto-swap matrix](/api-reference/transactions), and [Core Concepts](/core-concepts#wallet-system).
+  - Distinguished fintech-level external wallets (`/addexternalwallet`) from user-level default wallets in the [Wallet Management API](/api-reference/wallet#add-an-external-wallet).
+  - Noted that `fintech.user.deposit.funding.completed` still fires for external deliveries, with `smartWalletAddress` carrying the external address.
+  - Added an optional default wallet step to the [Implementation Guide](/implementation-guide) and a verification item to the [Going Live checklist](/going-live).
+</Update>
+
 <Update label="2026-09-11" description="API">
   **User default wallet endpoints**
 

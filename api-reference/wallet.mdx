@@ -99,6 +99,10 @@ curl --request GET \
 
 Registers an external wallet address on your fintech account. External wallets cannot be used for escrow operations. The address must be valid for the specified blockchain before it is accepted.
 
+<Note>
+  This endpoint registers wallets at the **fintech** level. To nominate an external delivery destination for an individual end-user's cNGN, use [Set User Default Wallet](/api-reference/user-management#post-setuserdefaultwallet) instead.
+</Note>
+
 ```bash
 curl --request POST \
   --url "https://api.strails.io/v1/addexternalwallet" \
@@ -140,7 +144,7 @@ curl --request POST \
 </ParamField>
 
 <ParamField body="isDefault" type="boolean">
-  Whether to set this wallet as your default external wallet. Defaults to `false`.
+  Whether to set this wallet as your fintech's default external wallet. Defaults to `false`. This does not affect end-user deliveries - see [User Default Wallet](/api-reference/user-management#user-default-wallet).
 </ParamField>
 
 <ParamField body="metadata" type="object">

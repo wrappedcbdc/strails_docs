@@ -61,8 +61,9 @@ Run all of the following flows at least once against the production environment 
 
 - [ ] **User onboarding:** BVN submission -> verification -> `user.onboarded` webhook event received.
 - [ ] **Virtual account creation:** Onramp initiation -> account details returned -> account expires correctly after 30 minutes if unused.
-- [ ] **Wallet funding (onramp):** NGN deposit received -> cNGN minted -> `wallet.funding.completed` webhook event received -> balance visible on wallet.
-- [ ] **Auto-swap:** Onramp with `autoSwap: true` -> cNGN minted -> USDC/USDT credited -> `swap.completed` webhook event received.
+- [ ] **Wallet funding (onramp):** NGN deposit received -> cNGN disbursed -> `wallet.funding.completed` webhook event received -> balance visible on wallet.
+- [ ] **Auto-swap:** Onramp with `autoSwap: true` -> cNGN disbursed -> USDC/USDT credited -> `swap.completed` webhook event received.
+- [ ] **User default wallet (if used):** External wallet set via [`/setuserdefaultwallet`](/api-reference/user-management#post-setuserdefaultwallet) -> onramp completed -> cNGN confirmed at the external address -> wallet removed -> funding confirmed to revert to the Strails-managed wallet.
 - [ ] **Withdrawal (offramp):** Offramp initiated -> bank transfer processed -> `vault.return.payout.completed` (user offramp) or `fintech.offramp.completed` (fintech offramp) webhook event received -> correct amount credited to bank account.
 - [ ] **FX trading:** Limit order posted -> quote fetched -> trade executed -> `GET /fx/trades/status` polled through to `completed` -> both wallet balances updated correctly.
 
