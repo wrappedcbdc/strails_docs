@@ -13,7 +13,7 @@ Use virtual accounts to power NGN onramp flows for your users, fund your own fin
 | Type | Lifetime | Purpose | cNGN Destination |
 |------|----------|---------|-----------------|
 | **Fintech Permanent** | Permanent | Fintech's own NGN funding channel | Fintech's default wallet (Strails HSM or whitelisted external wallet) |
-| **User Permanent** | Permanent | Dedicated funding account per user | User's Strails-controlled HSM wallet |
+| **User Permanent** | Permanent | Dedicated funding account per user | User's Strails-controlled HSM wallet, or their [external default wallet](/api-reference/user-management#user-default-wallet) if one is set |
 | **Transaction Temporary** | 30 minutes | One-time collection for a specific amount | Generated Smart Wallet (optionally swept to user's default wallet) |
 
 ## Fintech Permanent Account
@@ -52,11 +52,15 @@ Fund your Strails wallet balance to cover user withdrawals, FX liquidity, or fee
 
 ## User Permanent Account
 
-Each user automatically receives a permanent virtual account after BVN verification is completed during the `/onboarduser` flow. Users can deposit NGN into this account at any time - deposits are validated against BVN records and converted to cNGN in the user's Strails-controlled HSM wallet.
+Each user automatically receives a permanent virtual account after BVN verification is completed during the `/onboarduser` flow. Users can deposit NGN into this account at any time - deposits are validated against BVN records and converted to cNGN in the user's Strails-controlled HSM wallet, or in their registered external default wallet.
 
 <Info>
   User permanent accounts are BVN-linked. Deposits must originate from the user's own bank account. Third-party and corporate account transfers are automatically refunded.
 </Info>
+
+<Note>
+  Disbursed cNGN goes to the user's Strails-managed wallet unless you have registered an [external default wallet](/api-reference/user-management#user-default-wallet) for that user, in which case it is delivered there instead. Deposit webhooks fire either way.
+</Note>
 
 ### Retrieve a User's Account
 
@@ -91,7 +95,7 @@ curl -X POST https://api.strails.io/v1/getuserdetails \
 | Event | Trigger |
 |-------|---------|
 | `fintech.user.deposit.received` | Deposit landed on the virtual account |
-| `fintech.user.deposit.funding.completed` | BVN validation passed; cNGN minted to user's wallet |
+| `fintech.user.deposit.funding.completed` | BVN validation passed; cNGN disbursed to user's wallet |
 | `fintech.user.deposit.refunded` | Deposit refunded due to BVN name mismatch |
 
 Wait for `fintech.user.deposit.funding.completed` before crediting the user's in-app balance.
@@ -155,6 +159,8 @@ curl -X POST https://api.strails.io/v1/getvirtualaccount \
 | `true` | `false` | cNGN swapped to USDC/USDT; stays in generated Smart Wallet |
 | `true` | `true` | cNGN swapped to USDC/USDT; swept to user's default wallet |
 
+The user's default wallet is their Strails-managed smart wallet, unless an [external default wallet](/api-reference/user-management#user-default-wallet) has been registered for them.
+
 ## Deposit Flow
 
 The following steps describe the complete path from a user's bank transfer to confirmed cNGN in a wallet:
@@ -162,9 +168,9 @@ The following steps describe the complete path from a user's bank transfer to co
 1. **User initiates a bank transfer** - the user sends NGN to the virtual account number from their bank app.
 2. **Payment gateway receives the deposit** - the licensed payment provider confirms receipt and notifies Strails.
 3. **BVN validation runs** - Strails checks that the depositor's account name matches the BVN on file. Mismatches trigger an automatic refund.
-4. **cNGN is minted** - on a successful validation, Strails mints the equivalent cNGN amount to the destination wallet.
-5. **Auto-swap executes (if configured)** - if `autoSwap` is set, the minted cNGN is immediately swapped to USDC or USDT.
-6. **Sweep executes (if configured)** - if `sweepToOfframp` is set, the resulting tokens are transferred to the user's default wallet.
+4. **cNGN is disbursed** - on a successful validation, Strails mints the equivalent cNGN amount to the destination wallet.
+5. **Auto-swap executes (if configured)** - if `autoSwap` is set, the disbursed cNGN is immediately swapped to USDC or USDT.
+6. **Sweep executes (if configured)** - if `sweepToOfframp` is set, the resulting tokens are transferred to the user's default wallet - their Strails-managed smart wallet, or their [external default wallet](/api-reference/user-management#user-default-wallet) if one is registered.
 7. **Webhook is delivered** - Strails sends the appropriate `funding.completed` or `refunded` webhook to your endpoint.
 
 ## Fee Structure
@@ -185,7 +191,7 @@ The `feeBreakdown` field in the `/cngnonramp` response shows an itemised breakdo
 |-------|-------------|
 | `fintech.virtual_account.deposit.received` | Fintech permanent account received a NGN deposit |
 | `fintech.user.deposit.received` | User permanent account received a NGN deposit |
-| `fintech.user.deposit.funding.completed` | Deposit passed BVN validation; cNGN minted successfully |
+| `fintech.user.deposit.funding.completed` | Deposit passed BVN validation; cNGN disbursed successfully |
 | `fintech.user.deposit.refunded` | Deposit refunded due to BVN name mismatch or amount error |
 
 ## Related
@@ -201,6 +207,6 @@ The `feeBreakdown` field in the `/cngnonramp` response shows an itemised breakdo
     Payload schemas for all deposit and funding webhooks
   </Card>
   <Card title="Smart Wallet" icon="file-contract" href="/smart-wallet">
-    Where temporary account deposits are minted
+    Where temporary account deposits are disbursed
   </Card>
 </CardGroup>

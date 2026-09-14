@@ -34,7 +34,7 @@ The Transactions API handles every financial operation in Strails. You can fund 
 
 `POST /cngnonramp`
 
-Creates a temporary Smart Wallet and a bank transfer instruction so your end-user can fund their wallet by paying Naira into a virtual account. After the bank transfer is confirmed, cNGN is minted to the generated wallet.
+Creates a temporary Smart Wallet and a bank transfer instruction so your end-user can fund their wallet by paying Naira into a virtual account. After the bank transfer is confirmed, cNGN is disbursed to the generated wallet.
 
 <Info>
   Use the [`/getvirtualaccount`](/api-reference/virtual-accounts) endpoint to retrieve the virtual bank account details for payment. The generated account is only active for **30 minutes** after creation.
@@ -80,7 +80,7 @@ curl --request POST \
 </ParamField>
 
 <ParamField body="sweepToOfframp" type="boolean">
-  When `true`, automatically routes the funded (and optionally swapped) amount to the user's default Smart Wallet after confirmation. When set, `destinationAssetSwap` is ignored.
+  When `true`, automatically routes the funded (and optionally swapped) amount to the user's default wallet after confirmation - their Strails-managed Smart Wallet, or their [external default wallet](/api-reference/user-management#user-default-wallet) if one is registered. When set, `destinationAssetSwap` is ignored.
 </ParamField>
 
 <ParamField body="destinationAssetSwap" type="string">
@@ -101,10 +101,14 @@ curl --request POST \
 | `true` | `false` | set | cNGN -> `assetSwap` -> `destinationAssetSwap` |
 | `true` | `true` | ignored | cNGN -> `assetSwap` -> user's default Smart Wallet |
 
+<Note>
+  "User's default Smart Wallet" resolves to the user's [external default wallet](/api-reference/user-management#user-default-wallet) when one is registered. Because Strails cannot sign for external addresses, plan subsequent swap or offramp operations against a Strails-managed wallet.
+</Note>
+
 <ResponseField name="data" type="object">
   <Expandable title="data fields">
     <ResponseField name="requestId" type="string">Unique identifier for this onramp request. Use it with `/cngnonrampstatus` and `/getvirtualaccount` to track the bank account and status.</ResponseField>
-    <ResponseField name="walletAddress" type="string">The generated Smart Wallet address that will receive the minted cNGN.</ResponseField>
+    <ResponseField name="walletAddress" type="string">The generated Smart Wallet address that will receive the disbursed cNGN.</ResponseField>
     <ResponseField name="status" type="string">Initial status of the request (e.g. `requested`).</ResponseField>
     <ResponseField name="autoSwapEnabled" type="boolean">Whether auto-swap is active for this request.</ResponseField>
     <ResponseField name="sweepToOfframpEnabled" type="boolean">Whether sweep-to-offramp is active for this request.</ResponseField>
@@ -280,7 +284,7 @@ curl --request POST \
 Returns the persistent virtual bank account assigned to your fintech. Any Naira payment received on this account is automatically converted to cNGN and credited to your fintech Smart Wallet.
 
 <Info>
-  Use [`/getfintechwallet`](/api-reference/wallet#retrieve-the-fintech-wallet) to find your Smart Wallet address - that is where minted cNGN is credited after a deposit is confirmed.
+  Use [`/getfintechwallet`](/api-reference/wallet#retrieve-the-fintech-wallet) to find your Smart Wallet address - that is where disbursed cNGN is credited after a deposit is confirmed.
 </Info>
 
 For full virtual account management (including per-user virtual accounts and fee configuration), see the [Virtual Accounts API](/api-reference/virtual-accounts) page.

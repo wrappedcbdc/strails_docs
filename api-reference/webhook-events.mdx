@@ -212,9 +212,13 @@ Fired when a deposit is received on a user's permanent virtual account, before c
 
 ### `fintech.user.deposit.funding.completed`
 
-Fired after a user's fiat deposit is fully processed and cNGN has been sent to their Strails-controlled HSM smart wallet. This is the final success event in the user deposit flow.
+Fired after a user's fiat deposit is fully processed and cNGN has been sent to their destination wallet. This is the final success event in the user deposit flow.
 
 **Key payload fields:** `depositId`, `amount`, `currency`, `transactionReference`, `smartWalletAddress`, `transactionHash`, `depositor`, `bvnVerified`, `completedAt`
+
+<Note>
+  If the user has an [external default wallet](/api-reference/user-management#user-default-wallet) registered, the cNGN is delivered there and `smartWalletAddress` carries that address. The event fires either way.
+</Note>
 
 ```json
 {

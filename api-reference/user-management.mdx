@@ -389,10 +389,18 @@ curl -X POST https://api.strails.io/v1/listfintechusers \
 
 ## User Default Wallet
 
-By default, cNGN minted for a user is delivered to the Strails-managed smart wallet provisioned during onboarding. Setting an **external default wallet** redirects those deliveries to an address you control on behalf of the user - useful when the user self-custodies or when your fintech settles into its own treasury addresses.
+By default, cNGN disbursed for a user is delivered to the Strails-managed smart wallet provisioned during onboarding. Setting an **external default wallet** redirects those deliveries to an address you control on behalf of the user - useful when the user self-custodies or when your fintech settles into its own treasury addresses.
+
+The external default wallet applies to three delivery paths only:
+
+- cNGN disbursed from a deposit into the user's permanent virtual account
+- cNGN disbursed through `/cngnonramp`
+- Tokens swept when `sweepToOfframp` is enabled
+
+Deposit and funding webhooks fire as normal; the destination address in the payload reflects the external wallet.
 
 <Warning>
-  An external default wallet is a **delivery destination only**. Strails cannot sign for it, so platform operations that require custody - swaps, offramp, and escrow - do not operate on it. Funds that land there must be moved by whoever holds the keys.
+  An external default wallet is a **delivery destination only**. Strails holds no keys for it, so swaps, offramp, and escrow continue to operate against the user's Strails-managed wallet and never against this address. Funds delivered here must be moved by whoever holds the keys.
 </Warning>
 
 ---

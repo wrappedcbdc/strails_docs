@@ -194,6 +194,24 @@ This guide walks you through a complete Strails integration, from your first API
     <Info>
       Poll until `status` is `"completed"` or `"failed"`, or listen for the [`user.onboarded`](/api-reference/webhook-events) webhook event instead of polling. Once complete, use the returned `userId` for every subsequent call for this user.
     </Info>
+
+    **Optional: route the user's cNGN to an external address**
+
+    Onboarding provisions a Strails-managed wallet that receives the user's cNGN. If the user self-custodies, or you settle into your own treasury addresses, register an external destination with [`POST /setuserdefaultwallet`](/api-reference/user-management#post-setuserdefaultwallet):
+
+    ```bash
+    curl -X POST https://api.strails.io/v1/setuserdefaultwallet \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "userId": "user_uniqueID",
+        "address": "0xc5422E03B8250917023501E4697c738E7427b540",
+        "blockchain": "base",
+        "label": "User payout wallet"
+      }'
+    ```
+
+    This redirects virtual account mints, onramps, and `sweepToOfframp` transfers. Swaps, offramp, and escrow still run against the Strails-managed wallet, so keep balance there for those flows. Call [`DELETE /removeuserdefaultwallet`](/api-reference/user-management#delete-removeuserdefaultwallet) to revert.
   </Step>
 
   <Step title="Fund a User Wallet">
@@ -203,9 +221,9 @@ This guide walks you through a complete Strails integration, from your first API
 
     | `autoSwap` | `assetSwap` | `sweepToOfframp` | Outcome |
     |---|---|---|---|
-    | `false` | - | `false` | NGN deposited -> cNGN minted to user wallet. No swap. |
-    | `true` | `"USDC"` or `"USDT"` | `false` | NGN deposited -> cNGN minted -> auto-swapped to `assetSwap` token via fx orders in Strails orderbook. |
-    | `true` | `"USDC"` or `"USDT"` | `true` | NGN deposited -> cNGN minted -> auto-swapped -> swept to the user's default Smart Wallet. When set, `destinationAssetSwap` is ignored. |
+    | `false` | - | `false` | NGN deposited -> cNGN disbursed to user wallet. No swap. |
+    | `true` | `"USDC"` or `"USDT"` | `false` | NGN deposited -> cNGN disbursed -> auto-swapped to `assetSwap` token via fx orders in Strails orderbook. |
+    | `true` | `"USDC"` or `"USDT"` | `true` | NGN deposited -> cNGN disbursed -> auto-swapped -> swept to the user's default Smart Wallet. When set, `destinationAssetSwap` is ignored. |
 
     **Initiate the onramp:**
 
@@ -469,7 +487,7 @@ This guide walks you through a complete Strails integration, from your first API
 ## Common Integration Patterns
 
 **Simple Wallet Funding**
-Onboard a user -> generate a virtual account -> user pays NGN -> cNGN is minted to their wallet. Use this pattern when your users just need a cNGN balance.
+Onboard a user -> generate a virtual account -> user pays NGN -> cNGN is disbursed to their wallet. Use this pattern when your users just need a cNGN balance.
 
 **Wallet Funding with Auto-Swap**
 Set `"autoSwap": true` and `"assetSwap": "USDC"` on the onramp request. After the NGN deposit is received, Strails mints cNGN and immediately swaps it to USDC via fx order in StRails orderbook - no extra API calls required. Use this pattern for products where users want USD-denominated stablecoins.

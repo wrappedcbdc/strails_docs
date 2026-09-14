@@ -37,6 +37,8 @@ Fintechs operate with three wallet types:
 
 Tokens live in smart wallets and managed wallets.
 
+A user's disbursed cNGN lands in their Strails-managed wallet by default. Fintechs can instead nominate an [external default wallet](/api-reference/user-management#user-default-wallet) per user - a delivery destination for virtual account mints, onramps, and `sweepToOfframp`. Strails holds no keys for it, so swaps, offramp, and escrow continue to operate only on Strails-managed wallets.
+
 ## FX Orderbook
 
 Fintechs can trade between cNGN and USDC/USDT with other fintechs:
