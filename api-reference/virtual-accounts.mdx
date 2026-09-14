@@ -19,7 +19,7 @@ The Virtual Accounts API provides two endpoints for retrieving Nigerian bank acc
 
 ---
 
-### GET /getfintechvirtualaccount
+### GET /getfintechvirtualaccount {#get-getfintechvirtualaccount}
 
 Returns the NGN virtual account(s) created for your fintech during the Strails onboarding process. This is the pooled account your users direct NGN deposits to before conversion into cNGN. Display this account information to your users in your onramp UI.
 
@@ -82,7 +82,7 @@ This endpoint requires no request body.
 
 ---
 
-### POST /getvirtualaccount
+### POST /getvirtualaccount {#post-getvirtualaccount}
 
 Retrieves a specific user-level virtual account using the `requestId` generated when the deposit request was created. The response includes the exact amounts your user must transfer, a full fee breakdown, and the destination wallet address that will receive the equivalent cNGN.
 

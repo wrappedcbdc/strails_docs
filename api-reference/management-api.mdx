@@ -24,7 +24,7 @@ Use the Management API to configure the operational settings for your Strails in
 
 ---
 
-## GET /regenerateapikey
+## GET /regenerateapikey {#get-regenerateapikey}
 
 Generate a fresh API key for your fintech account.
 
@@ -64,7 +64,7 @@ curl --request GET \
 
 ---
 
-## POST /setwebhook
+## POST /setwebhook {#post-setwebhook}
 
 Register or update the webhook endpoint that Strails uses to deliver event notifications to your server. You can also attach a signing secret so you can verify each delivery.
 
@@ -142,7 +142,7 @@ curl --request POST \
 
 ---
 
-## POST /togglewebhookstatus
+## POST /togglewebhookstatus {#post-togglewebhookstatus}
 
 Enable or disable webhook delivery without modifying the registered URL or signing secret. Use this to pause notifications during maintenance windows or re-enable them when you are ready.
 
@@ -193,7 +193,7 @@ curl --request POST \
 
 ---
 
-## GET /getwebhook
+## GET /getwebhook {#get-getwebhook}
 
 Retrieve your current webhook configuration, including the registered URL (partially masked), delivery status, and whether a signing secret is set.
 
@@ -244,7 +244,7 @@ curl --request GET \
 
 ---
 
-## POST /storepublickey
+## POST /storepublickey {#post-storepublickey}
 
 Register your X25519 public key with Strails. Once stored, Strails uses it to encrypt all response payloads and webhook bodies sent to your integration via libsodium `crypto_box_seal`.
 
@@ -285,7 +285,7 @@ curl --request POST \
 
 ---
 
-## GET /getplatformpublickey
+## GET /getplatformpublickey {#get-getplatformpublickey}
 
 Retrieve the Strails platform X25519 public key. Use this key to seal request payloads with libsodium `crypto_box_seal` so only Strails can decrypt them.
 
@@ -316,7 +316,7 @@ curl --request GET \
 
 ---
 
-## GET /getaeskey
+## GET /getaeskey {#get-getaeskey}
 
 Retrieve your raw, unmasked AES key. This key is used for legacy AES-GCM payload encryption and as a fallback for webhook signature verification when no dedicated webhook secret is configured.
 
@@ -351,7 +351,7 @@ curl --request GET \
 
 ---
 
-## POST /manageipallowlist
+## POST /manageipallowlist {#post-manageipallowlist}
 
 Manage the set of IP addresses permitted to make API requests on behalf of your fintech account. You can list all allowed IPs, add a new address, remove an existing one by address or index, or check whether your current request IP is on the list.
 
@@ -493,7 +493,7 @@ curl --request POST \
 
 ---
 
-## POST /updateonrampasset
+## POST /updateonrampasset {#post-updateonrampasset}
 
 Update the onramp asset preferences for a specific user on your platform. Use this to configure which token a user receives by default when they fund via onramp, whether to auto-swap on arrival, and the acceptable slippage tolerance.
 
@@ -568,7 +568,7 @@ curl --request POST \
 
 ---
 
-## GET /autosigning/config
+## GET /autosigning/config {#get-autosigningconfig}
 
 Retrieve the auto-approval threshold configuration assigned to your fintech account for cNGN buying. When a transaction amount is at or below this threshold, it is approved automatically without requiring manual signing.
 
@@ -619,7 +619,7 @@ curl --request GET \
 
 ---
 
-## POST /createsandboxapikey
+## POST /createsandboxapikey {#post-createsandboxapikey}
 
 Create a sandbox-only API key for testing against the mock sandbox environment. This key is separate from your production API key and can only be used with sandbox endpoints.
 
