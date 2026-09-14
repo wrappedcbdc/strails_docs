@@ -20,7 +20,7 @@ Use the Fee Management API to configure the fee structures applied to your users
 
 ---
 
-## GET /getwithdrawalhistory
+## GET /getwithdrawalhistory {#get-getwithdrawalhistory}
 
 Retrieve a paginated list of all fee withdrawal requests for your fintech account. Filter by status to isolate completed, pending, or failed withdrawals.
 
@@ -144,7 +144,7 @@ curl --request GET \
 
 ---
 
-## POST /feewithdrawal
+## POST /feewithdrawal {#post-feewithdrawal}
 
 Submit a request to withdraw accumulated fees to a destination bank account. Withdrawals are processed within 1-3 business days.
 
@@ -257,7 +257,7 @@ curl --request POST \
 
 ---
 
-## GET /getaccumulatedfees
+## GET /getaccumulatedfees {#get-getaccumulatedfees}
 
 Retrieve a real-time summary of your accumulated fees, broken down by transaction direction (onramp vs offramp), collection status, and withdrawal availability.
 
@@ -347,7 +347,7 @@ curl --request GET \
 
 ---
 
-## PUT /managefees
+## PUT /managefees {#put-managefees}
 
 Configure the fee structure applied to your users' transactions. You can set an independent percentage fee and cap for onramp and offramp directions, and enable or disable each independently.
 
@@ -471,7 +471,7 @@ curl --request PUT \
 
 ---
 
-## GET /getfees
+## GET /getfees {#get-getfees}
 
 Retrieve your current fee configuration including any active onramp and offramp settings, configuration timestamps, and a schema version indicator.
 
@@ -539,7 +539,7 @@ curl --request GET \
 
 ---
 
-## POST /fees/strails/preview
+## POST /fees/strails/preview {#post-feesstrailspreview}
 
 Calculate the Strails platform fee that will be applied to a transaction before you confirm it. This is separate from the fintech-configured fee returned by `/getfees`.
 
@@ -648,7 +648,7 @@ curl --request POST \
 
 ---
 
-## POST /verifywithdrawal
+## POST /verifywithdrawal {#post-verifywithdrawal}
 
 Check the current status of a fee withdrawal by its ID. Use this to confirm whether a pending withdrawal has been processed or to retrieve the reason for a failure.
 

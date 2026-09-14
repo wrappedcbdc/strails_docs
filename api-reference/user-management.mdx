@@ -21,7 +21,7 @@ The User Management API lets you register end-users on Strails using their Bank 
 
 ---
 
-### POST /onboarduser
+### POST /onboarduser {#post-onboarduser}
 
 Initiates onboarding for a new user by submitting their 11-digit BVN for identity verification. The request is processed asynchronously - use the returned `requestId` to poll `/onboardstatus`, or wait for the [`user.onboarded`](/api-reference/webhook-events) webhook event.
 
@@ -96,7 +96,7 @@ curl -X POST https://api.strails.io/v1/onboarduser \
 
 ---
 
-### POST /onboardstatus
+### POST /onboardstatus {#post-onboardstatus}
 
 Checks the current status of a pending user onboarding request using the `requestId` returned by `/onboarduser`. Poll this endpoint until `status` is `"completed"` or `"failed"`, or handle the [`user.onboarded`](/api-reference/webhook-events) webhook event instead.
 
@@ -147,7 +147,7 @@ Once `status` is `"completed"`, use the `userId` from the response to call `/get
 
 ---
 
-### POST /getuserdetails
+### POST /getuserdetails {#post-getuserdetails}
 
 Retrieves the full profile for a verified user, including their personal details pulled from BVN verification, all multi-chain wallet addresses provisioned by Strails, and any virtual accounts assigned to them.
 
@@ -216,7 +216,7 @@ curl -X POST https://api.strails.io/v1/getuserdetails \
 
 ---
 
-### POST /manageuserstatus
+### POST /manageuserstatus {#post-manageuserstatus}
 
 Activates or deactivates a user account. When deactivating, you must supply a `reason` - this is recorded in the audit trail. Deactivated users cannot initiate transactions or receive deposits until reactivated.
 
@@ -282,7 +282,7 @@ curl -X POST https://api.strails.io/v1/manageuserstatus \
 
 ---
 
-### POST /listfintechusers
+### POST /listfintechusers {#post-listfintechusers}
 
 Returns a paginated list of all users belonging to your fintech, with summary wallet and virtual account information for each. Use `limit` and `offset` to page through large user sets, and `status` to filter by account state.
 
@@ -397,7 +397,7 @@ By default, cNGN minted for a user is delivered to the Strails-managed smart wal
 
 ---
 
-### POST /setuserdefaultwallet
+### POST /setuserdefaultwallet {#post-setuserdefaultwallet}
 
 Sets or replaces the external default wallet for a user. Calling this endpoint again with a different address overwrites the existing configuration. The address must be valid for the specified blockchain.
 
@@ -486,7 +486,7 @@ curl -X POST https://api.strails.io/v1/setuserdefaultwallet \
 
 ---
 
-### POST /getuserdefaultwallet
+### POST /getuserdefaultwallet {#post-getuserdefaultwallet}
 
 Retrieves the external default wallet currently configured for a user. Returns `defaultWallet: null` when no external wallet is set - in that case cNGN is delivered to the user's system smart wallet.
 
@@ -536,7 +536,7 @@ curl -X POST https://api.strails.io/v1/getuserdefaultwallet \
 
 ---
 
-### DELETE /removeuserdefaultwallet
+### DELETE /removeuserdefaultwallet {#delete-removeuserdefaultwallet}
 
 Clears the external default wallet for a user. Once removed, cNGN deliveries revert to the user's Strails-managed smart wallet.
 
