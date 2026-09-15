@@ -22,6 +22,7 @@ The Transactions API handles every financial operation in Strails. You can fund 
 | [List Deposits](#list-deposits) | `/deposits` | GET | List deposit transactions with filtering and pagination |
 | [List Payouts](#list-payouts) | `/payouts` | GET | List payout transactions with filtering and pagination |
 | [List Transactions](#list-transactions) | `/transactions` | GET | List all transactions (deposits and payouts) with filtering and pagination |
+| [Withdraw History](#withdraw-history) | `/withdrawals` | GET | List token withdrawal transfers with filtering and pagination |
 | [Swap Trigger](#swap-trigger) | `/swaptrigger` | POST | Trigger an asynchronous swap for a specific wallet address |
 | [User Swap](#user-swap) | `/swap` | POST | Request a token swap on a user's default Smart Wallet |
 | [Swap Status](#swap-status) | `/swapstatus` | GET | Get the status of an asynchronous swap request |
@@ -1015,6 +1016,118 @@ curl --request GET \
       "payoutVolume": "0.00"
     },
     "filters": { "direction": "in", "status": "completed" }
+  }
+}
+```
+
+---
+
+## Withdraw History
+
+`GET /withdrawals`
+
+Returns a paginated list of token withdrawal transfers, including fintech self-transfers, fintech withdrawals on behalf of users, and direct user withdrawals. Filter by token ticker, status, transfer type, user, date range, and pagination.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/v1/withdrawals?ticker=CNGN&status=completed&type=fintech_user_withdrawal&limit=20&offset=0" \
+  --header "x-api-key: YOUR_API_KEY"
+```
+
+### Available query parameters
+
+| Param | Type | Description |
+|---|---|---|
+| `ticker` | string | Token ticker, e.g. `CNGN` |
+| `status` | string | `pending`, `completed`, `failed` |
+| `type` | string | `fintech_self_transfer`, `fintech_user_withdrawal`, `user_withdrawal` |
+| `userId` | string | Filter by end-user hash/id |
+| `startDate` | ISO date | e.g. `2026-09-01` |
+| `endDate` | ISO date | e.g. `2026-09-15` |
+| `limit` | number | Page size (default 20) |
+| `offset` | number | Pagination offset (default 0) |
+
+<ParamField query="ticker" type="string">
+  Token ticker, e.g. `CNGN`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status. One of `pending`, `completed`, or `failed`.
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by transfer type. One of `fintech_self_transfer`, `fintech_user_withdrawal`, or `user_withdrawal`.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  Filter by end-user hash/id. Only applicable when `type` includes user-related withdrawals.
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  ISO 8601 start of the date range.
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  ISO 8601 end of the date range.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Maximum number of results to return. Defaults to `20`.
+</ParamField>
+
+<ParamField query="offset" type="number">
+  Pagination offset. Defaults to `0`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Withdrawals retrieved successfully",
+  "data": {
+    "transfers": [
+      {
+        "transferId": "07148ef1-3e9a-45f4-9fcd-5a318c187ba5",
+        "fintechId": "fintech_UniqueID",
+        "userId": "user_UniqueID",
+        "type": "fintech_user_withdrawal",
+        "status": "completed",
+        "source": {
+          "smartWalletAddress": "0x92e48c8Ce75CD34aC83011296C817bA62D7bAC67",
+          "network": "base"
+        },
+        "destination": {
+          "address": "0x1843b0A71A716d0bD1F233Af45F451E48a49a2ed",
+          "network": "base"
+        },
+        "token": {
+          "ticker": "CNGN",
+          "address": "0x46C85152bFe9f96829aA94755D9f915F9B10EF5F",
+          "decimals": 6
+        },
+        "amounts": {
+          "requested": "1600",
+          "fee": "100",
+          "net": "1500",
+          "feeBreakdown": {
+            "gasFee": "0",
+            "usedFintechOverride": false,
+            "platformFee": "100"
+          }
+        },
+        "transactionHash": "0xe2ea9bfe8e84953c979d54ae29c3c9a2fe334b2cad45b5bec46e5a53b9fa91f7",
+        "note": "Fintech withdrawal on behalf of user user_UniqueID",
+        "createdAt": "2026-09-15T15:45:45.216Z",
+        "updatedAt": "2026-09-15T15:45:45.216Z"
+      }
+    ],
+    "pagination": {
+      "total": 2,
+      "limit": 20,
+      "offset": 0,
+      "hasMore": false
+    },
+    "filters": {}
   }
 }
 ```
