@@ -114,7 +114,8 @@
               "api-reference/virtual-accounts",
               "api-reference/fiat-payout-management",
               "api-reference/wallet",
-              "api-reference/transactions"
+              "api-reference/transactions",
+              "api-reference/bridge"
             ]
           },
           {
