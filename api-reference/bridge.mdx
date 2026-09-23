@@ -1,0 +1,432 @@
+---
+title: "Bridge API: Cross-Network Token Transfers"
+sidebarTitle: "Bridge"
+description: "Move tokens across supported networks - quote fees, initiate bridge transactions, track status, and retrieve bridge history."
+---
+
+The Bridge API lets you move tokens between the networks where they are deployed. A user can hold cNGN on Base and bridge it to BSC, Polygon, Ethereum, or another supported chain. All bridge operations are asynchronous - initiation returns a `requestId` you can poll with [`/bridge/status/:requestId`](#bridge-status), or you can receive a webhook notification at the `callbackUrl` you provide.
+
+## Endpoints Overview
+
+| Section | Endpoint | Method | Description |
+|---|---|---|---|
+| [Bridge Quote](#bridge-quote) | `/bridge/quote` | POST | Get the cost, output amount, and validity window for a bridge transaction |
+| [Initiate Bridge](#initiate-bridge) | `/bridge/initiate` | POST | Start a bridge transaction and receive a funding address |
+| [Bridge Status](#bridge-status) | `/bridge/status/:requestId` | GET | Check the current status of a bridge transaction |
+| [Bridge Networks](#bridge-networks) | `/bridge/networks` | GET | List all tokens and networks that support bridging |
+| [Bridge History](#bridge-history) | `/bridge/history` | GET | Retrieve historical bridge transactions with filtering |
+
+---
+
+## Bridge Quote
+
+`POST /bridge/quote`
+
+Returns the estimated output amount and fee for bridging cNGN from one network to another. The quote is valid for a limited time window.
+
+<Note>
+  The `amount` field is denominated in **human-readable token units**. For example, `10000` means 10,000 cNGN.
+</Note>
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/v1/bridge/quote" \
+  --header "x-api-key: YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "token": "CNGN",
+    "fromNetwork": "base",
+    "toNetwork": "bsc",
+    "amount": "10000"
+  }'
+```
+
+<ParamField body="token" type="string" required>
+  Token symbol to bridge. Currently `CNGN`.
+</ParamField>
+
+<ParamField body="fromNetwork" type="string" required>
+  Source network for the bridge. Supported values include `base`, `bsc`, `eth`, `pol`, `asc`, `arc`, `celo`, `sol`, and `xbn`.
+</ParamField>
+
+<ParamField body="toNetwork" type="string" required>
+  Destination network for the bridge. Use [`/bridge/networks`](#bridge-networks) to see all supported combinations.
+</ParamField>
+
+<ParamField body="amount" type="string" required>
+  Human-readable amount to bridge (e.g. `10000` = 10,000 cNGN).
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Bridge quote retrieved",
+  "data": {
+    "quoteId": "cngn-fallback-1790143588792",
+    "provider": "cngn-bridge",
+    "token": "CNGN",
+    "fromNetwork": "base",
+    "toNetwork": "bsc",
+    "inputAmount": "10000",
+    "outputAmount": "9950.000000",
+    "fee": {
+      "total": "50.000000",
+      "percentage": 0.5,
+      "breakdown": {
+        "basePercentage": 0.5,
+        "networkModifier": 0,
+        "finalPercentage": 0.5
+      }
+    },
+    "estimatedDurationSeconds": 210,
+    "estimatedDurationMinutes": 4,
+    "validUntil": "2026-09-23T06:11:28.792Z"
+  }
+}
+```
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="quoteId" type="string">Unique identifier for this quote.</ResponseField>
+    <ResponseField name="provider" type="string">Bridge provider handling the transfer.</ResponseField>
+    <ResponseField name="token" type="string">Token symbol being bridged.</ResponseField>
+    <ResponseField name="fromNetwork" type="string">Source network.</ResponseField>
+    <ResponseField name="toNetwork" type="string">Destination network.</ResponseField>
+    <ResponseField name="inputAmount" type="string">Amount sent on the source network.</ResponseField>
+    <ResponseField name="outputAmount" type="string">Estimated amount received on the destination network after fees.</ResponseField>
+    <ResponseField name="fee" type="object">
+      <Expandable title="fee fields">
+        <ResponseField name="total" type="string">Total fee deducted from the input amount.</ResponseField>
+        <ResponseField name="percentage" type="number">Final fee percentage applied.</ResponseField>
+        <ResponseField name="breakdown" type="object">
+          <Expandable title="breakdown fields">
+            <ResponseField name="basePercentage" type="number">Base bridge fee percentage.</ResponseField>
+            <ResponseField name="networkModifier" type="number">Network-specific fee modifier.</ResponseField>
+            <ResponseField name="finalPercentage" type="number">Combined final percentage.</ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="estimatedDurationSeconds" type="number">Estimated processing time in seconds.</ResponseField>
+    <ResponseField name="estimatedDurationMinutes" type="number">Estimated processing time in minutes.</ResponseField>
+    <ResponseField name="validUntil" type="string">ISO 8601 timestamp after which the quote expires.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Initiate Bridge
+
+`POST /bridge/initiate`
+
+Starts a bridge transaction. The response includes a `receivableAddress` on the source network where the user must send the specified amount. Once the deposit is detected, the bridged tokens are released on the destination network to `toAddress`.
+
+<Warning>
+  Funds must originate from `fromAddress` on the source network. Sending from an unverified address may cause the bridge to fail or require manual reconciliation.
+</Warning>
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/v1/bridge/initiate" \
+  --header "x-api-key: YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "token": "CNGN",
+    "fromNetwork": "base",
+    "toNetwork": "bsc",
+    "amount": "250",
+    "fromAddress": "0xa6affd289C709DA14cAfddCD948fe0043A70F346",
+    "toAddress": "0x1843b0A71A716d0bD1F233Af45F451E48a49a2ed",
+    "callbackUrl": "https://your.callback.url/v1/bridge/callback"
+  }'
+```
+
+<ParamField body="token" type="string" required>
+  Token symbol to bridge. Currently `CNGN`.
+</ParamField>
+
+<ParamField body="fromNetwork" type="string" required>
+  Source network for the bridge.
+</ParamField>
+
+<ParamField body="toNetwork" type="string" required>
+  Destination network for the bridge.
+</ParamField>
+
+<ParamField body="amount" type="string" required>
+  Human-readable amount to bridge (e.g. `250` = 250 cNGN).
+</ParamField>
+
+<ParamField body="fromAddress" type="string" required>
+  Wallet address sending the tokens on the source network.
+</ParamField>
+
+<ParamField body="toAddress" type="string" required>
+  Destination wallet address on the target network.
+</ParamField>
+
+<ParamField body="callbackUrl" type="string">
+  HTTPS URL where Strails will send webhook notifications for this bridge transaction.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Bridge initiated successfully",
+  "data": {
+    "requestId": "c50ee8f4-ba4a-4a26-97fc-b3daf1909cea",
+    "transactionId": "eb01e592-7ab1-45b8-a5a3-c326c817267f",
+    "receivableAddress": "0x2a41736e8ea5031ccefb70a913c76c73fc464cf0",
+    "reference": "15b2c3fb-37e0-4773-ac48-a01e0225f003",
+    "status": "initiated",
+    "token": "CNGN",
+    "fromNetwork": "base",
+    "toNetwork": "bsc",
+    "amount": "250",
+    "estimatedDurationMinutes": 5,
+    "message": "Send 250 CNGN to 0x2a41736e8ea5031ccefb70a913c76c73fc464cf0 on base network. Funds will be bridged to 0x1843b0A71A716d0bD1F233Af45F451E48a49a2ed on bsc."
+  }
+}
+```
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="requestId" type="string">Unique identifier for tracking the bridge transaction.</ResponseField>
+    <ResponseField name="transactionId" type="string">Internal bridge transaction identifier.</ResponseField>
+    <ResponseField name="receivableAddress" type="string">Source-network address where the user must send the tokens.</ResponseField>
+    <ResponseField name="reference" type="string">Reference code for the bridge transaction.</ResponseField>
+    <ResponseField name="status" type="string">Initial status of the bridge (e.g. `initiated`).</ResponseField>
+    <ResponseField name="token" type="string">Token symbol being bridged.</ResponseField>
+    <ResponseField name="fromNetwork" type="string">Source network.</ResponseField>
+    <ResponseField name="toNetwork" type="string">Destination network.</ResponseField>
+    <ResponseField name="amount" type="string">Amount to send to the receivable address.</ResponseField>
+    <ResponseField name="estimatedDurationMinutes" type="number">Estimated processing time in minutes.</ResponseField>
+    <ResponseField name="message" type="string">Human-readable instruction for completing the bridge.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Bridge Status
+
+`GET /bridge/status/:requestId`
+
+Returns the current status of a bridge transaction, including on-chain transaction details and the destination explorer link once completed.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/v1/bridge/status/c50ee8f4-ba4a-4a26-97fc-b3daf1909cea" \
+  --header "x-api-key: YOUR_API_KEY"
+```
+
+<ParamField path="requestId" type="string" required>
+  The `requestId` returned by `/bridge/initiate`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Bridge status retrieved",
+  "data": {
+    "requestId": "c50ee8f4-ba4a-4a26-97fc-b3daf1909cea",
+    "status": "completed",
+    "token": "CNGN",
+    "fromNetwork": "base",
+    "toNetwork": "bsc",
+    "amount": "250",
+    "actualAmount": "150",
+    "fromAddress": "0xa6affd289C709DA14cAfddCD948fe0043A70F346",
+    "toAddress": "0x1843b0A71A716d0bD1F233Af45F451E48a49a2ed",
+    "receivableAddress": "0x2a41736e8ea5031ccefb70a913c76c73fc464cf0",
+    "transactionId": "eb01e592-7ab1-45b8-a5a3-c326c817267f",
+    "txHash": "0x8e2e3d162911b6f19221a30864b6fc2e87e846c39088cf5a5b841c1826d4a3e2",
+    "explorerLink": "https://bscscan.com/tx/0x8e2e3d162911b6f19221a30864b6fc2e87e846c39088cf5a5b841c1826d4a3e2",
+    "createdAt": "2026-09-23T06:07:03.872Z",
+    "completedAt": "2026-09-23T06:10:25.224Z"
+  }
+}
+```
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="requestId" type="string">Unique identifier for the bridge transaction.</ResponseField>
+    <ResponseField name="status" type="string">Current status, e.g. `initiated`, `pending`, `completed`, or `failed`.</ResponseField>
+    <ResponseField name="token" type="string">Token symbol being bridged.</ResponseField>
+    <ResponseField name="fromNetwork" type="string">Source network.</ResponseField>
+    <ResponseField name="toNetwork" type="string">Destination network.</ResponseField>
+    <ResponseField name="amount" type="string">Original amount requested for the bridge.</ResponseField>
+    <ResponseField name="actualAmount" type="string">Actual amount released on the destination network.</ResponseField>
+    <ResponseField name="fromAddress" type="string">Source wallet address.</ResponseField>
+    <ResponseField name="toAddress" type="string">Destination wallet address.</ResponseField>
+    <ResponseField name="receivableAddress" type="string">Source-network deposit address.</ResponseField>
+    <ResponseField name="transactionId" type="string">Internal bridge transaction identifier.</ResponseField>
+    <ResponseField name="txHash" type="string">Destination-network transaction hash.</ResponseField>
+    <ResponseField name="explorerLink" type="string">Block explorer link for the destination transaction.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 timestamp when the bridge was initiated.</ResponseField>
+    <ResponseField name="completedAt" type="string">ISO 8601 timestamp when the bridge completed.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Bridge Networks
+
+`GET /bridge/networks`
+
+Returns the tokens that support bridging and the complete list of networks where bridging is enabled.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/v1/bridge/networks" \
+  --header "x-api-key: YOUR_API_KEY"
+```
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "All bridge-enabled tokens retrieved",
+  "data": {
+    "tokens": [
+      {
+        "token": "CNGN",
+        "networks": [
+          "base",
+          "bsc",
+          "eth",
+          "sol",
+          "pol",
+          "atc",
+          "lisk",
+          "xbn"
+        ],
+        "preferredProvider": "cngn-bridge"
+      }
+    ],
+    "allSupportedNetworks": [
+      "base",
+      "bsc",
+      "eth",
+      "pol",
+      "trx",
+      "sol",
+      "xbn",
+      "atc",
+      "monad",
+      "arc",
+      "celo"
+    ]
+  }
+}
+```
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="tokens" type="array">List of bridge-enabled tokens and their supported networks.</ResponseField>
+    <ResponseField name="allSupportedNetworks" type="array">All networks where bridging is enabled, including token-specific and global availability.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Bridge History
+
+`GET /bridge/history`
+
+Returns a paginated list of historical bridge transactions. Filter by status, token, source network, destination network, date range, and page.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/v1/bridge/history?status=completed&token=CNGN&fromNetwork=base&toNetwork=trx&startDate=2026-08-01&endDate=2026-09-23&limit=20&page=1" \
+  --header "x-api-key: YOUR_API_KEY"
+```
+
+### Available query parameters
+
+| Param | Type | Description |
+|---|---|---|
+| `status` | string | Filter by status, e.g. `completed`, `pending`, `failed` |
+| `token` | string | Token ticker, e.g. `CNGN` |
+| `fromNetwork` | string | Source network |
+| `toNetwork` | string | Destination network |
+| `startDate` | ISO date | Start of the date range, e.g. `2026-08-01` |
+| `endDate` | ISO date | End of the date range, e.g. `2026-09-23` |
+| `limit` | number | Page size (default 20) |
+| `page` | number | Page number (default 1) |
+
+<ParamField query="status" type="string">
+  Filter by bridge transaction status.
+</ParamField>
+
+<ParamField query="token" type="string">
+  Token ticker, e.g. `CNGN`.
+</ParamField>
+
+<ParamField query="fromNetwork" type="string">
+  Source network.
+</ParamField>
+
+<ParamField query="toNetwork" type="string">
+  Destination network.
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  ISO 8601 start of the date range.
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  ISO 8601 end of the date range.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Maximum number of results to return. Defaults to `20`.
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number for pagination. Defaults to `1`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Bridge history retrieved",
+  "data": {
+    "transactions": [],
+    "pagination": {
+      "total": 0,
+      "limit": 20,
+      "offset": 0,
+      "hasMore": false
+    },
+    "filters": {
+      "status": "completed",
+      "token": "CNGN",
+      "fromNetwork": "base",
+      "toNetwork": "trx",
+      "startDate": "2026-08-01T00:00:00.000Z",
+      "endDate": "2026-09-23T00:00:00.000Z"
+    },
+    "version": "1.0.0"
+  }
+}
+```
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="transactions" type="array">List of bridge transactions matching the filters.</ResponseField>
+    <ResponseField name="pagination" type="object">
+      <Expandable title="pagination fields">
+        <ResponseField name="total" type="number">Total number of matching transactions.</ResponseField>
+        <ResponseField name="limit" type="number">Page size.</ResponseField>
+        <ResponseField name="offset" type="number">Pagination offset.</ResponseField>
+        <ResponseField name="hasMore" type="boolean">Whether additional pages are available.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="filters" type="object">Filters applied to the query.</ResponseField>
+    <ResponseField name="version" type="string">API version.</ResponseField>
+  </Expandable>
+</ResponseField>
