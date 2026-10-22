@@ -1,10 +1,10 @@
 ---
-title: "Webhook Events: Complete Reference for All 22 Events"
+title: "Webhook Events: Complete Reference for All 25 Events"
 sidebarTitle: "Webhook Events"
-description: "Complete reference for all 22 HMAC-signed webhook event types, including payload schemas for onramp, offramp, transfers, and user lifecycle events."
+description: "Complete reference for all 25 HMAC-signed webhook event types, including payload schemas for onramp, offramp, transfers, and user lifecycle events."
 ---
 
-Strails sends real-time event notifications to your configured webhook URL for all 22 critical operations across the platform. Every delivery is HMAC-signed so you can verify its authenticity, and any delivery that does not receive a `200` response is automatically retried with exponential backoff.
+Strails sends real-time event notifications to your configured webhook URL for all 25 critical operations across the platform. Every delivery is HMAC-signed so you can verify its authenticity, and any delivery that does not receive a `200` response is automatically retried with exponential backoff.
 
 ## Common payload fields
 
@@ -168,6 +168,37 @@ Fired when a deposit is received on your fintech's permanent reserved virtual ac
 
 ---
 
+### `fintech.deposit.funding.failed`
+
+Fired when a deposit to your fintech-level virtual account was received but the cNGN could not be delivered to your fintech wallet. It is the fintech-level counterpart of `fintech.user.deposit.funding.failed` and has the same payload, without `userId`.
+
+**Key payload fields:** `depositId`, `amount`, `currency`, `transactionReference`, `smartWalletAddress`, `error.message`, `error.code`, `failedAt`, `metadata`
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "fintech.deposit.funding.failed",
+  "timestamp": "2026-05-30T12:00:00.000Z",
+  "requestId": "deposit-id",
+  "fintechId": "your-fintech-id",
+  "version": "1.0",
+  "payload": {
+    "depositId": "dep_123",
+    "amount": 50000,
+    "currency": "NGN",
+    "transactionReference": "NOVAC-REF-456",
+    "smartWalletAddress": "0x...",
+    "error": {
+      "message": "Funding failed",
+      "code": "FUNDING_FAILED"
+    },
+    "failedAt": "2026-05-30T12:00:00.000Z"
+  }
+}
+```
+
+---
+
 ### `fintech.user.deposit.received`
 
 Fired when a deposit is received on a user's permanent virtual account, before cNGN minting has begun. This is the first event in the user deposit funding flow.
@@ -214,10 +245,10 @@ Fired when a deposit is received on a user's permanent virtual account, before c
 
 Fired after a user's fiat deposit is fully processed and cNGN has been sent to their destination wallet. This is the final success event in the user deposit flow.
 
-**Key payload fields:** `depositId`, `amount`, `currency`, `transactionReference`, `smartWalletAddress`, `transactionHash`, `depositor`, `bvnVerified`, `completedAt`
+**Key payload fields:** `depositId`, `amount`, `currency`, `transactionReference`, `smartWalletAddress`, `destinationWallet`, `destinationType`, `transactionHash`, `depositor`, `bvnVerified`, `completedAt`
 
 <Note>
-  If the user has an [external default wallet](/api-reference/user-management#user-default-wallet) registered, the cNGN is delivered there and `smartWalletAddress` carries that address. The event fires either way.
+  If the user has an [external default wallet](/api-reference/user-management#user-default-wallet) registered, the cNGN is delivered there and `smartWalletAddress` carries that address. The event fires either way. `destinationWallet` is the address that received the cNGN and `destinationType` says which kind it is: `smart_wallet` or `external_default`.
 </Note>
 
 ```json
@@ -235,6 +266,8 @@ Fired after a user's fiat deposit is fully processed and cNGN has been sent to t
     "currency": "NGN",
     "transactionReference": "NOVAC-REF-123",
     "smartWalletAddress": "0x...",
+    "destinationWallet": "0x...",
+    "destinationType": "smart_wallet",
     "transactionHash": "0x...",
     "depositor": {
       "accountNumber": "1234567890",
@@ -244,6 +277,38 @@ Fired after a user's fiat deposit is fully processed and cNGN has been sent to t
     },
     "bvnVerified": true,
     "completedAt": "2026-05-30T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+### `fintech.user.deposit.funding.failed`
+
+Fired when a user's fiat deposit was received but the cNGN could not be delivered to their wallet. The deposit is marked failed. Contact support with the `depositId` to resolve it.
+
+**Key payload fields:** `depositId`, `amount`, `currency`, `transactionReference`, `smartWalletAddress`, `error.message`, `error.code`, `failedAt`, `metadata`
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "fintech.user.deposit.funding.failed",
+  "timestamp": "2026-05-30T12:00:00.000Z",
+  "requestId": "deposit-id",
+  "fintechId": "your-fintech-id",
+  "version": "1.0",
+  "userId": "user-hash-string",
+  "payload": {
+    "depositId": "abc123",
+    "amount": 1000,
+    "currency": "NGN",
+    "transactionReference": "NOVAC-REF-123",
+    "smartWalletAddress": "0x...",
+    "error": {
+      "message": "Funding failed",
+      "code": "FUNDING_FAILED"
+    },
+    "failedAt": "2026-05-30T12:00:00.000Z"
   }
 }
 ```
@@ -314,6 +379,35 @@ Fired when cNGN minting is complete and tokens have been credited to the user's 
     "amount": "100",
     "transactionHash": "0x7d832e32bb5128bf8ac19e0ad4d18c92026eec14a1b0d9a60a4df95945afd1f4",
     "completedAt": "2026-05-07T15:28:20.832Z"
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="MPC Signing Events">
+
+### `mpc.signing.completed`
+
+Fired when an MPC signing request Strails raised for one of your operations has been signed and its transaction confirmed on-chain. `operationType` names the operation, for example `wallet_funding`, `token_transfer`, `token_approval` or `sweep_to_offramp`.
+
+**Key payload fields:** `signingRequestUuid`, `transactionHash`, `operationType`, `targetAddress`, `amount`, `completedAt`, `completionMetadata`
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "mpc.signing.completed",
+  "timestamp": "2026-05-30T12:00:00.000Z",
+  "requestId": "req-12345",
+  "fintechId": "your-fintech-id",
+  "version": "1.0",
+  "payload": {
+    "signingRequestUuid": "a1b2c3d4-...",
+    "transactionHash": "0x...",
+    "operationType": "wallet_funding",
+    "targetAddress": "0x...",
+    "amount": "100.00",
+    "completedAt": "2026-05-30T12:00:00.000Z"
   }
 }
 ```
@@ -830,7 +924,7 @@ Fired when an offramp fails at any stage in the pipeline - whether during the on
 ---
 
 <Note>
-  **FX trades do not emit webhook events.** None of the 22 events above cover the orderbook or trading flow, so track trade settlement by polling [`GET /fx/trades/status`](/api-reference/trading-management#get-trade-status) until the trade reaches `completed`, `expired`, or `failed`.
+  **FX trades do not emit webhook events.** None of the 25 events above cover the orderbook or trading flow, so track trade settlement by polling [`GET /fx/trade/status`](/api-reference/trading-management#get-trade-status) until the trade reaches `completed`, `partial`, `expired`, or `failed`.
 </Note>
 
 ## Retry behaviour

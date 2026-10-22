@@ -87,6 +87,13 @@ Respect the `retry_after` value (in seconds) before re-attempting the request.
 | `/setuserdefaultwallet` | 20 rpm |
 | `/getuserdefaultwallet` | 100 rpm |
 | `/removeuserdefaultwallet` | 20 rpm |
+| `/setusersettlementnetwork` | 20 rpm |
+| `/getusersettlementnetwork` | 100 rpm |
+| `/removeusersettlementnetwork` | 20 rpm |
+| `/listusersettlementdestinations` | 100 rpm |
+| `/setfintechsettlementnetwork` | 20 rpm |
+| `/getfintechsettlementnetwork` | 100 rpm |
+| `/removefintechsettlementnetwork` | 20 rpm |
 
 ### Virtual Accounts & Wallet
 
@@ -118,6 +125,9 @@ Respect the `retry_after` value (in seconds) before re-attempting the request.
 | `/fintechtransfer` | 30 rpm | |
 | `/initiateofframp` | 30 rpm | |
 | `/getofframpstatus` | 30 rpm | |
+| `/listofframps` | 100 rpm | List your offramps |
+| `/cancelofframp` | 20 rpm | Cancel a pending offramp |
+| `/getofframplimits` | 100 rpm | Your offramp amount limits |
 | `/deposits` | 100 rpm | List deposit transactions |
 | `/payouts` | 100 rpm | List payout transactions |
 | `/transactions` | 100 rpm | List all transactions |
@@ -125,6 +135,7 @@ Respect the `retry_after` value (in seconds) before re-attempting the request.
 | `/swaptrigger` | 30 rpm | Trigger async token swap |
 | `/swap` | 30 rpm | Swap on user smart wallet |
 | `/swapstatus` | 60 rpm | Get swap request status |
+| `/swapquote` | 30 rpm | Quote a swap before executing it |
 | `/swaphistory` | 100 rpm | List historical swaps |
 
 ### FX Orderbook & Trading
@@ -141,8 +152,36 @@ Respect the `retry_after` value (in seconds) before re-attempting the request.
 | `/fx/quote` | POST | 60 rpm | Generate trade quote |
 | `/fx/trade` | POST | 30 rpm | Execute trade |
 | `/fx/market-order` | POST | 30 rpm | Execute market order |
-| `/fx/trades/status` | GET | 60 rpm | Get trade status |
+| `/fx/trade/status` | GET | 150 rpm | Get trade status |
 | `/fx/trades` | GET | 100 rpm | List your trades |
+
+### Bank Accounts
+
+| Endpoint | Rate limit |
+|---|---|
+| `/addbankaccount` | 10 rpm |
+| `/updatebankaccount` | 20 rpm |
+| `/deletebankaccount` | 10 rpm |
+| `/listbankaccounts` | 100 rpm |
+| `/getbankaccount` | 100 rpm |
+| `/verifybankaccount` | 60 rpm |
+
+### Fee Management
+
+| Endpoint | Rate limit | Notes |
+|---|---|---|
+| `/managefees` | 2 rpm | Configured as 20 requests per 10-minute window |
+| `/getfees` | 20 rpm | Configured as 100 requests per 5-minute window |
+| `/fees/strails/preview` | 100 rpm | |
+
+### Security & Keys
+
+| Endpoint | Rate limit | Notes |
+|---|---|---|
+| `/storepublickey` | 2 rpm | Configured as 20 requests per 10-minute window |
+| `/getpublickey` | 5 rpm | Configured as 50 requests per 10-minute window |
+| `/deletepublickey` | 1 rpm | Configured as 10 requests per 10-minute window |
+| `/regenerateaeskey` | 1 rpm | Configured as 10 requests per 10-minute window |
 
 ## Error Handling
 

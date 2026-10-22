@@ -46,7 +46,7 @@ curl --request POST \
 </ParamField>
 
 <ParamField body="fromNetwork" type="string" required>
-  Source network for the bridge. Supported values include `base`, `bsc`, `eth`, `pol`, `asc`, `arc`, `celo`, `sol`, and `xbn`.
+  Source network for the bridge. One of `base`, `bsc`, `eth`, `pol`, `trx`, `sol`, `xbn`, `atc`, `lisk`, `monad`, or `arc`. The token must also support bridging on both networks - see [`/bridge/networks`](#bridge-networks).
 </ParamField>
 
 <ParamField body="toNetwork" type="string" required>
@@ -315,9 +315,9 @@ curl --request GET \
       "sol",
       "xbn",
       "atc",
+      "lisk",
       "monad",
-      "arc",
-      "celo"
+      "arc"
     ]
   }
 }

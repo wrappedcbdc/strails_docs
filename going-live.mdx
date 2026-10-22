@@ -36,7 +36,7 @@ See [Encryption](/encryption) for key generation, `POST /storepublickey` registr
 - [ ] You have configured a **strong, randomly generated webhook secret** (at least 32 bytes of entropy) and stored it in your secret manager.
 - [ ] Your handler verifies **`X-Strails-Signature`** using HMAC-SHA256 on every incoming request and rejects requests that fail verification.
 - [ ] Your handler **rejects requests where `X-Strails-Timestamp` is more than 5 minutes old** to prevent replay attacks.
-- [ ] You have confirmed that your handler processes all **critical event types** your integration depends on (for example, `user.onboarded`, `wallet.funding.completed`, `swap.completed`, `vault.return.payout.completed`, `fintech.offramp.completed`). FX trades emit no webhooks - poll `GET /fx/trades/status` instead.
+- [ ] You have confirmed that your handler processes all **critical event types** your integration depends on (for example, `user.onboarded`, `wallet.funding.completed`, `swap.completed`, `vault.return.payout.completed`, `fintech.offramp.completed`). FX trades emit no webhooks - poll `GET /fx/trade/status` instead.
 
 See [HMAC Signatures](/hmac-signatures) and [Webhook Events](/api-reference/webhook-events) for payload schemas and the full event list.
 
@@ -65,7 +65,7 @@ Run all of the following flows at least once against the production environment 
 - [ ] **Auto-swap:** Onramp with `autoSwap: true` -> cNGN disbursed -> USDC/USDT credited -> `swap.completed` webhook event received.
 - [ ] **User default wallet (if used):** External wallet set via [`/setuserdefaultwallet`](/api-reference/user-management#post-setuserdefaultwallet) -> onramp completed -> cNGN confirmed at the external address -> wallet removed -> funding confirmed to revert to the Strails-managed wallet.
 - [ ] **Withdrawal (offramp):** Offramp initiated -> bank transfer processed -> `vault.return.payout.completed` (user offramp) or `fintech.offramp.completed` (fintech offramp) webhook event received -> correct amount credited to bank account.
-- [ ] **FX trading:** Limit order posted -> quote fetched -> trade executed -> `GET /fx/trades/status` polled through to `completed` -> both wallet balances updated correctly.
+- [ ] **FX trading:** Limit order posted -> quote fetched -> trade executed -> `GET /fx/trade/status` polled through to `completed` -> both wallet balances updated correctly.
 
 ## 8. Monitoring & Support
 

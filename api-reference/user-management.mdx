@@ -18,6 +18,13 @@ The User Management API lets you register end-users on Strails using their Bank 
 | [Set User Default Wallet](#post-setuserdefaultwallet) | `/setuserdefaultwallet` | POST | Route a user's cNGN deliveries to an external wallet address. |
 | [Get User Default Wallet](#post-getuserdefaultwallet) | `/getuserdefaultwallet` | POST | Retrieve the external default wallet currently set for a user. |
 | [Remove User Default Wallet](#delete-removeuserdefaultwallet) | `/removeuserdefaultwallet` | DELETE | Clear the external default wallet and revert to the system smart wallet. |
+| [Set User Settlement Network](#post-setusersettlementnetwork) | `/setusersettlementnetwork` | POST | Choose the network a user's onramp cNGN is delivered on. |
+| [Get User Settlement Network](#post-getusersettlementnetwork) | `/getusersettlementnetwork` | POST | Retrieve a user's settlement network and where it would be delivered. |
+| [Remove User Settlement Network](#post-removeusersettlementnetwork) | `/removeusersettlementnetwork` | POST | Clear a user's settlement network setting. |
+| [List User Settlement Destinations](#post-listusersettlementdestinations) | `/listusersettlementdestinations` | POST | List every network and whether the user can be paid on it. |
+| [Set Fintech Settlement Network](#post-setfintechsettlementnetwork) | `/setfintechsettlementnetwork` | POST | Set the default settlement network for all of your users. |
+| [Get Fintech Settlement Network](#post-getfintechsettlementnetwork) | `/getfintechsettlementnetwork` | POST | Retrieve your fintech's default settlement network. |
+| [Remove Fintech Settlement Network](#post-removefintechsettlementnetwork) | `/removefintechsettlementnetwork` | POST | Clear your fintech's default settlement network and revert to Base. |
 
 ---
 
@@ -428,11 +435,11 @@ curl -X POST https://api.strails.io/v1/setuserdefaultwallet \
 </ParamField>
 
 <ParamField body="address" type="string" required>
-  The external wallet address that should receive the user's cNGN deliveries.
+  The external EVM wallet address (`0x...`) that should receive the user's cNGN deliveries.
 </ParamField>
 
-<ParamField body="blockchain" type="string" required>
-  The blockchain network the address belongs to (e.g. `base`, `eth`, `bsc`).
+<ParamField body="blockchain" type="string">
+  The EVM network the address belongs to (e.g. `base`, `eth`, `bsc`). Defaults to `base`. A network other than Base is accepted only when bridged settlement is available - see [Settlement Network](#settlement-network).
 </ParamField>
 
 <ParamField body="label" type="string">
@@ -581,4 +588,390 @@ curl -X DELETE https://api.strails.io/v1/removeuserdefaultwallet \
 <Note>
   Removing a default wallet only changes where future deliveries go. Balances already sent to the external address remain there.
 </Note>
+
+---
+
+## Settlement Network
+
+The **settlement network** is the chain a user's onramp cNGN is delivered on. Unless you set one, every onramp settles on Base. You can set a network per user, set a default for all of your users, or name one on a single [`/cngnonramp`](/api-reference/transactions#user-onramp) request.
+
+It applies to cNGN disbursed from a deposit into the user's permanent virtual account and to cNGN disbursed through `/cngnonramp`.
+
+### How the network is chosen
+
+Strails uses the first of these that is set:
+
+1. `settlementNetwork` on the `/cngnonramp` request (that request only)
+2. The user's settlement network, set with [`/setusersettlementnetwork`](#post-setusersettlementnetwork)
+3. The network the user's [external default wallet](#user-default-wallet) is registered for
+4. Your fintech's default, set with [`/setfintechsettlementnetwork`](#post-setfintechsettlementnetwork)
+5. Base
+
+Because steps 2 and 3 outrank step 4, a fintech default never overrides a user who has their own setting or an external default wallet.
+
+### Where the cNGN lands
+
+Off Base, cNGN is delivered **only to an external default wallet registered for that network**. The user's Strails-managed smart wallet exists only on Base, so it is never a destination on another chain. On Base, cNGN goes to the user's external default wallet if it is registered for Base, otherwise to their smart wallet.
+
+| Network | Destination |
+|---|---|
+| Base | External default wallet registered for Base, otherwise the user's smart wallet |
+| Other EVM networks (`bsc`, `eth`, `pol`, `atc`, `lisk`, `monad`, `arc`) | External default wallet registered for that network |
+| Tron, Solana, Bantu (`trx`, `sol`, `xbn`) | None today - external default wallets must be EVM addresses |
+
+Use [`/listusersettlementdestinations`](#post-listusersettlementdestinations) to check where a user can be paid before you pick a network.
+
+<Info>
+  Strails bridges the cNGN from Base to the settlement network and **absorbs the bridge fee**, so the user receives the same amount they would have received on Base. A bridged deposit is reported complete only after the bridge releases the cNGN on the destination network. If a bridge transfer can't be started (for example, the amount is above the bridged-settlement limit), the cNGN is delivered on Base instead.
+</Info>
+
+<Warning>
+  If a user has no address on the resolved network, a permanent virtual account deposit is **held** rather than paid on another network, and Strails is alerted. A `/cngnonramp` request that names such a network in `settlementNetwork` is refused when you make it. For a `/cngnonramp` payment where the network comes from a stored setting instead, the cNGN is delivered on Base.
+</Warning>
+
+#### Network values
+
+`base`, `bsc`, `eth`, `pol`, `trx`, `sol`, `xbn`, `atc`, `lisk`, `monad`, `arc`. Common names such as `ethereum`, `polygon`, and `bnb` are also accepted and normalised to these codes.
+
+A network other than Base can be stored only while bridged settlement is available on Strails. Otherwise the set endpoints, and `/cngnonramp`, return:
+
+```json
+{
+  "status": "Failed",
+  "response_code": "01",
+  "message": "Settlement on BNB Smart Chain is not available yet; only Base is supported"
+}
+```
+
+---
+
+### POST /setusersettlementnetwork {#post-setusersettlementnetwork}
+
+Sets the network a user's onramps settle on. Strails stores the network only if the user already has an address that can receive on it, so a stored setting is always one the onramp can honour.
+
+```bash
+curl -X POST https://api.strails.io/v1/setusersettlementnetwork \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "userId": "user_uniqueID",
+    "network": "pol"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier of the user.
+</ParamField>
+
+<ParamField body="network" type="string" required>
+  The settlement network. See [network values](#network-values).
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Default settlement network set successfully",
+  "data": {
+    "userId": "user_uniqueID",
+    "settlementNetwork": "pol",
+    "networkName": "Polygon",
+    "destinationAddress": "0xc5422E03B8250917023501E4697c738E7427b540",
+    "destinationSource": "external_default"
+  }
+}
+```
+
+<ResponseField name="data.destinationAddress" type="string">
+  The address that will receive the user's onramp cNGN on this network.
+</ResponseField>
+
+<ResponseField name="data.destinationSource" type="string">
+  Which of the user's wallets that address is: `external_default` (their external default wallet) or `smart_wallet` (their Strails-managed smart wallet, Base only).
+</ResponseField>
+
+#### Error Responses
+
+```json
+{
+  "status": "Failed",
+  "response_code": "01",
+  "message": "This user has no address that can receive on Polygon. Register an external default wallet for it first."
+}
+```
+
+```json
+{
+  "status": "Failed",
+  "response_code": "01",
+  "message": "\"polygonx\" is not a network Strails supports"
+}
+```
+
+```json
+{
+  "status": "Failed",
+  "response_code": "03",
+  "message": "Invalid user credentials for fintech"
+}
+```
+
+---
+
+### POST /getusersettlementnetwork {#post-getusersettlementnetwork}
+
+Returns the network a user's onramps settle on and the address that would receive them. When the user has no setting of their own, this reports Base.
+
+```bash
+curl -X POST https://api.strails.io/v1/getusersettlementnetwork \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "userId": "user_uniqueID"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier of the user.
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Default settlement network retrieved successfully",
+  "data": {
+    "userId": "user_uniqueID",
+    "settlementNetwork": "base",
+    "networkName": "Base",
+    "isExplicit": false,
+    "destinationAddress": "0x2KCC051A79dE65d7068542cB5D9D03754cc22F60",
+    "destinationSource": "smart_wallet"
+  }
+}
+```
+
+<ResponseField name="data.isExplicit" type="boolean">
+  `true` when the user has a settlement network set with `/setusersettlementnetwork`. `false` means the user has no setting and Base is reported.
+</ResponseField>
+
+<ResponseField name="data.destinationAddress" type="string">
+  The address that would receive on `settlementNetwork`, or `null` if the user has none there.
+</ResponseField>
+
+<Note>
+  This reports the user's own setting only. When `isExplicit` is `false`, an onramp can still settle elsewhere through the user's external default wallet network or your fintech default - see [How the network is chosen](#how-the-network-is-chosen).
+</Note>
+
+---
+
+### POST /removeusersettlementnetwork {#post-removeusersettlementnetwork}
+
+Clears a user's settlement network setting. Onramps for the user then follow the rest of the [precedence order](#how-the-network-is-chosen).
+
+```bash
+curl -X POST https://api.strails.io/v1/removeusersettlementnetwork \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "userId": "user_uniqueID"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier of the user.
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Default settlement network cleared successfully",
+  "data": {
+    "userId": "user_uniqueID",
+    "settlementNetwork": "base",
+    "note": "Onramps settle on Base again."
+  }
+}
+```
+
+---
+
+### POST /listusersettlementdestinations {#post-listusersettlementdestinations}
+
+Lists every supported network and whether the user can be paid on it. Call this before setting a user's network or naming one on `/cngnonramp` - a network with `canSettle: false` would be refused or held.
+
+```bash
+curl -X POST https://api.strails.io/v1/listusersettlementdestinations \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "userId": "user_uniqueID"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier of the user.
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Settlement destinations retrieved successfully",
+  "data": {
+    "userId": "user_uniqueID",
+    "destinations": [
+      {
+        "network": "base",
+        "canSettle": true,
+        "destinationAddress": "0x2KCC051A79dE65d7068542cB5D9D03754cc22F60",
+        "destinationSource": "smart_wallet",
+        "requiresBridge": false,
+        "networkName": "Base"
+      },
+      {
+        "network": "bsc",
+        "canSettle": false,
+        "destinationAddress": null,
+        "destinationSource": null,
+        "requiresBridge": true,
+        "networkName": "BNB Smart Chain"
+      }
+    ],
+    "settleableNetworks": ["base"],
+    "note": "A network with canSettle false has no address for this user. Register an external wallet for it first; off Base an internal wallet cannot receive."
+  }
+}
+```
+
+<ResponseField name="data.destinations" type="array">
+  One entry per supported network, with `network`, `networkName`, `canSettle`, `destinationAddress`, `destinationSource` (`external_default`, `smart_wallet`, or `null`), and `requiresBridge` (`true` for every network except Base).
+</ResponseField>
+
+<ResponseField name="data.settleableNetworks" type="array">
+  The networks where `canSettle` is `true`.
+</ResponseField>
+
+---
+
+### POST /setfintechsettlementnetwork {#post-setfintechsettlementnetwork}
+
+Sets the default settlement network for all of your users. It is a default, not an override: a user's own setting and their external default wallet network both take precedence.
+
+<Warning>
+  Strails can't check this setting against each user's wallets. A user with no address on the chosen network has their permanent virtual account deposits **held** rather than paid elsewhere, so register an external default wallet on that network for those users.
+</Warning>
+
+```bash
+curl -X POST https://api.strails.io/v1/setfintechsettlementnetwork \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_SECRET_API_KEY" \
+  -d '{
+    "network": "pol"
+  }'
+```
+
+#### Request Parameters
+
+<ParamField body="network" type="string" required>
+  The default settlement network. See [network values](#network-values).
+</ParamField>
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Default settlement network set successfully",
+  "data": {
+    "settlementNetwork": "pol",
+    "networkName": "Polygon",
+    "note": "Users without their own setting are paid on Polygon. A user with no address on Polygon will have their deposit held rather than paid elsewhere, so give those users an external wallet for it."
+  }
+}
+```
+
+#### Error Responses
+
+```json
+{
+  "status": "Failed",
+  "response_code": "01",
+  "message": "\"polygonx\" is not a network Strails supports"
+}
+```
+
+---
+
+### POST /getfintechsettlementnetwork {#post-getfintechsettlementnetwork}
+
+Returns your fintech's default settlement network. When none is set, this reports Base.
+
+```bash
+curl -X POST https://api.strails.io/v1/getfintechsettlementnetwork \
+  -H "x-api-key: YOUR_SECRET_API_KEY"
+```
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Default settlement network retrieved successfully",
+  "data": {
+    "settlementNetwork": "pol",
+    "networkName": "Polygon",
+    "isExplicit": true,
+    "note": "A user's own setting, and the network their external default wallet is registered for, both take precedence over this."
+  }
+}
+```
+
+<ResponseField name="data.isExplicit" type="boolean">
+  `true` when a default is set. `false` means none is set and Base is reported.
+</ResponseField>
+
+---
+
+### POST /removefintechsettlementnetwork {#post-removefintechsettlementnetwork}
+
+Clears your fintech's default settlement network. Users without their own setting or an external default wallet network settle on Base again.
+
+```bash
+curl -X POST https://api.strails.io/v1/removefintechsettlementnetwork \
+  -H "x-api-key: YOUR_SECRET_API_KEY"
+```
+
+#### Response
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Default settlement network cleared successfully",
+  "data": {
+    "settlementNetwork": "base",
+    "note": "Users without their own setting are paid on Base again."
+  }
+}
+```
 

@@ -352,7 +352,7 @@ curl -X POST "https://api.strails.io/v1/manageipallowlist" \
 
 ### FX Quote & Trade
 
-Get a live exchange rate for a cNGN/USDC or cNGN/USDT pair, then execute the trade within the 5-minute quote window.
+Get a live exchange rate for a cNGN/USDC or cNGN/USDT pair, then execute the trade within the 15-minute quote window.
 
 **Step 1 - Request a quote:**
 
@@ -412,12 +412,19 @@ FX trades are executed by the fintech account that owns the API key - there is n
 {
   "status": "Success",
   "response_code": "00",
-  "message": "Trade initiated",
+  "message": "Trade executed successfully",
   "data": {
-    "tradeId": "trade_mno345",
-    "status": "pending",
-    "lockId": "lock_abc123",
-    "expiresAt": "2026-05-01T10:40:00.000Z"
+    "trade": {
+      "tradeId": "trade_mno345",
+      "pair": "CNGN-USDC",
+      "side": "sell",
+      "cngnAmount": "50000",
+      "usdcAmount": "37.04",
+      "price": "1350.00",
+      "status": "pending",
+      "expiresAt": "2026-05-01T10:40:00.000Z"
+    },
+    "version": "1.0.0"
   }
 }
 ```
@@ -425,7 +432,7 @@ FX trades are executed by the fintech account that owns the API key - there is n
 The trade moves through `pending` -> `locked` -> `signing` -> `settling` -> `completed`. FX trades emit no webhook events, so track progress by polling:
 
 ```bash
-curl -X GET "https://api.strails.io/v1/fx/trades/status?tradeId=trade_mno345" \
+curl -X GET "https://api.strails.io/v1/fx/trade/status?tradeId=trade_mno345" \
   -H "Accept: */*" \
   -H "x-api-key: YOUR_API_KEY"
 ```

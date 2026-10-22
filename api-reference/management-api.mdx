@@ -14,6 +14,9 @@ Use the Management API to configure the operational settings for your Strails in
 | [Store Public Key](#post-storepublickey) | `/storepublickey` | POST | Store your X25519 public key for response and webhook encryption |
 | [Get Platform Public Key](#get-getplatformpublickey) | `/getplatformpublickey` | GET | Retrieve the platform X25519 public key used to encrypt requests |
 | [Get AES Key](#get-getaeskey) | `/getaeskey` | GET | Retrieve your raw, unmasked AES key for legacy operations |
+| [Get Public Key](#get-getpublickey) | `/getpublickey` | GET | Check the X25519 public key Strails holds for you |
+| [Delete Public Key](#delete-deletepublickey) | `/deletepublickey` | DELETE | Remove your stored X25519 public key |
+| [Regenerate AES Key](#post-regenerateaeskey) | `/regenerateaeskey` | POST | Replace your AES key with a new one |
 | [Set Webhook](#post-setwebhook) | `/setwebhook` | POST | Configure your webhook URL, optional secret, and event subscriptions |
 | [Toggle Webhook Status](#post-togglewebhookstatus) | `/togglewebhookstatus` | POST | Enable or disable webhook delivery without changing the URL |
 | [Get Webhook](#get-getwebhook) | `/getwebhook` | GET | Retrieve your current webhook configuration |
@@ -276,7 +279,7 @@ curl --request POST \
 {
   "status": "Success",
   "response_code": "00",
-  "message": "Public key stored successfully",
+  "message": "X25519 public key stored successfully",
   "data": {
     "updatedAt": "2025-08-26T10:30:00.000Z"
   }
@@ -351,6 +354,140 @@ curl --request GET \
 
 ---
 
+## GET /getpublickey {#get-getpublickey}
+
+Check which X25519 public key Strails holds for you, alongside the platform key. Use it to confirm that `/storepublickey` took effect.
+
+<Note>
+  When a public key is stored, this response is encrypted to that key, like your other responses.
+</Note>
+
+### Request
+
+```bash
+curl --request GET \
+  --url "{{BASE_URL}}/getpublickey" \
+  --header "x-api-key: YOUR_API_KEY"
+```
+
+### Response
+
+<ResponseField name="data.hasPublicKey" type="boolean">
+  `true` if a public key is stored for your fintech.
+</ResponseField>
+
+<ResponseField name="data.fintechPublicKey" type="string | null">
+  Your stored 64-character hex X25519 public key, or `null`.
+</ResponseField>
+
+<ResponseField name="data.fintechPublicKeyVersion" type="number">
+  Increments each time you store a new key. `0` when none is stored.
+</ResponseField>
+
+<ResponseField name="data.fintechPublicKeyUpdatedAt" type="string | null">
+  ISO 8601 timestamp of the last `/storepublickey` call.
+</ResponseField>
+
+<ResponseField name="data.platformPublicKey" type="string">
+  The Strails platform X25519 public key, as returned by `/getplatformpublickey`.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "X25519 public key information retrieved",
+  "data": {
+    "fintechPublicKey": null,
+    "fintechPublicKeyVersion": 0,
+    "fintechPublicKeyUpdatedAt": null,
+    "platformPublicKey": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+    "hasPublicKey": false
+  }
+}
+```
+
+---
+
+## DELETE /deletepublickey {#delete-deletepublickey}
+
+Remove your stored X25519 public key. Responses and webhooks are no longer encrypted to it after this call.
+
+### Request
+
+```bash
+curl --request DELETE \
+  --url "{{BASE_URL}}/deletepublickey" \
+  --header "x-api-key: YOUR_API_KEY"
+```
+
+### Response
+
+The response itself is still encrypted to the key being deleted, when one existed.
+
+<ResponseField name="data.deletedAt" type="string">
+  ISO 8601 timestamp of the deletion.
+</ResponseField>
+
+<ResponseField name="data.hadPublicKey" type="boolean">
+  `false` if there was no key to delete.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "X25519 public key deleted successfully",
+  "data": {
+    "message": "ED25519 public key deleted successfully",
+    "deletedAt": "2026-10-22T10:30:00.000Z",
+    "hadPublicKey": true
+  }
+}
+```
+
+---
+
+## POST /regenerateaeskey {#post-regenerateaeskey}
+
+Generate a new AES key, replacing the current one immediately. Anything still using the old key, such as legacy AES-GCM payloads or webhook verification without a dedicated webhook secret, stops working until you switch to the new key.
+
+<Warning>
+  The new key is returned once in this response. Store it securely before making other calls.
+</Warning>
+
+### Request
+
+```bash
+curl --request POST \
+  --url "{{BASE_URL}}/regenerateaeskey" \
+  --header "x-api-key: YOUR_API_KEY"
+```
+
+### Response
+
+<ResponseField name="data.aesKey" type="string">
+  Your new AES key.
+</ResponseField>
+
+<ResponseField name="data.rotatedAt" type="string">
+  ISO 8601 timestamp of the rotation.
+</ResponseField>
+
+```json
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "AES key regenerated successfully",
+  "data": {
+    "aesKey": "your_new_aes_key_value",
+    "rotatedAt": "2026-10-22T10:30:00.000Z"
+  }
+}
+```
+
+---
+
 ## POST /manageipallowlist {#post-manageipallowlist}
 
 Manage the set of IP addresses permitted to make API requests on behalf of your fintech account. You can list all allowed IPs, add a new address, remove an existing one by address or index, or check whether your current request IP is on the list.
@@ -373,10 +510,6 @@ Manage the set of IP addresses permitted to make API requests on behalf of your 
   Zero-based index of the IP to remove, as returned by the `"list"` action. Use this as an alternative to specifying `ipAddress` when removing an entry.
 </ParamField>
 
-<ParamField body="description" type="string">
-  Optional label describing the IP address (e.g., `"Office network IP"`). Used with the `"add"` action.
-</ParamField>
-
 ### List all allowed IPs
 
 ```bash
@@ -394,11 +527,13 @@ curl --request POST \
   "message": "IP allowlist operation completed",
   "data": {
     "action": "list",
-    "ipAddresses": [
-      { "index": 0, "ip": "203.0.***.***", "description": "Office network" },
-      { "index": 1, "ip": "192.168.***.***", "description": "VPN endpoint" }
+    "count": 2,
+    "ips": [
+      { "index": 0, "ip": "203.0.***.***" },
+      { "index": 1, "ip": "192.168.***.***" }
     ],
-    "totalIps": 2
+    "message": "2 IP address(es) configured",
+    "usage": "To remove an IP, use the 'remove' action with either the full IP address or the index number shown here."
   }
 }
 ```
@@ -412,8 +547,7 @@ curl --request POST \
   --header "Content-Type: application/json" \
   --data '{
     "action": "add",
-    "ipAddress": "203.0.113.45",
-    "description": "Office network IP"
+    "ipAddress": "203.0.113.45"
   }'
 ```
 

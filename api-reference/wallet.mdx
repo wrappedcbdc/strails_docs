@@ -484,7 +484,7 @@ curl --request GET \
 </ParamField>
 
 <ParamField query="networks" type="string">
-  Comma-separated list of EVM network keys to check (e.g. `base,eth,bsc`). Defaults to all supported EVM networks.
+  Comma-separated list of EVM network keys to check (e.g. `base,eth,bsc`). Supported values: `base`, `eth`, `bsc`, `pol`, `atc`, `lisk`; others are ignored. Defaults to all of them.
 </ParamField>
 
 <ResponseField name="data" type="object">
@@ -558,7 +558,7 @@ curl --request POST \
 </ParamField>
 
 <ParamField body="networks" type="array">
-  Array of EVM network keys to check (e.g. `["base", "eth", "bsc"]`). Defaults to all supported EVM networks.
+  Array of EVM network keys to check (e.g. `["base", "eth", "bsc"]`). Supported values: `base`, `eth`, `bsc`, `pol`, `atc`, `lisk`; others are ignored. Defaults to all of them.
 </ParamField>
 
 <ResponseField name="data" type="object">

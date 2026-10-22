@@ -458,7 +458,7 @@ This guide walks you through a complete Strails integration, from your first API
       }'
     ```
 
-    The quote response includes a `quoteId` and is valid for **5 minutes**. Pass the `quoteId` directly to the trade endpoint.
+    The quote response includes a `quoteId` and is valid for **15 minutes**. Pass the `quoteId` directly to the trade endpoint.
 
     **Execute the trade:**
 
@@ -475,7 +475,7 @@ This guide walks you through a complete Strails integration, from your first API
     After execution, tokens from both sides are held in escrow and settlement completes automatically.
 
     <Warning>
-      FX trades do **not** emit webhook events. Poll [`GET /fx/trades/status?tradeId=...`](/api-reference/trading-management#get-trade-status) until the trade reaches `completed`, `expired`, or `failed`. The lock window is 5 minutes.
+      FX trades do **not** emit webhook events. Poll [`GET /fx/trade/status?tradeId=...`](/api-reference/trading-management#get-trade-status) until the trade reaches `completed`, `partial`, `expired`, or `failed`. The lock window is 15 minutes.
     </Warning>
 
     <Tip>

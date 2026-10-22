@@ -98,29 +98,31 @@ Every API response includes a `response_code` field. The six possible values are
 
   <Accordion title="FX Trade Statuses">
 
-    FX trades execute against the Strails orderbook and have a strict 5-minute lock window:
+    FX trades execute against the Strails orderbook and have a strict 15-minute price lock window:
 
     | Status | Description |
     |---|---|
     | `pending` | Trade created; validating parameters and available liquidity |
-    | `locked` | Funds locked in escrow; 5-minute countdown active |
+    | `locked` | Funds locked in escrow; 15-minute countdown active |
     | `signing` | Awaiting MPC signature for the blockchain transaction |
-    | `settling` | Blockchain transaction submitted and executing |
+    | `settling` | Signed transaction ready for on-chain settlement |
+    | `settling_in_progress` | Settlement actively executing on-chain; returns to `settling` if it stops before a final status |
     | `completed` | Trade executed successfully |
+    | `partial` | Multi-order trade where some slices settled and others failed or expired; unsettled cNGN is refunded |
     | `expired` | Lock window elapsed before settlement completed |
     | `failed` | Settlement or execution failed |
 
     **Lifecycle flow:**
 
     ```
-    pending -> locked -> signing -> settling -> completed
-                  |         |           |
-                  v         v           v
-               expired   expired      failed
+    pending -> locked -> signing -> settling -> settling_in_progress -> completed
+                  |         |                            |
+                  v         v                            v
+               expired   expired              partial (multi-order) / failed
     ```
 
     <Note>
-      A trade can only expire from `locked` or `signing` states. Once the transaction reaches `settling`, it either completes or fails - it cannot expire.
+      A trade can only expire from `locked` or `signing` states. Once the transaction reaches `settling`, it either completes, partially completes, or fails - it cannot expire. See [How orders are matched](/api-reference/trading-management#how-orders-are-matched) for when a trade fills across several orders.
     </Note>
 
   </Accordion>
@@ -167,6 +169,8 @@ These error code strings appear in the `error` field of a failed response and in
 | `NOT_FOUND` | 404 | The resource ID supplied (user, transaction, order, etc.) does not exist |
 | `RATE_LIMIT_EXCEEDED` | 429 | The caller has exceeded the maximum allowed requests per minute |
 | `INTERNAL_ERROR` | 500 | An unexpected server-side error; retry with exponential backoff and contact support if it persists |
+
+FX quote and trade endpoints also return a more specific `errorCode` in `data.details.errorCode`, such as `NO_LIQUIDITY`, `INVALID_QUOTE`, or `TRADING_SUSPENDED`. Some of these are client-side rejections returned with HTTP 500, so branch on the `errorCode`. See [FX error codes](/api-reference/trading-management#fx-error-codes) for the full list.
 
 ## Common Issues
 
@@ -289,7 +293,7 @@ Use these values when querying list endpoints with the `type`, `status`, `side`,
 |---|---|
 | `pair` | `CNGN-USDC`, `CNGN-USDT` |
 | `side` | `buy`, `sell` |
-| `status` | `pending`, `locked`, `signing`, `settling`, `completed`, `expired`, `failed` |
+| `status` | `pending`, `locked`, `signing`, `settling`, `settling_in_progress`, `completed`, `partial`, `expired`, `failed` |
 
 **Asset Withdrawals**
 

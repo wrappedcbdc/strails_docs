@@ -14,7 +14,8 @@ The Fiat Payout API lets you manage the Nigerian bank accounts that Strails pays
 | [Add a Bank Account](#add-a-bank-account) | `/addbankaccount` | POST | Add and verify a new Nigerian bank account for payout |
 | [Update a Bank Account](#update-a-bank-account) | `/updatebankaccount` | PUT | Update the label or default status of a bank account |
 | [Delete a Bank Account](#delete-a-bank-account) | `/deletebankaccount` | DELETE | Remove a bank account from your fintech configuration |
-| [Retrieve a Single Bank Account](#retrieve-a-single-bank-account) | `/getbankaccounts` | GET | Retrieve details of a single bank account by ID |
+| [Retrieve a Single Bank Account](#retrieve-a-single-bank-account) | `/getbankaccount` | GET | Retrieve details of a single bank account by ID |
+| [Verify a Bank Account](#verify-a-bank-account) | `/verifybankaccount` | POST | Look up the account holder name for a bank account without saving it |
 | [Retrieve All Bank Accounts](#retrieve-all-bank-accounts) | `/listbankaccounts` | GET | Retrieve all bank accounts configured on your fintech account |
 
 ---
@@ -237,13 +238,13 @@ curl --request DELETE \
 
 ## Retrieve a Single Bank Account
 
-`GET /getbankaccounts`
+`GET /getbankaccount`
 
 Returns the details of a single bank account by its UUID.
 
 ```bash
 curl --request GET \
-  --url "https://api.strails.io/v1/getbankaccounts?accountId=uuid-account-id" \
+  --url "https://api.strails.io/v1/getbankaccount?accountId=uuid-account-id" \
   --header "x-api-key: YOUR_API_KEY"
 ```
 
@@ -253,8 +254,8 @@ curl --request GET \
 
 <ResponseField name="data" type="object">
   <Expandable title="data fields">
-    <ResponseField name="accounts" type="array">
-      Array containing the single matched account. Each entry includes:
+    <ResponseField name="account" type="object">
+      The matched account:
       - `accountId` - UUID of the account
       - `fintechId` - UUID of your fintech
       - `accountName` - verified account holder name
@@ -274,29 +275,78 @@ curl --request GET \
 {
   "status": "Success",
   "response_code": "00",
-  "message": "Bank accounts retrieved successfully",
+  "message": "Bank account retrieved successfully",
   "data": {
-    "accounts": [
-      {
-        "accountId": "account-uuid",
-        "fintechId": "fintech-uuid",
-        "accountName": "JOHN DOE",
-        "accountNumber": "1234567890",
-        "bankName": "Access Bank",
-        "bankCode": "044",
-        "isDefault": true,
-        "isValidated": true,
-        "validationDetails": {
-          "validatedAt": "2026-02-04T10:30:00.000Z",
-          "accountNameMatch": true
-        },
-        "createdAt": "2026-02-04T10:30:00.000Z",
-        "updatedAt": "2026-02-04T10:30:00.000Z"
-      }
-    ]
+    "account": {
+      "accountId": "account-uuid",
+      "fintechId": "fintech-uuid",
+      "accountName": "JOHN DOE",
+      "accountNumber": "1234567890",
+      "bankName": "Access Bank",
+      "bankCode": "044",
+      "isDefault": true,
+      "isValidated": true,
+      "validationDetails": {
+        "validatedAt": "2026-02-04T10:30:00.000Z",
+        "accountNameMatch": true
+      },
+      "createdAt": "2026-02-04T10:30:00.000Z",
+      "updatedAt": "2026-02-04T10:30:00.000Z"
+    }
   }
 }
 ```
+
+If no account with that `accountId` belongs to your fintech, the response is `"Bank account not found"`.
+
+---
+
+## Verify a Bank Account
+
+`POST /verifybankaccount`
+
+Looks up the account holder's name for a Nigerian bank account (name enquiry) without saving it. Use it to confirm details with your user before calling `/addbankaccount` or starting an offramp.
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/v1/verifybankaccount" \
+  --header "x-api-key: YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "accountNumber": "1234567890",
+    "bankCode": "044"
+  }'
+```
+
+<ParamField body="accountNumber" type="string" required>
+  10-digit bank account number, digits only.
+</ParamField>
+
+<ParamField body="bankCode" type="string" required>
+  Bank code (3 to 6 characters) from `/getbankscode`.
+</ParamField>
+
+<ParamField body="currency" type="string" default="NGN">
+  Three-letter currency code.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Bank account verified successfully",
+  "data": {
+    "accountNumber": "1234567890",
+    "accountName": "JOHN DOE",
+    "bankCode": "044",
+    "verified": true
+  }
+}
+```
+
+**Error response**
+
+When the bank cannot resolve the account, the response has `response_code` `02` and the bank's reason as the message, for example `Bank account verification failed`.
 
 ---
 
