@@ -539,7 +539,12 @@ Targeted trades (Mode 3) always execute against exactly one order.
 
 ### Insufficient liquidity
 
-A trade fills completely or not at all. If the matched orders cannot cover your full amount, the request is rejected with `NO_LIQUIDITY` and no trade is created. The `message` explains why, for example that your amount is below the smallest available `minAmount`, that the matching liquidity providers' wallets are underfunded, or that only part of the amount could be matched. Reduce your amount, split it into smaller trades, or retry when more liquidity is available.
+Orders are combined across liquidity providers whether or not you set `allowPartialFill`. The flag only decides what happens when all the matched orders together still cannot cover your amount:
+
+- `allowPartialFill: false` (default): the request is rejected with `NO_LIQUIDITY` and no trade is created.
+- `allowPartialFill: true`: Strails fills what the matched orders can cover and leaves the rest unfilled. For a quote, this is decided when the quote is generated, so set the flag on `POST /fx/quote`.
+
+When a request is rejected, the `message` explains why, for example that your amount is below the smallest available `minAmount`, that the matching liquidity providers' wallets are underfunded, or that only part of the amount could be matched. Reduce your amount, split it into smaller trades, or retry when more liquidity is available.
 
 ### Multi-order settlement
 
