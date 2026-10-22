@@ -634,31 +634,42 @@ curl --request POST \
       "walletAddress": "0x.....",
       "owner": "0x.....",
       "tokenBuy": "USDC",
-      "autoSwap": false,
-      "sweepToOfframp": true,
-      "amount": "200",
-      "createdAt": "2026-01-28T11:17:47.513Z",
-      "fundingRequestedAt": "2026-01-28T11:21:20.170Z",
-      "fundedAt": "2026-01-28T11:22:01.527Z",
+      "autoSwap": true,
+      "allowPartialFill": true,
+      "sweepToOfframp": false,
+      "amount": "700",
+      "createdAt": "2026-10-22T11:17:16.711Z",
+      "fundingRequestedAt": "2026-10-22T11:19:09.218Z",
+      "fundedAt": "2026-10-22T11:19:27.137Z",
       "transactionHash": "0x......",
       "virtualAccountDetails": {
-        "accountNumber": "xxxx",
-        "bankName": "XXXX Bank",
-        "accountName": "Okaformbah",
-        "amount": 200,
-        "createdAt": "2026-01-28T11:18:09.353Z"
+        "accountNumber": "9900010056",
+        "bankName": "FAME BANK",
+        "accountName": "CHEK UDE",
+        "amount": 700,
+        "createdAt": "2026-10-22T11:17:19.763Z"
       },
-      "virtualAccountStatus": "created"
+      "virtualAccountStatus": "created",
+      "fxTradeId": "fx_trade_...",
+      "fxTradeStatus": "pending",
+      "fxTradeMetadata": {},
+      "autoSwapError": {
+        "code": "NO_LIQUIDITY",
+        "message": "Only partial liquidity available. Matched 204.00 CNGN of 700.00 CNGN requested..."
+      }
     },
     "fxQuote": {
       "available": true,
       "pair": "CNGN-USDC",
-      "cngnAmount": "1000",
-      "tokenAmount": "0.689655",
-      "averagePrice": "1450.00",
+      "cngnAmount": "204",
+      "usdcAmount": "0.132",
+      "averagePrice": "1545.45",
       "averageSpread": 0.5,
-      "expiresAt": "2026-04-04T08:58:36.072Z",
-      "note": "This quote is valid for 5 minutes"
+      "expiresAt": "2026-10-22T11:24:27.000Z",
+      "autoSwap": true,
+      "isPartialFill": true,
+      "unfilledCngnAmount": "496",
+      "note": "Auto-swap will execute automatically via FX orderbook"
     }
   }
 }
