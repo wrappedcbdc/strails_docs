@@ -5,6 +5,29 @@ description: "Notable changes and additions to the Strails API and documentation
 
 Track new endpoints, breaking changes, and improvements to the Strails API and documentation.
 
+<Update label="2026-10-22" description="API">
+  **Sync with the production API**
+
+  - Added the [Settlement Network](/api-reference/user-management#settlement-network) endpoints: `POST /setusersettlementnetwork`, `/getusersettlementnetwork`, `/removeusersettlementnetwork`, `/listusersettlementdestinations`, `/setfintechsettlementnetwork`, `/getfintechsettlementnetwork` and `/removefintechsettlementnetwork`, plus the `settlementNetwork` parameter on [`/cngnonramp`](/api-reference/transactions).
+  - Added `GET /listofframps`, `POST /cancelofframp`, `GET /getofframplimits` and `POST /swapquote` to the [Transactions API](/api-reference/transactions), `POST /verifybankaccount` to [Fiat Payout Management](/api-reference/fiat-payout-management#verify-a-bank-account), and `GET /getpublickey`, `DELETE /deletepublickey` and `POST /regenerateaeskey` to the [Management API](/api-reference/management-api).
+  - Rewrote `PUT /managefees` and `GET /getfees` for tiered fees: `collectionFees` and `payoutFees` replace the old `onrampFee` and `offrampFee` objects, which the API no longer accepts.
+  - Added `allowPartialFill` to `/fx/quote`, `/fx/trade`, `/fx/market-order` and `/cngnonramp`, and explained when a partial fill applies under [Insufficient liquidity](/api-reference/trading-management#insufficient-liquidity).
+  - Documented how FX trades are [matched across orders](/api-reference/trading-management#how-orders-are-matched), the new `partial` and `settling_in_progress` trade statuses, and the [FX error codes](/api-reference/trading-management#fx-error-codes).
+  - Documented the `refunded` deposit status, the `refund` object and NIBSS `sessionId` on deposits and payouts.
+  - Added the `fintech.deposit.funding.failed`, `fintech.user.deposit.funding.failed` and `mpc.signing.completed` [webhook events](/api-reference/webhook-events), and `destinationWallet` / `destinationType` on `fintech.user.deposit.funding.completed`.
+  - Added rate limits for these endpoints to the [Authentication guide](/authentication#rate-limits).
+
+  **Fixes**
+
+  - The trade status endpoint is `GET /fx/trade/status`, not `/fx/trades/status`; its limit is 150 rpm.
+  - The single bank account endpoint is `GET /getbankaccount`, not `/getbankaccounts`, and returns one `account` object.
+  - FX quotes, price locks and the signing window last 15 minutes, not 5.
+  - `/initiateofframp` takes `amount` in naira, not the token's lowest unit.
+  - Corrected the network lists for `/withdrawasset`, the Bridge API and wallet balances to the values the API accepts.
+  - Removed the IP allowlist `description` field, which the API does not store, and corrected the `list` response.
+  - `blockchain` on `/setuserdefaultwallet` is optional and defaults to `base`.
+</Update>
+
 <Update label="2026-09-14" description="Documentation">
   **User default wallet cross-references**
 

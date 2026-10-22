@@ -15,18 +15,20 @@ Execute trades against the Strails FX orderbook using one of three execution mod
 | [Get Quote](#get-quote)           | `/fx/quote`           | POST   | Generate a price quote matched against current orderbook liquidity |
 | [Execute Trade](#execute-trade)           | `/fx/trade`           | POST   | Execute a trade using quote ID, direct params, or a targeted order |
 | [Create Market Order](#create-market-order)    | `/fx/market-order`    | POST   | Submit an immediate market order at the current best price         |
-| [Get Trade Status](#get-trade-status)   | `/fx/trades/status`   | GET    | Retrieve the current status and details of a single trade          |
+| [Get Trade Status](#get-trade-status)   | `/fx/trade/status`   | GET    | Retrieve the current status and details of a single trade          |
 | [List Trades](#list-trades)          | `/fx/trades`          | GET    | List your fintech's trades with optional filters and pagination     |
 
 ---
 
 ## Get Quote
 
-Generate a price quote by matching your requested cNGN amount against live orderbook liquidity. The response includes the matched order(s), the resulting stablecoin amount you will receive, and a `quoteId` you can pass directly to `POST /fx/trade`. The quote is valid for five minutes.
+Generate a price quote by matching your requested cNGN amount against live orderbook liquidity. The response includes the matched order(s), the resulting stablecoin amount you will receive, and a `quoteId` you can pass directly to `POST /fx/trade`. The quote is valid for 15 minutes.
 
 <Note>
-  Quotes expire exactly five minutes after generation. If you pass an expired `quoteId` to `POST /fx/trade`, the request is rejected. Generate a fresh quote and retry.
+  Quotes expire exactly 15 minutes after generation, and each `quoteId` can be executed only once. If you pass an expired or already-used `quoteId` to `POST /fx/trade`, the request is rejected with `INVALID_QUOTE`. Generate a fresh quote and retry.
 </Note>
+
+If no single order can fill your amount, the quote combines several orders. See [How orders are matched](#how-orders-are-matched).
 
 <Tabs>
   <Tab title="Request">
@@ -38,7 +40,8 @@ Generate a price quote by matching your requested cNGN amount against live order
       --data '{
         "pair": "CNGN-USDC",
         "side": "sell",
-        "cngnAmount": "50000"
+        "cngnAmount": "50000",
+        "allowPartialFill": true
       }'
     ```
 
@@ -56,6 +59,10 @@ Generate a price quote by matching your requested cNGN amount against live order
 
     <ParamField body="tokenAmount" type="string">
       The pair-currency amount to trade, expressed as a human-readable decimal (e.g., `"37.04"` for USDC or `"37.04"` for USDT). Use this when you want the quote denominated in the pair token instead of cNGN. Provide this **or** `cngnAmount`, not both.
+    </ParamField>
+
+    <ParamField body="allowPartialFill" type="boolean" default="false">
+      When `true`, the quote may be partially filled across multiple orderbook orders if no single order can fully satisfy the requested amount. When `false` (default), the quote is only generated if the full amount can be matched.
     </ParamField>
   </Tab>
 
@@ -135,16 +142,21 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
       --header "Content-Type: application/json" \
       --data '{
         "quoteId": "quote_7f3a9d2c-8e41-4b29-9a1c-5d8e7f2b3a9c",
-        "idempotencyKey": "trade_20260501_001"
+        "idempotencyKey": "trade_20260501_001",
+        "allowPartialFill": true
       }'
     ```
 
     <ParamField body="quoteId" type="string" required>
-      The `quoteId` returned by `POST /fx/quote`. The quote must not be expired (valid for 5 minutes).
+      The `quoteId` returned by `POST /fx/quote`. The quote must not be expired (valid for 15 minutes) or already used.
     </ParamField>
 
     <ParamField body="idempotencyKey" type="string">
       An optional client-generated key to prevent duplicate trade submissions. If you retry a request with the same key and the original trade was accepted, the original trade is returned instead of creating a new one.
+    </ParamField>
+
+    <ParamField body="allowPartialFill" type="boolean" default="false">
+      When `true`, the trade may be partially filled across multiple orderbook orders if no single order can fully satisfy the requested amount. When `false` (default), the trade is only executed if the full amount can be matched.
     </ParamField>
   </Tab>
 
@@ -160,7 +172,8 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
         "pair": "CNGN-USDC",
         "side": "sell",
         "cngnAmount": "50000",
-        "destinationWalletAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+        "destinationWalletAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        "allowPartialFill": true
       }'
     ```
 
@@ -179,6 +192,10 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
     <ParamField body="destinationWalletAddress" type="string">
       On-chain wallet address to receive the traded tokens. Defaults to your registered fintech wallet if omitted.
     </ParamField>
+
+    <ParamField body="allowPartialFill" type="boolean" default="false">
+      When `true`, the trade may be partially filled across multiple orderbook orders if no single order can fully satisfy the requested amount. When `false` (default), the trade is only executed if the full amount can be matched.
+    </ParamField>
   </Tab>
 
   <Tab title="Mode 3 - Targeted">
@@ -191,7 +208,8 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
       --header "Content-Type: application/json" \
       --data '{
         "orderId": "order_abc123",
-        "cngnAmount": "25000"
+        "cngnAmount": "25000",
+        "allowPartialFill": true
       }'
     ```
 
@@ -201,6 +219,10 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
 
     <ParamField body="cngnAmount" type="string" required>
       cNGN amount to trade against this specific order, in human-readable format. Must fall within the order's `minAmount` and `maxAmount`.
+    </ParamField>
+
+    <ParamField body="allowPartialFill" type="boolean" default="false">
+      When `true`, the remaining unmatched portion may be filled against other available orderbook orders if the targeted order cannot fully satisfy the amount. When `false` (default), the trade is only executed against the targeted order and fails if the full amount cannot be matched there.
     </ParamField>
   </Tab>
 
@@ -231,7 +253,7 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
     ```
 
     <ResponseField name="data.trade.tradeId" type="string">
-      Unique trade identifier. Use this with `GET /fx/trades/status` to track settlement progress.
+      Unique trade identifier. Use this with `GET /fx/trade/status` to track settlement progress.
     </ResponseField>
 
     <ResponseField name="data.trade.orderId" type="string">
@@ -251,7 +273,7 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
     </ResponseField>
 
     <ResponseField name="data.trade.strailsFeePercentage" type="number">
-      The Strails platform fee percentage applied to this trade.
+      The Strails platform fee, expressed as a percentage of the liquidity provider's spread (for example, `20` means Strails takes 20% of the spread).
     </ResponseField>
   </Tab>
 </Tabs>
@@ -263,7 +285,7 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
 Submit an immediate market order that executes at the current best available price from the orderbook. Market orders skip the quote step and settle based on your auto-signing configuration.
 
 <Note>
-  Market orders execute against the best available limit order at the time of submission. If orderbook liquidity changes between your request and matching, the final fill price may differ slightly from what you observed in the orderbook stats. Use `POST /fx/quote` followed by `POST /fx/trade` (Mode 1) if exact price certainty is required.
+  Market orders execute against the best available limit orders at the time of submission, combining several orders if needed (see [How orders are matched](#how-orders-are-matched)). If orderbook liquidity changes between your request and matching, the final fill price may differ slightly from what you observed in the orderbook stats. Use `POST /fx/quote` followed by `POST /fx/trade` (Mode 1) if exact price certainty is required.
 </Note>
 
 <Tabs>
@@ -278,7 +300,8 @@ Submit an immediate market order that executes at the current best available pri
         "side": "sell",
         "cngnAmount": "50000",
         "destinationWalletAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-        "idempotencyKey": "market_20260501_001"
+        "idempotencyKey": "market_20260501_001",
+        "allowPartialFill": true
       }'
     ```
 
@@ -301,21 +324,27 @@ Submit an immediate market order that executes at the current best available pri
     <ParamField body="idempotencyKey" type="string">
       Client-generated unique key to prevent duplicate order execution on retry.
     </ParamField>
+
+    <ParamField body="allowPartialFill" type="boolean" default="false">
+      When `true`, the market order may be partially filled across multiple orderbook orders if no single order can fully satisfy the requested amount. When `false` (default), the order is only executed if the full amount can be matched.
+    </ParamField>
   </Tab>
 
   <Tab title="Response">
     ```json
     {
-      "responseCode": "00",
-      "responseMessage": "Market order executed successfully",
+      "status": "Success",
+      "response_code": "00",
+      "message": "Market order executed successfully",
       "data": {
         "trade": {
           "tradeId": "trade_xyz789",
           "pair": "CNGN-USDC",
           "side": "sell",
-          "cngnAmount": "50000.00",
+          "cngnAmount": "50000",
           "usdcAmount": "37.04",
-          "averagePrice": "1350.00",
+          "price": "1350.00",
+          "strailsFeePercentage": 20,
           "status": "pending",
           "expiresAt": "2026-05-01T10:35:00.000Z",
           "createdAt": "2026-05-01T10:30:00.000Z"
@@ -327,11 +356,11 @@ Submit an immediate market order that executes at the current best available pri
     ```
 
     <ResponseField name="data.trade.tradeId" type="string">
-      Unique trade identifier. Poll `GET /fx/trades/status` with this ID to track settlement.
+      Unique trade identifier. Poll `GET /fx/trade/status` with this ID to track settlement.
     </ResponseField>
 
-    <ResponseField name="data.trade.averagePrice" type="string">
-      The effective exchange rate at which the market order was filled.
+    <ResponseField name="data.trade.price" type="string">
+      The effective exchange rate at which the market order was filled (cNGN per stablecoin unit). When the order fills across several limit orders, this is the volume-weighted average.
     </ResponseField>
 
     <ResponseField name="data.trade.status" type="string">
@@ -354,7 +383,7 @@ Retrieve the full details and current status of a single trade. Poll this endpoi
   <Tab title="Request">
     ```bash
     curl --request GET \
-      --url "https://api.strails.io/v1/fx/trades/status?tradeId=trade_abc123" \
+      --url "https://api.strails.io/v1/fx/trade/status?tradeId=trade_abc123" \
       --header "x-api-key: <API_KEY>"
     ```
 
@@ -407,7 +436,7 @@ Retrieve the full details and current status of a single trade. Poll this endpoi
     </ResponseField>
 
     <ResponseField name="data.trade.fintechNetAmount" type="string">
-      The net stablecoin amount credited to your fintech after Strails fees are deducted.
+      The liquidity provider's share of the spread after the Strails fee is deducted, in cNGN (human-readable).
     </ResponseField>
 
     <ResponseField name="data.trade.priceLockExpiresAt" type="string">
@@ -497,31 +526,66 @@ List your fintech's FX trades with optional filters. Results are paginated using
 
 ---
 
+## How orders are matched
+
+Quote-based (Mode 1), direct (Mode 2), and market-order trades are matched against the orderbook in the same way:
+
+- Strails considers the 10 best-priced active orders on the opposite side of your trade: the lowest-priced `sell` orders when you buy, and the highest-priced `buy` orders when you sell.
+- Your amount fills those orders in price order. If the best order cannot cover the full amount, the remainder spills into the next order, so one trade can fill across several liquidity providers. Each contributing order appears in the quote's `matchedOrders` array, and `price` is the volume-weighted average.
+- An order is skipped if the amount still to fill is below its `minAmount`, if it has no remaining capacity, or if the liquidity provider's wallet does not currently hold enough funds to honour it.
+- Quotes never include your own orders.
+
+Targeted trades (Mode 3) always execute against exactly one order.
+
+### Insufficient liquidity
+
+Orders are combined across liquidity providers whether or not you set `allowPartialFill`. The flag only decides what happens when all the matched orders together still cannot cover your amount:
+
+- `allowPartialFill: false` (default): the request is rejected with `NO_LIQUIDITY` and no trade is created.
+- `allowPartialFill: true`: Strails fills what the matched orders can cover and leaves the rest unfilled. For a quote, this is decided when the quote is generated, so set the flag on `POST /fx/quote`.
+
+When a request is rejected, the `message` explains why, for example that your amount is below the smallest available `minAmount`, that the matching liquidity providers' wallets are underfunded, or that only part of the amount could be matched. Reduce your amount, split it into smaller trades, or retry when more liquidity is available.
+
+### Multi-order settlement
+
+When a trade fills across more than one order, each order is settled as its own slice:
+
+- **Buy trades** need no MPC signature, so they move straight from `locked` to `settling`.
+- **Sell trades** need each liquidity provider to sign the stablecoin transfer for their own slice, within the 15-minute price lock.
+
+If every slice settles, the trade is `completed`. If some slices of a sell trade settle and others fail or expire (for example, because one liquidity provider did not sign in time), the trade ends as `partial`: the settled slices are final, the cNGN for the unsettled slices is refunded from escrow, and the trade is flagged for review by Strails. If no slice settles, the trade is `failed`.
+
+---
+
 ## Trade Status Lifecycle
 
 Every trade passes through the following statuses as it progresses from submission to final settlement:
 
-| Status      | Description                                                                     |
-| ----------- | ------------------------------------------------------------------------------- |
-| `pending`   | Trade submitted and parameters are being validated.                             |
-| `locked`    | cNGN locked in escrow. A 5-minute countdown begins at this point.              |
-| `signing`   | Awaiting MPC Vault signature to authorise the blockchain transaction.           |
-| `settling`  | Signed transaction submitted to the blockchain; awaiting on-chain confirmation. |
-| `completed` | Settlement confirmed. Tokens transferred to all parties.                        |
-| `failed`    | Trade failed at the `signing` or `settling` stage. Check `errorMessage`.       |
-| `expired`   | The 5-minute escrow lock elapsed before the trade reached `settling`.           |
+| Status                 | Description                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `pending`              | Trade submitted and parameters are being validated.                             |
+| `locked`               | cNGN locked in escrow. The 15-minute price lock is running.                     |
+| `signing`              | Awaiting MPC Vault signature to authorise the blockchain transaction.           |
+| `settling`             | Signed transaction ready for settlement on the blockchain.                      |
+| `settling_in_progress` | Settlement is actively executing on-chain. If settlement stops before reaching a final status, the trade returns to `settling`. |
+| `completed`            | Settlement confirmed. Tokens transferred to all parties.                        |
+| `partial`              | Multi-order trades only. Some slices settled; the others failed or expired and their cNGN was refunded. |
+| `failed`               | Trade failed at the `signing` or `settling` stage. Check `errorMessage`.        |
+| `expired`              | The 15-minute price lock elapsed before the trade reached `settling`.           |
 
 ### Status Flow
 
 ```text
-pending --> locked --> signing --> settling --> completed
-                              |                 |
-                              +--> failed       +--> failed
+pending --> locked --> signing --> settling --> settling_in_progress --> completed
+                          |                              |
+                          +--> failed                    +--> partial  (multi-order trades only)
+                          |                              |
+                          +--> expired                   +--> failed
 
-locked --> expired  (if 5-minute lock window elapses)
+locked --> expired  (if the 15-minute price lock elapses)
 ```
 
-When a trade expires or fails, the escrowed cNGN is automatically released back to your wallet.
+`completed`, `partial`, `failed`, and `expired` are final. When a trade expires or fails, the escrowed cNGN is automatically released back to your wallet.
 
 ---
 
@@ -530,13 +594,54 @@ When a trade expires or fails, the escrowed cNGN is automatically released back 
 | Code | Error                  | Description                                                   |
 | ---- | ---------------------- | ------------------------------------------------------------- |
 | `01` | `VALIDATION_ERROR`     | One or more request fields failed validation.                 |
-| `01` | `INVALID_QUOTE`        | The `quoteId` has expired or does not exist.                  |
+| `01` | `INVALID_QUOTE`        | The `quoteId` has expired, has already been used, or does not exist. |
 | `02` | `NO_LIQUIDITY`         | Insufficient liquidity in the orderbook for the requested amount. |
 | `02` | `NOT_FOUND`            | The requested trade or order was not found, or you do not have access. |
 | `03` | `AUTHENTICATION_FAILED`| The API key is invalid or missing from the request.           |
 | `03` | `IP_BLOCKED`           | The request originated from an IP address not on your allowlist. |
 | `04` | `RATE_LIMIT_EXCEEDED`  | You have exceeded the allowed request rate. Back off and retry. |
 | `05` | `INTERNAL_ERROR`       | An unexpected server-side error occurred. Contact support if it persists. |
+
+### FX error codes
+
+When a quote or trade is rejected by the trading engine, the specific reason is returned in `data.details.errorCode`. Requests that fail schema validation return `response_code` `01` with the field errors in `data.details.details` and no `errorCode`.
+
+```json
+{
+  "status": "Failed",
+  "response_code": "02",
+  "message": "No liquidity available for CNGN-USDC sell orders. No liquidity providers have placed matching orders for this trading pair.",
+  "data": {
+    "details": {
+      "errorCode": "NO_LIQUIDITY",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+| `errorCode`                | `response_code` (HTTP) | Endpoints                       | Description                                                            |
+| -------------------------- | ---------------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| `INVALID_QUOTE`            | `01` (400)             | Trade                           | The `quoteId` does not exist, belongs to another fintech, has expired, or has already been used. |
+| `NO_LIQUIDITY`             | `02` (404)             | Quote, trade, market order      | The orderbook cannot fill the full amount. See [Insufficient liquidity](#insufficient-liquidity). |
+| `FINTECH_NOT_FOUND`        | `02` (404)             | Quote, trade, market order      | No fintech wallet is configured for your account.                      |
+| `TRADING_SUSPENDED`        | `05` (500)             | Trade, market order             | Your fintech is suspended from FX trading after repeated manual signing failures. The `message` gives the reason. |
+| `ORDER_UNAVAILABLE`        | `05` (500)             | Trade, market order             | The matched order no longer exists. Request a fresh quote.             |
+| `ORDER_NOT_ACTIVE`         | `05` (500)             | Trade, market order             | The matched or targeted order is no longer active. Request a fresh quote or choose another order. |
+| `INVALID_ORDER_DATA`       | `05` (500)             | Trade, market order             | The matched order data is invalid. Request a fresh quote.              |
+| `INVALID_LP_DATA`          | `05` (500)             | Trade, market order             | The matched order has no liquidity provider attached. Request a fresh quote. |
+| `ORDER_NOT_FOUND`          | `05` (500)             | Trade (Mode 3)                  | The targeted `orderId` does not exist.                                 |
+| `SELF_TRADING_NOT_ALLOWED` | `05` (500)             | Trade (Mode 3)                  | The targeted order belongs to your own fintech.                        |
+| `AMOUNT_BELOW_MINIMUM`     | `05` (500)             | Trade (Mode 3)                  | `cngnAmount` is below the targeted order's `minAmount`.                |
+| `AMOUNT_EXCEEDS_MAXIMUM`   | `05` (500)             | Trade (Mode 3)                  | `cngnAmount` is above the targeted order's `maxAmount`.                |
+| `INSUFFICIENT_LIQUIDITY`   | `05` (500)             | Trade (Mode 3)                  | The liquidity provider's wallet does not hold enough funds to fill the targeted order. |
+| `QUOTE_GENERATION_FAILED`  | `05` (500)             | Quote                           | Unexpected error while generating the quote. Retry.                    |
+| `TRADE_EXECUTION_FAILED`   | `05` (500)             | Trade, market order             | Unexpected error while creating the trade. Retry.                      |
+| `ORDER_EXECUTION_FAILED`   | `05` (500)             | Trade (Mode 3)                  | Unexpected error while creating the targeted trade. Retry.             |
+
+<Warning>
+  Several client-side rejections (for example `SELF_TRADING_NOT_ALLOWED` and `AMOUNT_BELOW_MINIMUM`) are returned with `response_code` `05` and HTTP 500. Branch on `data.details.errorCode`, not on the HTTP status, and do not retry these blindly.
+</Warning>
 
 ---
 
@@ -547,5 +652,5 @@ When a trade expires or fails, the escrowed cNGN is automatically released back 
 </Note>
 
 <Note>
-  Quotes and trade locks both expire after exactly five minutes. Structure your integration to execute the trade immediately after generating a quote, and to poll `GET /fx/trades/status` for settlement confirmation rather than relying on synchronous responses.
+  Quotes and trade price locks both expire after exactly 15 minutes. Structure your integration to execute the trade immediately after generating a quote, and to poll `GET /fx/trade/status` for settlement confirmation rather than relying on synchronous responses.
 </Note>

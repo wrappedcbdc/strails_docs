@@ -62,6 +62,12 @@ Each user automatically receives a permanent virtual account after BVN verificat
   Disbursed cNGN goes to the user's Strails-managed wallet unless you have registered an [external default wallet](/api-reference/user-management#user-default-wallet) for that user, in which case it is delivered there instead. Deposit webhooks fire either way.
 </Note>
 
+### Settlement Network
+
+cNGN is delivered on Base unless a [settlement network](/api-reference/user-management#settlement-network) applies - set per user, as a default for your fintech, or taken from the network of the user's external default wallet. Off Base, cNGN is bridged to the user's external default wallet on that network (the Strails-managed wallet receives on Base only), and Strails absorbs the bridge fee. If the user has no address on the resolved network, the deposit is held rather than paid elsewhere, so check [`/listusersettlementdestinations`](/api-reference/user-management#post-listusersettlementdestinations) before you set one.
+
+A deposit refunded because of a name mismatch shows `status: "refunded"` in [`/deposits`](/api-reference/transactions#list-deposits), with a `refund` object holding the refund's status, reason, and NIBSS session ID.
+
 ### Retrieve a User's Account
 
 User permanent account details are included in the `/getuserdetails` response:
@@ -160,6 +166,8 @@ curl -X POST https://api.strails.io/v1/getvirtualaccount \
 | `true` | `true` | cNGN swapped to USDC/USDT; swept to user's default wallet |
 
 The user's default wallet is their Strails-managed smart wallet, unless an [external default wallet](/api-reference/user-management#user-default-wallet) has been registered for them.
+
+To deliver one onramp on a network other than Base, pass `settlementNetwork` to `/cngnonramp`. The request is refused if the user has no address on that network. See [Settlement Network](/api-reference/user-management#settlement-network).
 
 ## Deposit Flow
 

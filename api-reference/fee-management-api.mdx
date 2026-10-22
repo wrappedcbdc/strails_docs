@@ -13,7 +13,7 @@ Use the Fee Management API to configure the fee structures applied to your users
 | [Withdrawal History](#get-getwithdrawalhistory) | `/getwithdrawalhistory` | GET | Retrieve paginated history of all fintech fee withdrawals |
 | [Fee Withdrawal](#post-feewithdrawal) | `/feewithdrawal` | POST | Request withdrawal of accumulated fees to a bank account |
 | [Accumulated Fees](#get-getaccumulatedfees) | `/getaccumulatedfees` | GET | Get a summary of accumulated fees and available withdrawal balance |
-| [Manage Fees](#put-managefees) | `/managefees` | PUT | Configure onramp and offramp fee percentages, caps, and toggles |
+| [Manage Fees](#put-managefees) | `/managefees` | PUT | Configure tiered onramp (collection) and offramp (payout) fees |
 | [Get Fees](#get-getfees) | `/getfees` | GET | Retrieve the current fee configuration and example calculations |
 | [Strails Fee Preview](#post-feesstrailspreview) | `/fees/strails/preview` | POST | Preview the Strails platform fee for a given amount and transaction type |
 | [Verify Withdrawal](#post-verifywithdrawal) | `/verifywithdrawal` | POST | Check the status or outcome of a previously submitted withdrawal |
@@ -349,58 +349,53 @@ curl --request GET \
 
 ## PUT /managefees {#put-managefees}
 
-Configure the fee structure applied to your users' transactions. You can set an independent percentage fee and cap for onramp and offramp directions, and enable or disable each independently.
+Configure the fees you charge your users. Fees are set as amount bands (tiers) for each direction: `collectionFees` apply to onramps (NGN in) and `payoutFees` apply to offramps (NGN out). Each request replaces both tier lists.
 
 <Note>
-  Both `onrampFee` and `offrampFee` are optional in a single request - omit whichever object you do not want to update. Fields within an included object are required.
+  Amounts in fee tiers are in naira (NGN), not kobo. The tiers in each list must start at `0`, be continuous with no gaps or overlaps, and end with a tier whose `maxAmount` is `null`. Send an empty array for a direction you do not charge, but at least one list must contain a tier.
 </Note>
 
 ### Body parameters
 
-<ParamField body="onrampFee" type="object">
-  Fee configuration for onramp (fiat-to-cNGN) transactions.
+<ParamField body="enabled" type="boolean" default="true">
+  Set to `false` to stop charging your fees without deleting the configuration.
+</ParamField>
 
-  <Expandable title="onrampFee fields">
-    <ParamField body="percentageFee" type="number" required>
-      Fee percentage to charge on each onramp transaction (e.g., `1.5` for 1.5%).
+<ParamField body="collectionFees" type="array" required>
+  Fee tiers for onramp (NGN-to-cNGN) transactions. Pass `[]` to charge no onramp fee.
+
+  <Expandable title="tier fields">
+    <ParamField body="minAmount" type="number" required>
+      Lower bound of the band in NGN, inclusive. The first tier must start at `0`.
     </ParamField>
-    <ParamField body="capFee" type="number" required>
-      Maximum fee amount in kobo that can be charged regardless of transaction size.
+    <ParamField body="maxAmount" type="number | null" required>
+      Upper bound of the band in NGN, exclusive. Must equal the next tier's `minAmount`. Use `null` for the last tier.
     </ParamField>
-    <ParamField body="enabled" type="boolean" required>
-      Set to `true` to activate this fee or `false` to waive it entirely.
+    <ParamField body="feePercentage" type="number" required>
+      Percentage charged on the amount, from `0` to `100` (e.g., `1.5` for 1.5%).
+    </ParamField>
+    <ParamField body="feeCap" type="number | null" required>
+      Maximum percentage fee in NGN for this band. Use `null` for no cap.
+    </ParamField>
+    <ParamField body="fixedFee" type="number | null">
+      Flat fee in NGN added on top of the percentage fee. Defaults to `null` (none).
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="offrampFee" type="object">
-  Fee configuration for offramp (cNGN-to-fiat) transactions.
-
-  <Expandable title="offrampFee fields">
-    <ParamField body="percentageFee" type="number" required>
-      Fee percentage to charge on each offramp transaction (e.g., `2.0` for 2%).
-    </ParamField>
-    <ParamField body="capFee" type="number" required>
-      Maximum fee amount in kobo that can be charged regardless of transaction size.
-    </ParamField>
-    <ParamField body="enabled" type="boolean" required>
-      Set to `true` to activate this fee or `false` to waive it entirely.
-    </ParamField>
-  </Expandable>
+<ParamField body="payoutFees" type="array" required>
+  Fee tiers for offramp (cNGN-to-NGN) transactions, with the same fields as `collectionFees`. Pass `[]` to charge no offramp fee.
 </ParamField>
 
 <ParamField body="metadata" type="object">
-  Optional notes to attach to this configuration change for your own audit trail.
+  Optional notes stored with the configuration for your own audit trail.
 
   <Expandable title="metadata fields">
     <ParamField body="description" type="string">
-      Short description of why the fee configuration is being updated.
+      Short description of the configuration.
     </ParamField>
     <ParamField body="notes" type="string">
       Additional context or rationale for the change.
-    </ParamField>
-    <ParamField body="lastUpdatedBy" type="string">
-      Email or identifier of the administrator making this change.
     </ParamField>
   </Expandable>
 </ParamField>
@@ -413,20 +408,17 @@ curl --request PUT \
   --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
-    "onrampFee": {
-      "percentageFee": 1.5,
-      "capFee": 500,
-      "enabled": true
-    },
-    "offrampFee": {
-      "percentageFee": 2.0,
-      "capFee": 1000,
-      "enabled": true
-    },
+    "enabled": true,
+    "collectionFees": [
+      { "minAmount": 0, "maxAmount": 100000, "feePercentage": 1.5, "feeCap": 500, "fixedFee": null },
+      { "minAmount": 100000, "maxAmount": null, "feePercentage": 1.0, "feeCap": 2000, "fixedFee": null }
+    ],
+    "payoutFees": [
+      { "minAmount": 0, "maxAmount": null, "feePercentage": 2.0, "feeCap": 1000, "fixedFee": 50 }
+    ],
     "metadata": {
-      "description": "Updated fee configuration for Q4 2025",
-      "notes": "Reduced onramp fees, increased offramp fees",
-      "lastUpdatedBy": "admin@yourfintech.com"
+      "description": "Tiered fees for Q4",
+      "notes": "Lower onramp rate above 100,000 NGN"
     }
   }'
 ```
@@ -438,15 +430,15 @@ curl --request PUT \
 </ResponseField>
 
 <ResponseField name="data.operation" type="string">
-  Confirmation of the operation performed. Typically `"updated"`.
+  `"created"` for your first configuration, `"updated"` afterwards.
 </ResponseField>
 
 <ResponseField name="data.feeConfiguration" type="object">
-  The full fee configuration as it now stands after the update.
+  The configuration as saved: `enabled`, `collectionFees`, `payoutFees` and `metadata`.
 </ResponseField>
 
-<ResponseField name="data.exampleCalculation" type="object">
-  An illustrative fee calculation based on a typical transaction amount, useful for sanity-checking your configuration.
+<ResponseField name="data.examples" type="object">
+  Fees your tiers produce for 5,000, 50,000 and 500,000 NGN, under `collection` and `payout`. Use them to sanity-check the bands.
 </ResponseField>
 
 ```json
@@ -458,28 +450,59 @@ curl --request PUT \
     "fintechId": "your_fintech_id",
     "operation": "updated",
     "feeConfiguration": {
-      "onrampFee": { "percentageFee": 1.5, "capFee": 500, "enabled": true },
-      "offrampFee": { "percentageFee": 2.0, "capFee": 1000, "enabled": true }
+      "enabled": true,
+      "collectionFees": [
+        { "minAmount": 0, "maxAmount": 100000, "feePercentage": 1.5, "feeCap": 500, "fixedFee": null },
+        { "minAmount": 100000, "maxAmount": null, "feePercentage": 1.0, "feeCap": 2000, "fixedFee": null }
+      ],
+      "payoutFees": [
+        { "minAmount": 0, "maxAmount": null, "feePercentage": 2.0, "feeCap": 1000, "fixedFee": 50 }
+      ],
+      "metadata": {
+        "description": "Tiered fees for Q4",
+        "lastUpdatedBy": "your_fintech_id",
+        "notes": "Lower onramp rate above 100,000 NGN"
+      }
     },
-    "exampleCalculation": {
-      "onramp": { "amount": 10000, "fee": 150, "capped": false },
-      "offramp": { "amount": 10000, "fee": 200, "capped": false }
-    }
+    "examples": {
+      "collection": [
+        { "amount": 5000, "fee": 75, "feePercentage": 1.5, "fixedFee": 0, "wasCapped": false, "appliedCap": null, "tierUsed": { "minAmount": 0, "maxAmount": 100000 } }
+      ],
+      "payout": [
+        { "amount": 5000, "fee": 150, "feePercentage": 2.0, "fixedFee": 50, "wasCapped": false, "appliedCap": null, "tierUsed": { "minAmount": 0, "maxAmount": null } }
+      ]
+    },
+    "version": "2.0.0"
   }
 }
 ```
+
+The `examples` arrays above are shortened to one entry each; the response includes all three amounts.
+
+### Error responses
+
+| Message | Cause |
+| --- | --- |
+| `Validation error` | A tier field is missing or invalid, or the tiers are not continuous from `0` to an open-ended last tier. `data.errors` lists each field. |
+| `At least one collection or payout fee tier must be configured.` | Both `collectionFees` and `payoutFees` are empty. |
 
 ---
 
 ## GET /getfees {#get-getfees}
 
-Retrieve your current fee configuration including any active onramp and offramp settings, configuration timestamps, and a schema version indicator.
+Retrieve your current fee tiers. Pass `exampleAmount` to see the fee your tiers produce for that amount.
+
+### Query parameters
+
+<ParamField query="exampleAmount" type="number">
+  Optional amount in NGN. When set, the response includes `exampleCalculation` for both directions.
+</ParamField>
 
 ### Request
 
 ```bash
 curl --request GET \
-  --url "{{BASE_URL}}/getfees" \
+  --url "{{BASE_URL}}/getfees?exampleAmount=50000" \
   --header "x-api-key: YOUR_API_KEY"
 ```
 
@@ -490,23 +513,23 @@ curl --request GET \
 </ResponseField>
 
 <ResponseField name="data.hasConfiguration" type="boolean">
-  `true` if a fee configuration has been set. `false` if you are using platform defaults.
+  `true` if you have saved a fee configuration. When `false`, the response carries `defaultConfiguration` (no fees) instead of `feeConfiguration`.
 </ResponseField>
 
 <ResponseField name="data.feeConfiguration" type="object">
-  The full active fee configuration object including onramp and offramp settings and any attached metadata.
+  Your saved `enabled` flag, `collectionFees`, `payoutFees` and `metadata`.
 </ResponseField>
 
-<ResponseField name="data.timestamps.createdAt" type="string">
-  ISO 8601 timestamp when your fee configuration was first created.
+<ResponseField name="data.exampleCalculation" type="object">
+  Present only when `exampleAmount` is passed: the `amount` plus the `collection` and `payout` fee for it.
 </ResponseField>
 
-<ResponseField name="data.timestamps.updatedAt" type="string">
-  ISO 8601 timestamp when your fee configuration was last modified.
+<ResponseField name="data.timestamps" type="object">
+  ISO 8601 `createdAt` and `updatedAt` of your configuration.
 </ResponseField>
 
 <ResponseField name="data.version" type="string">
-  Schema version of the fee configuration object.
+  Schema version of the fee configuration, currently `"2.0.0"`.
 </ResponseField>
 
 ```json
@@ -518,21 +541,26 @@ curl --request GET \
     "fintechId": "your_fintech_id",
     "hasConfiguration": true,
     "feeConfiguration": {
-      "onrampFee": {
-        "percentageFee": 1.5,
-        "capFee": 500,
-        "enabled": true
-      },
+      "enabled": true,
+      "collectionFees": [
+        { "minAmount": 0, "maxAmount": null, "feePercentage": 1.5, "feeCap": 500, "fixedFee": null }
+      ],
+      "payoutFees": [],
       "metadata": {
         "description": "Onramp fee configuration",
         "lastUpdatedBy": "your_fintech_id"
       }
     },
+    "exampleCalculation": {
+      "amount": 50000,
+      "collection": { "fee": 500, "feePercentage": 1.5, "fixedFee": 0, "wasCapped": true, "appliedCap": 500, "tierUsed": { "minAmount": 0, "maxAmount": null } },
+      "payout": { "fee": 0, "feePercentage": 0, "fixedFee": 0, "wasCapped": false, "appliedCap": null, "tierUsed": { "minAmount": 0, "maxAmount": null } }
+    },
     "timestamps": {
       "createdAt": "2025-09-10T11:02:11.539Z",
       "updatedAt": "2026-04-29T05:47:38.653Z"
     },
-    "version": "1.0.0"
+    "version": "2.0.0"
   }
 }
 ```

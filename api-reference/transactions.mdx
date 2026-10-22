@@ -19,10 +19,14 @@ The Transactions API handles every financial operation in Strails. You can fund 
 | [cNGN Onramp Status](#cngn-onramp-status) | `/cngnonrampstatus` | POST | Check the current status of a user onramp request |
 | [cNGN Offramp Status](#cngn-offramp-status) | `/cngnofframpstatus` | POST | Check the current status of a user offramp request |
 | [Fintech Offramp Status](#fintech-offramp-status) | `/getofframpstatus` | GET | Check the current status of a fintech offramp request |
+| [List Fintech Offramps](#list-fintech-offramps) | `/listofframps` | GET | List your fintech offramp requests |
+| [Cancel Fintech Offramp](#cancel-fintech-offramp) | `/cancelofframp` | POST | Cancel a fintech offramp that is still `pending` |
+| [Fintech Offramp Limits](#fintech-offramp-limits) | `/getofframplimits` | GET | Get the per-request, daily, and monthly limits for fintech offramps |
 | [List Deposits](#list-deposits) | `/deposits` | GET | List deposit transactions with filtering and pagination |
 | [List Payouts](#list-payouts) | `/payouts` | GET | List payout transactions with filtering and pagination |
 | [List Transactions](#list-transactions) | `/transactions` | GET | List all transactions (deposits and payouts) with filtering and pagination |
 | [Withdraw History](#withdraw-history) | `/withdrawals` | GET | List token withdrawal transfers with filtering and pagination |
+| [Swap Quote](#swap-quote) | `/swapquote` | POST | Get an indicative cNGN/USDC swap quote |
 | [Swap Trigger](#swap-trigger) | `/swaptrigger` | POST | Trigger an asynchronous swap for a specific wallet address |
 | [User Swap](#user-swap) | `/swap` | POST | Request a token swap on a user's default Smart Wallet |
 | [Swap Status](#swap-status) | `/swapstatus` | GET | Get the status of an asynchronous swap request |
@@ -59,6 +63,7 @@ curl --request POST \
     "amount": 500,
     "assetSwap": "USDC",
     "autoSwap": true,
+    "allowPartialFill": true,
     "sweepToOfframp": false,
     "destinationAssetSwap": "0xDestinationAddress"
   }'
@@ -80,6 +85,10 @@ curl --request POST \
   When `true`, automatically swaps the funded cNGN into `assetSwap` after the bank payment is confirmed.
 </ParamField>
 
+<ParamField body="allowPartialFill" type="boolean" default="false">
+  When `true`, the auto-swap may be partially filled across multiple FX orderbook orders if no single order can fully satisfy the swap amount. When `false` (default), the swap is only executed if the full amount can be matched.
+</ParamField>
+
 <ParamField body="sweepToOfframp" type="boolean">
   When `true`, automatically routes the funded (and optionally swapped) amount to the user's default wallet after confirmation - their Strails-managed Smart Wallet, or their [external default wallet](/api-reference/user-management#user-default-wallet) if one is registered. When set, `destinationAssetSwap` is ignored.
 </ParamField>
@@ -90,6 +99,10 @@ curl --request POST \
 
 <ParamField body="owner" type="string">
   Your EOA wallet address to take ownership of the generated Smart Wallet. When set, you can withdraw tokens directly using your EOA. Note that Strails cannot withdraw funds from wallets with a custom owner.
+</ParamField>
+
+<ParamField body="settlementNetwork" type="string">
+  Network to deliver this onramp's cNGN on (e.g. `base`, `bsc`, `pol`). Applies to this request only and takes precedence over the user's and your fintech's [settlement network](/api-reference/user-management#settlement-network). Off Base, the cNGN is bridged to the user's external default wallet registered for that network. The request is refused if the network is not supported or the user has no address that can receive on it - check with [`/listusersettlementdestinations`](/api-reference/user-management#post-listusersettlementdestinations) first. An empty string is treated as not set.
 </ParamField>
 
 ### autoSwap behaviour matrix
@@ -168,6 +181,14 @@ curl --request POST \
   "response_code": "02",
   "message": "User not found",
   "error": "No verified user found with the provided userId"
+}
+```
+
+```json Settlement network unavailable for user
+{
+  "status": "Failed",
+  "response_code": "01",
+  "message": "This user has no address that can receive on Polygon. Register an external wallet for it first, or leave the settlement network unset."
 }
 ```
 
@@ -322,9 +343,9 @@ curl --request GET \
 
 Converts cNGN from your fintech Smart Wallet to Naira and initiates a payout to a configured bank account. Returns a `requestId` immediately; the transfer completes asynchronously.
 
-<Warning>
-  The `amount` field must be provided in the **lowest token unit** (cNGN has 6 decimals). For example, `1000000` represents 1.00 cNGN, not ₦1,000,000 - to off-ramp 1,000 cNGN send `1000000000`. Use [`/listbankaccounts`](/api-reference/fiat-payout-management#retrieve-all-bank-accounts) to find your `bankAccountId`.
-</Warning>
+<Note>
+  The `amount` field is denominated in **Naira** (e.g. `5000` = ₦5,000, burned 1:1 as 5,000 cNGN). It must fall within your [offramp limits](#fintech-offramp-limits). Use [`/listbankaccounts`](/api-reference/fiat-payout-management#retrieve-all-bank-accounts) to find your `bankAccountId`.
+</Note>
 
 ```bash
 curl --request POST \
@@ -332,13 +353,13 @@ curl --request POST \
   --header "x-api-key: YOUR_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
-    "amount": 1000000,
+    "amount": 5000,
     "bankAccountId": "uuid-of-bank-account"
   }'
 ```
 
 <ParamField body="amount" type="number" required>
-  Amount to transfer in the **lowest token unit** (e.g. `1000000` = 1.00 cNGN, `1000000000` = 1,000.00 cNGN). Must be greater than 0.
+  Amount to off-ramp **in Naira** (e.g. `5000` = ₦5,000). Must be greater than 0 and within your [offramp limits](#fintech-offramp-limits).
 </ParamField>
 
 <ParamField body="bankAccountId" type="string" required>
@@ -433,7 +454,7 @@ curl --request POST \
 </ParamField>
 
 <ParamField body="network" type="string">
-  Target network for the withdrawal. When set, Strails routes the transfer through a bridge. Supported values: `base`, `bsc`, `sol`, `eth`, `xbn`, `asc`, `arc`, `lisk`. Defaults to `base` if not provided.
+  Target network for the withdrawal. When set, Strails routes the transfer through a bridge. Supported values: `base`, `bsc`, `eth`, `pol`, `trx`, `sol`, `xbn`, `atc`. Defaults to `base` if not provided.
 </ParamField>
 
 ```json Response
@@ -737,7 +758,7 @@ curl --request GET \
   "data": {
     "requestId": "uuid",
     "status": "completed",
-    "amount": 17000,
+    "amount": "17000",
     "currency": "NGN",
     "bankAccount": {
       "accountNumber": "123456789",
@@ -755,13 +776,180 @@ curl --request GET \
     "payoutDetails": {
       "reference": "uuid",
       "provider": "novac",
-      "status": "completed"
+      "status": "completed",
+      "sessionId": "000015260129045600000000099570"
     },
     "initiatedAt": "2026-01-29T03:56:20.198Z",
     "completedAt": "2026-01-29T03:57:07.012Z"
   }
 }
 ```
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="status" type="string">Offramp status: `pending`, `bridge_pending`, `bridge_initiated`, `bridge_processing`, `bridge_completed`, `processing`, `transferring_cngn`, `initiating_payout`, `payout_processing`, `completed`, `failed`, `cancelled`, `reversed`, or `pending_manual_review`.</ResponseField>
+    <ResponseField name="amount" type="string">Offramp amount in Naira.</ResponseField>
+    <ResponseField name="transferDetails" type="object">The cNGN transfer from your Smart Wallet: `txHash` and `status`. Present once the transfer is submitted.</ResponseField>
+    <ResponseField name="payoutDetails" type="object">
+      <Expandable title="payoutDetails fields">
+        <ResponseField name="reference" type="string">Payout reference.</ResponseField>
+        <ResponseField name="provider" type="string">Payout provider.</ResponseField>
+        <ResponseField name="status" type="string">Payout status: `pending`, `processing`, `completed`, or `failed`.</ResponseField>
+        <ResponseField name="sessionId" type="string">NIBSS session ID of the bank transfer, when the provider returned one. Share it with the recipient's bank to trace the payment.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="error" type="object">Present when the offramp recorded an error: `message` and `code`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## List Fintech Offramps
+
+`GET /listofframps`
+
+Returns your fintech's offramp requests created with `/initiateofframp`, newest first.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/v1/listofframps?limit=20" \
+  --header "x-api-key: YOUR_API_KEY"
+```
+
+<ParamField query="limit" type="number">
+  Maximum number of results to return. Defaults to `50`.
+</ParamField>
+
+<Warning>
+  `amount` and `processingFee` in this response are in **kobo** (`1700000` = ₦17,000), unlike `/getofframpstatus`, which returns `amount` in Naira.
+</Warning>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Offramps retrieved successfully",
+  "data": {
+    "offramps": [
+      {
+        "requestId": "uuid",
+        "amount": 1700000,
+        "currency": "NGN",
+        "status": "completed",
+        "walletSource": "system_wallet",
+        "sourceWalletAddress": "0x3af904Ff6FA747A3da92E7ce21d312de4b2Ef967",
+        "bankAccountNumber": "123456789",
+        "bankAccountName": "Bidemi Chioma Hauwa",
+        "bankName": "UNITED BANK",
+        "processingFee": 25500,
+        "initiatedAt": "2026-01-29T03:56:20.198Z",
+        "completedAt": "2026-01-29T03:57:07.012Z"
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+<ResponseField name="data.offramps" type="array">
+  Offramp records. `status` takes the same values as in [`/getofframpstatus`](#fintech-offramp-status).
+</ResponseField>
+
+<ResponseField name="data.total" type="number">
+  Number of records returned in this response.
+</ResponseField>
+
+---
+
+## Cancel Fintech Offramp
+
+`POST /cancelofframp`
+
+Cancels a fintech offramp that is still `pending`. Once processing has started the offramp can no longer be cancelled, and processing usually starts shortly after `/initiateofframp` returns.
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/v1/cancelofframp" \
+  --header "x-api-key: YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "requestId": "uuid",
+    "reason": "Duplicate request"
+  }'
+```
+
+<ParamField body="requestId" type="string" required>
+  The `requestId` returned by `/initiateofframp`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Why the offramp is being cancelled. Defaults to `Cancelled by fintech`.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Offramp cancelled successfully"
+}
+```
+
+**Error responses**
+
+```json Not cancellable
+{
+  "status": "Failed",
+  "response_code": "05",
+  "message": "Cannot cancel offramp in status: processing"
+}
+```
+
+```json Not found
+{
+  "status": "Failed",
+  "response_code": "05",
+  "message": "Offramp not found"
+}
+```
+
+---
+
+## Fintech Offramp Limits
+
+`GET /getofframplimits`
+
+Returns the limits that apply to your fintech's `/initiateofframp` requests. All amounts are in **Naira**. Fintech-specific limits apply when Strails has configured them for you; otherwise the platform limits apply.
+
+```bash
+curl --request GET \
+  --url "https://api.strails.io/v1/getofframplimits" \
+  --header "x-api-key: YOUR_API_KEY"
+```
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Offramp limits retrieved successfully",
+  "data": {
+    "MIN_AMOUNT": 100,
+    "MAX_AMOUNT": 100000,
+    "DAILY_LIMIT": 500000,
+    "MONTHLY_LIMIT": 5000000,
+    "currency": "NGN"
+  }
+}
+```
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="MIN_AMOUNT" type="number">Smallest amount allowed per offramp.</ResponseField>
+    <ResponseField name="MAX_AMOUNT" type="number">Largest amount allowed per offramp.</ResponseField>
+    <ResponseField name="DAILY_LIMIT" type="number">Maximum total offramped per day.</ResponseField>
+    <ResponseField name="MONTHLY_LIMIT" type="number">Maximum total offramped per month.</ResponseField>
+    <ResponseField name="currency" type="string">Always `NGN`.</ResponseField>
+  </Expandable>
+</ResponseField>
 
 ---
 
@@ -786,7 +974,7 @@ curl --request GET \
 </ParamField>
 
 <ParamField query="status" type="string">
-  Filter by status. One of `pending`, `processing`, `completed`, `failed`, or `cancelled`.
+  Filter by status. One of `pending`, `processing`, `completed`, `failed`, `refunded`, or `cancelled`.
 </ParamField>
 
 <ParamField query="startDate" type="string">
@@ -828,6 +1016,7 @@ curl --request GET \
           "bankCode": "000001"
         },
         "transactionReference": "000015260129043400000000099569",
+        "sessionId": "000015260129043400000000099569",
         "provider": "novac",
         "status": "completed",
         "walletAddress": "0x3af904Ff6FA747A3da92E7ce21d312de4b2Ef967",
@@ -844,6 +1033,50 @@ curl --request GET \
   }
 }
 ```
+
+A `user_onramp` deposit refunded to the depositor (for example, because the depositor's name did not match the user) reports `status: "refunded"` and carries a `refund` object:
+
+```json Refunded deposit
+{
+  "id": "b1f0c7de-2a4e-4c1b-9d8e-5f3a2c1b0e9d",
+  "type": "user_onramp",
+  "direction": "in",
+  "userId": "user_uniqueID",
+  "amount": 5000,
+  "currency": "NGN",
+  "transactionReference": "000015260129043400000000099571",
+  "sessionId": "000015260129043400000000099571",
+  "provider": "bellbank",
+  "status": "refunded",
+  "refund": {
+    "status": "refunded",
+    "reason": "Depositor name does not match the account holder",
+    "reference": "refund_b1f0c7de",
+    "sessionId": "000015260129050100000000099580",
+    "provider": "bellbank",
+    "completedAt": "2026-01-29T05:01:12.198Z"
+  },
+  "createdAt": "2026-01-29T04:34:35.582Z"
+}
+```
+
+<ResponseField name="data.deposits[].sessionId" type="string">
+  NIBSS session ID of the inbound bank transfer, when available.
+</ResponseField>
+
+<ResponseField name="data.deposits[].refund" type="object">
+  Present only when the deposit was, or is being, refunded to the depositor.
+  <Expandable title="refund fields">
+    <ResponseField name="status" type="string">Refund progress: `processing` (in flight), `refunded`, or `failed`. While a refund is in flight the deposit's own `status` is `processing`; it becomes `refunded` or `failed` with the refund.</ResponseField>
+    <ResponseField name="reason" type="string">Why the deposit was refunded.</ResponseField>
+    <ResponseField name="reference" type="string">Strails reference for the refund transfer.</ResponseField>
+    <ResponseField name="sessionId" type="string">NIBSS session ID of the refund transfer, when the provider returned one.</ResponseField>
+    <ResponseField name="provider" type="string">Provider that sent the refund.</ResponseField>
+    <ResponseField name="completedAt" type="string">ISO 8601 timestamp of the refund, when complete.</ResponseField>
+    <ResponseField name="error" type="string">Failure detail, when the refund failed.</ResponseField>
+    <ResponseField name="manual" type="boolean">`true` when the refund was sent manually by Strails operations.</ResponseField>
+  </Expandable>
+</ResponseField>
 
 ---
 
@@ -912,6 +1145,7 @@ curl --request GET \
         "status": "completed",
         "transferTxHash": "0x59a8094c6dce96396d50e67083eba7d7d4ac7cd4393e976c7e73e46a67164077",
         "payoutReference": "6653603d-74fd-4a1f-80a1-d9b84bc0173a",
+        "sessionId": "000015260129045600000000099570",
         "payoutProvider": "novac",
         "payoutStatus": "completed",
         "processingFee": 75.00,
@@ -928,6 +1162,10 @@ curl --request GET \
   }
 }
 ```
+
+<ResponseField name="data.payouts[].sessionId" type="string">
+  NIBSS session ID of the payout bank transfer, when the provider returned one.
+</ResponseField>
 
 ---
 
@@ -956,7 +1194,7 @@ curl --request GET \
 </ParamField>
 
 <ParamField query="status" type="string">
-  Filter by status. One of `pending`, `processing`, `completed`, `failed`, or `cancelled`.
+  Filter by status. One of `pending`, `processing`, `completed`, `failed`, `refunded`, or `cancelled`.
 </ParamField>
 
 <ParamField query="startDate" type="string">
@@ -1019,6 +1257,8 @@ curl --request GET \
   }
 }
 ```
+
+Each entry has the same shape as in [List Deposits](#list-deposits) or [List Payouts](#list-payouts), including `sessionId` and, for refunded deposits, the `refund` object.
 
 ---
 
@@ -1128,6 +1368,72 @@ curl --request GET \
       "hasMore": false
     },
     "filters": {}
+  }
+}
+```
+
+---
+
+## Swap Quote
+
+`POST /swapquote`
+
+Returns an indicative quote for swapping between cNGN and USDC on Base, read from the liquidity pool. The quote is not reserved and excludes fees and slippage, so the executed amount from `/swap` or `/swaptrigger` can differ.
+
+```bash
+curl --request POST \
+  --url "https://api.strails.io/v1/swapquote" \
+  --header "x-api-key: YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "sellToken": "USDC",
+    "amount": 100
+  }'
+```
+
+<ParamField body="sellToken" type="string" required>
+  The token to sell. `USDC` quotes USDC -> cNGN; `CNGN` quotes cNGN -> USDC.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Human-readable amount of `sellToken` (e.g. `100` = 100 USDC). Must be greater than 0.
+</ParamField>
+
+```json Response
+{
+  "status": "Success",
+  "response_code": "00",
+  "message": "Quote calculated successfully",
+  "data": {
+    "amount": 100,
+    "amountIn": "100000000",
+    "amountOut": "145012345678",
+    "amountOutHuman": "145012.345678"
+  }
+}
+```
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="amount" type="number">The amount you asked to sell, as sent.</ResponseField>
+    <ResponseField name="amountIn" type="string">The sell amount in the lowest token unit (6 decimals).</ResponseField>
+    <ResponseField name="amountOut" type="string">The quoted output in the lowest token unit (6 decimals).</ResponseField>
+    <ResponseField name="amountOutHuman" type="string">The quoted output in human-readable token units.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+**Error response**
+
+```json Validation error
+{
+  "status": "Failed",
+  "response_code": "01",
+  "message": "Validation error",
+  "data": {
+    "details": {
+      "errors": [{ "path": ["amount"], "message": "amount must be positive" }],
+      "version": "1.0.0"
+    }
   }
 }
 ```
