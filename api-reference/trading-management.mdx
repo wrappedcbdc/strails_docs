@@ -38,7 +38,8 @@ Generate a price quote by matching your requested cNGN amount against live order
       --data '{
         "pair": "CNGN-USDC",
         "side": "sell",
-        "cngnAmount": "50000"
+        "cngnAmount": "50000",
+        "allowPartialFill": true
       }'
     ```
 
@@ -56,6 +57,10 @@ Generate a price quote by matching your requested cNGN amount against live order
 
     <ParamField body="tokenAmount" type="string">
       The pair-currency amount to trade, expressed as a human-readable decimal (e.g., `"37.04"` for USDC or `"37.04"` for USDT). Use this when you want the quote denominated in the pair token instead of cNGN. Provide this **or** `cngnAmount`, not both.
+    </ParamField>
+
+    <ParamField body="allowPartialFill" type="boolean" default="false">
+      When `true`, the quote may be partially filled across multiple orderbook orders if no single order can fully satisfy the requested amount. When `false` (default), the quote is only generated if the full amount can be matched.
     </ParamField>
   </Tab>
 
@@ -135,7 +140,8 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
       --header "Content-Type: application/json" \
       --data '{
         "quoteId": "quote_7f3a9d2c-8e41-4b29-9a1c-5d8e7f2b3a9c",
-        "idempotencyKey": "trade_20260501_001"
+        "idempotencyKey": "trade_20260501_001",
+        "allowPartialFill": true
       }'
     ```
 
@@ -145,6 +151,10 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
 
     <ParamField body="idempotencyKey" type="string">
       An optional client-generated key to prevent duplicate trade submissions. If you retry a request with the same key and the original trade was accepted, the original trade is returned instead of creating a new one.
+    </ParamField>
+
+    <ParamField body="allowPartialFill" type="boolean" default="false">
+      When `true`, the trade may be partially filled across multiple orderbook orders if no single order can fully satisfy the requested amount. When `false` (default), the trade is only executed if the full amount can be matched.
     </ParamField>
   </Tab>
 
@@ -160,7 +170,8 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
         "pair": "CNGN-USDC",
         "side": "sell",
         "cngnAmount": "50000",
-        "destinationWalletAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+        "destinationWalletAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        "allowPartialFill": true
       }'
     ```
 
@@ -179,6 +190,10 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
     <ParamField body="destinationWalletAddress" type="string">
       On-chain wallet address to receive the traded tokens. Defaults to your registered fintech wallet if omitted.
     </ParamField>
+
+    <ParamField body="allowPartialFill" type="boolean" default="false">
+      When `true`, the trade may be partially filled across multiple orderbook orders if no single order can fully satisfy the requested amount. When `false` (default), the trade is only executed if the full amount can be matched.
+    </ParamField>
   </Tab>
 
   <Tab title="Mode 3 - Targeted">
@@ -191,7 +206,8 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
       --header "Content-Type: application/json" \
       --data '{
         "orderId": "order_abc123",
-        "cngnAmount": "25000"
+        "cngnAmount": "25000",
+        "allowPartialFill": true
       }'
     ```
 
@@ -201,6 +217,10 @@ Execute an FX trade. Choose from three execution modes depending on how much pri
 
     <ParamField body="cngnAmount" type="string" required>
       cNGN amount to trade against this specific order, in human-readable format. Must fall within the order's `minAmount` and `maxAmount`.
+    </ParamField>
+
+    <ParamField body="allowPartialFill" type="boolean" default="false">
+      When `true`, the remaining unmatched portion may be filled against other available orderbook orders if the targeted order cannot fully satisfy the amount. When `false` (default), the trade is only executed against the targeted order and fails if the full amount cannot be matched there.
     </ParamField>
   </Tab>
 
@@ -278,7 +298,8 @@ Submit an immediate market order that executes at the current best available pri
         "side": "sell",
         "cngnAmount": "50000",
         "destinationWalletAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-        "idempotencyKey": "market_20260501_001"
+        "idempotencyKey": "market_20260501_001",
+        "allowPartialFill": true
       }'
     ```
 
@@ -300,6 +321,10 @@ Submit an immediate market order that executes at the current best available pri
 
     <ParamField body="idempotencyKey" type="string">
       Client-generated unique key to prevent duplicate order execution on retry.
+    </ParamField>
+
+    <ParamField body="allowPartialFill" type="boolean" default="false">
+      When `true`, the market order may be partially filled across multiple orderbook orders if no single order can fully satisfy the requested amount. When `false` (default), the order is only executed if the full amount can be matched.
     </ParamField>
   </Tab>
 
