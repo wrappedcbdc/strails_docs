@@ -63,6 +63,7 @@ curl --request POST \
     "amount": 500,
     "assetSwap": "USDC",
     "autoSwap": true,
+    "allowPartialFill": true,
     "sweepToOfframp": false,
     "destinationAssetSwap": "0xDestinationAddress"
   }'
@@ -82,6 +83,10 @@ curl --request POST \
 
 <ParamField body="autoSwap" type="boolean">
   When `true`, automatically swaps the funded cNGN into `assetSwap` after the bank payment is confirmed.
+</ParamField>
+
+<ParamField body="allowPartialFill" type="boolean" default="false">
+  When `true`, the auto-swap may be partially filled across multiple FX orderbook orders if no single order can fully satisfy the swap amount. When `false` (default), the swap is only executed if the full amount can be matched.
 </ParamField>
 
 <ParamField body="sweepToOfframp" type="boolean">
