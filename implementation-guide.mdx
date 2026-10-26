@@ -15,7 +15,7 @@ This guide walks you through a complete Strails integration, from your first API
 
 <Steps>
   <Step title="Test Your API Connection">
-    Verify your API key and confirm you can reach the staging environment by retrieving your fintech wallet.
+    Verify your API key and confirm you can reach the prod environment by retrieving your fintech wallet.
 
     ```bash
     curl -X GET https://api.strails.io/v1/getfintechwallet \
@@ -45,7 +45,7 @@ This guide walks you through a complete Strails integration, from your first API
     }
     ```
 
-    If you see your Smart Wallet address, your API key is valid and you are connected to the test environment. Save `data.smartWallet.address` - you will reference it throughout the integration. See [Wallet Management](/api-reference/wallet#retrieve-the-fintech-wallet) for the full response schema.
+    If you see your Smart Wallet address, your API key is valid and you are connected to the prod environment. Save `data.smartWallet.address` - you will reference it throughout the integration. See [Wallet Management](/api-reference/wallet#retrieve-the-fintech-wallet) for the full response schema.
 
     <Note>
       This endpoint returns your Smart Wallet and registered external wallets only. Your MPC Vault token wallets are returned by [`GET /fx/settings`](/api-reference/fx-setting) once MPC registration is approved, and Managed Wallets are provisioned per user - retrieve them with [`POST /listuserwallets`](/api-reference/wallet#retrieve-user-wallets).
