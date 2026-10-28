@@ -26,7 +26,6 @@ The Transactions API handles every financial operation in Strails. You can fund 
 | [List Payouts](#list-payouts) | `/payouts` | GET | List payout transactions with filtering and pagination |
 | [List Transactions](#list-transactions) | `/transactions` | GET | List all transactions (deposits and payouts) with filtering and pagination |
 | [Withdraw History](#withdraw-history) | `/withdrawals` | GET | List token withdrawal transfers with filtering and pagination |
-| [Swap Quote](#swap-quote) | `/swapquote` | POST | Get an indicative cNGN/USDC swap quote |
 | [Swap Trigger](#swap-trigger) | `/swaptrigger` | POST | Trigger an asynchronous swap for a specific wallet address |
 | [User Swap](#user-swap) | `/swap` | POST | Request a token swap on a user's default Smart Wallet |
 | [Swap Status](#swap-status) | `/swapstatus` | GET | Get the status of an asynchronous swap request |
@@ -1418,72 +1417,6 @@ curl --request GET \
       "hasMore": false
     },
     "filters": {}
-  }
-}
-```
-
----
-
-## Swap Quote
-
-`POST /swapquote`
-
-Returns an indicative quote for swapping between cNGN and USDC on Base, read from the liquidity pool. The quote is not reserved and excludes fees and slippage, so the executed amount from `/swap` or `/swaptrigger` can differ.
-
-```bash
-curl --request POST \
-  --url "https://api.strails.io/v1/swapquote" \
-  --header "x-api-key: YOUR_API_KEY" \
-  --header "Content-Type: application/json" \
-  --data '{
-    "sellToken": "USDC",
-    "amount": 100
-  }'
-```
-
-<ParamField body="sellToken" type="string" required>
-  The token to sell. `USDC` quotes USDC -> cNGN; `CNGN` quotes cNGN -> USDC.
-</ParamField>
-
-<ParamField body="amount" type="number" required>
-  Human-readable amount of `sellToken` (e.g. `100` = 100 USDC). Must be greater than 0.
-</ParamField>
-
-```json Response
-{
-  "status": "Success",
-  "response_code": "00",
-  "message": "Quote calculated successfully",
-  "data": {
-    "amount": 100,
-    "amountIn": "100000000",
-    "amountOut": "145012345678",
-    "amountOutHuman": "145012.345678"
-  }
-}
-```
-
-<ResponseField name="data" type="object">
-  <Expandable title="data fields">
-    <ResponseField name="amount" type="number">The amount you asked to sell, as sent.</ResponseField>
-    <ResponseField name="amountIn" type="string">The sell amount in the lowest token unit (6 decimals).</ResponseField>
-    <ResponseField name="amountOut" type="string">The quoted output in the lowest token unit (6 decimals).</ResponseField>
-    <ResponseField name="amountOutHuman" type="string">The quoted output in human-readable token units.</ResponseField>
-  </Expandable>
-</ResponseField>
-
-**Error response**
-
-```json Validation error
-{
-  "status": "Failed",
-  "response_code": "01",
-  "message": "Validation error",
-  "data": {
-    "details": {
-      "errors": [{ "path": ["amount"], "message": "amount must be positive" }],
-      "version": "1.0.0"
-    }
   }
 }
 ```
