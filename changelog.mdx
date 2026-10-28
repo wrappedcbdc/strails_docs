@@ -14,11 +14,18 @@ Track new endpoints, breaking changes, and improvements to the Strails API and d
   - A user's settlement network other than Base, used for permanent virtual account deposits, still requires an external default wallet on that network.
 </Update>
 
+<Update label="2026-10-28" description="Deprecation">
+  **Deprecated `/swapquote`**
+
+  - Removed the `POST /swapquote` endpoint from the [Transactions API](/api-reference/transactions). The endpoint is deprecated; use the FX orderbook quote and trade flow (`POST /fx/quote` followed by `POST /fx/trade`) or execute a swap directly via `/swap` / `/swaptrigger` and track it with `/swapstatus`.
+  - Removed the `/swapquote` row from the rate-limit table in the [Authentication guide](/authentication#rate-limits).
+</Update>
+
 <Update label="2026-10-22" description="API">
   **Sync with the production API**
 
   - Added the [Settlement Network](/api-reference/user-management#settlement-network) endpoints: `POST /setusersettlementnetwork`, `/getusersettlementnetwork`, `/removeusersettlementnetwork`, `/listusersettlementdestinations`, `/setfintechsettlementnetwork`, `/getfintechsettlementnetwork` and `/removefintechsettlementnetwork`, plus the `settlementNetwork` parameter on [`/cngnonramp`](/api-reference/transactions).
-  - Added `GET /listofframps`, `POST /cancelofframp`, `GET /getofframplimits` and `POST /swapquote` to the [Transactions API](/api-reference/transactions), `POST /verifybankaccount` to [Fiat Payout Management](/api-reference/fiat-payout-management#verify-a-bank-account), and `GET /getpublickey`, `DELETE /deletepublickey` and `POST /regenerateaeskey` to the [Management API](/api-reference/management-api).
+  - Added `GET /listofframps`, `POST /cancelofframp`, and `GET /getofframplimits` to the [Transactions API](/api-reference/transactions), `POST /verifybankaccount` to [Fiat Payout Management](/api-reference/fiat-payout-management#verify-a-bank-account), and `GET /getpublickey`, `DELETE /deletepublickey` and `POST /regenerateaeskey` to the [Management API](/api-reference/management-api).
   - Rewrote `PUT /managefees` and `GET /getfees` for tiered fees: `collectionFees` and `payoutFees` replace the old `onrampFee` and `offrampFee` objects, which the API no longer accepts.
   - Added `allowPartialFill` to `/fx/quote`, `/fx/trade`, `/fx/market-order` and `/cngnonramp`, and explained when a partial fill applies under [Insufficient liquidity](/api-reference/trading-management#insufficient-liquidity).
   - Documented how FX trades are [matched across orders](/api-reference/trading-management#how-orders-are-matched), the new `partial` and `settling_in_progress` trade statuses, and the [FX error codes](/api-reference/trading-management#fx-error-codes).
