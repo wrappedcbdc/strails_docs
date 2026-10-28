@@ -102,8 +102,29 @@ curl --request POST \
 </ParamField>
 
 <ParamField body="settlementNetwork" type="string">
-  Network to deliver this onramp's cNGN on (e.g. `base`, `bsc`, `pol`). Applies to this request only and takes precedence over the user's and your fintech's [settlement network](/api-reference/user-management#settlement-network). Off Base, the cNGN is bridged to the user's external default wallet registered for that network. The request is refused if the network is not supported or the user has no address that can receive on it - check with [`/listusersettlementdestinations`](/api-reference/user-management#post-listusersettlementdestinations) first. An empty string is treated as not set.
+  Network to deliver this onramp's cNGN on (e.g. `base`, `bsc`, `pol`, `celo`). Applies to this request only and takes precedence over the user's and your fintech's [settlement network](/api-reference/user-management#settlement-network). Off Base, the cNGN is bridged to that network. An empty string is treated as not set.
+
+  The cNGN goes to `settlementAddress` when you send one. Without it, it goes to the user's external default wallet registered for that network, and the request is refused if the user has none - check with [`/listusersettlementdestinations`](/api-reference/user-management#post-listusersettlementdestinations) first.
 </ParamField>
+
+<ParamField body="settlementAddress" type="string">
+  The address on `settlementNetwork` to deliver this onramp's cNGN to. Use it to pay a wallet the user hasn't registered, such as one of your own external wallets or an address they give you for this payment. It applies to this request only and does not change the user's external default wallet.
+
+  Requires `settlementNetwork`, and must be a valid address for that network: a `0x` address for EVM networks, a `T…` address for Tron, a Solana public key for Solana, or a `G…` key for Bantu. When set, the user does not need an address of their own on that network.
+</ParamField>
+
+```bash Settle on a named network and address
+curl --request POST \
+  --url "https://api.strails.io/v1/cngnonramp" \
+  --header "x-api-key: YOUR_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "userId": "user_uniqueID",
+    "amount": 500,
+    "settlementNetwork": "pol",
+    "settlementAddress": "0x1111111111111111111111111111111111111111"
+  }'
+```
 
 ### autoSwap behaviour matrix
 
@@ -189,6 +210,24 @@ curl --request POST \
   "status": "Failed",
   "response_code": "01",
   "message": "This user has no address that can receive on Polygon. Register an external wallet for it first, or leave the settlement network unset."
+}
+```
+
+Returned when `settlementNetwork` is set without `settlementAddress` and the user has no address on that network. Send `settlementAddress` to deliver to a specific wallet instead.
+
+```json Settlement address without a network
+{
+  "status": "Failed",
+  "response_code": "01",
+  "message": "settlementAddress needs settlementNetwork: name the network the address is on"
+}
+```
+
+```json Settlement address not valid for the network
+{
+  "status": "Failed",
+  "response_code": "01",
+  "message": "TQ5NMqJjhpQGK7YJbESmJd8ta7TjpWvbKy is not a valid Polygon address"
 }
 ```
 

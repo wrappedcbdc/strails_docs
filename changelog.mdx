@@ -5,6 +5,15 @@ description: "Notable changes and additions to the Strails API and documentation
 
 Track new endpoints, breaking changes, and improvements to the Strails API and documentation.
 
+<Update label="2026-10-28" description="API">
+  **Settlement address on onramps, and Celo**
+
+  - Added `settlementAddress` to [`/cngnonramp`](/api-reference/transactions). Name the address on `settlementNetwork` to deliver one onramp's cNGN to, such as one of your external wallets or an address the user gives you. The user no longer needs a wallet of their own on that network, and their external default wallet is unchanged.
+  - New `/cngnonramp` errors: `settlementAddress` without `settlementNetwork`, and an address that is not valid for the network.
+  - Added Celo (`celo`) as a [settlement network](/api-reference/user-management#settlement-network) and to the [Bridge API](/api-reference/bridge).
+  - A user's settlement network other than Base, used for permanent virtual account deposits, still requires an external default wallet on that network.
+</Update>
+
 <Update label="2026-10-22" description="API">
   **Sync with the production API**
 
