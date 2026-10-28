@@ -167,7 +167,7 @@ curl -X POST https://api.strails.io/v1/getvirtualaccount \
 
 The user's default wallet is their Strails-managed smart wallet, unless an [external default wallet](/api-reference/user-management#user-default-wallet) has been registered for them.
 
-To deliver one onramp on a network other than Base, pass `settlementNetwork` to `/cngnonramp`. The request is refused if the user has no address on that network. See [Settlement Network](/api-reference/user-management#settlement-network).
+To deliver one onramp on a network other than Base, pass `settlementNetwork` to `/cngnonramp`, with `settlementAddress` for the wallet to pay on that network. Without an address, the user's external default wallet on that network is used, and the request is refused if they have none. See [Settlement Network](/api-reference/user-management#settlement-network).
 
 ## Deposit Flow
 

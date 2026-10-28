@@ -601,7 +601,7 @@ It applies to cNGN disbursed from a deposit into the user's permanent virtual ac
 
 Strails uses the first of these that is set:
 
-1. `settlementNetwork` on the `/cngnonramp` request (that request only)
+1. `settlementNetwork` on the `/cngnonramp` request (that request only, optionally with a `settlementAddress`)
 2. The user's settlement network, set with [`/setusersettlementnetwork`](#post-setusersettlementnetwork)
 3. The network the user's [external default wallet](#user-default-wallet) is registered for
 4. Your fintech's default, set with [`/setfintechsettlementnetwork`](#post-setfintechsettlementnetwork)
@@ -611,12 +611,14 @@ Because steps 2 and 3 outrank step 4, a fintech default never overrides a user w
 
 ### Where the cNGN lands
 
+A `/cngnonramp` request that sends `settlementAddress` is delivered to that address, whatever the user has registered. Otherwise:
+
 Off Base, cNGN is delivered **only to an external default wallet registered for that network**. The user's Strails-managed smart wallet exists only on Base, so it is never a destination on another chain. On Base, cNGN goes to the user's external default wallet if it is registered for Base, otherwise to their smart wallet.
 
 | Network | Destination |
 |---|---|
 | Base | External default wallet registered for Base, otherwise the user's smart wallet |
-| Other EVM networks (`bsc`, `eth`, `pol`, `atc`, `lisk`, `monad`, `arc`) | External default wallet registered for that network |
+| Other EVM networks (`bsc`, `eth`, `pol`, `atc`, `lisk`, `monad`, `arc`, `celo`) | External default wallet registered for that network |
 | Tron, Solana, Bantu (`trx`, `sol`, `xbn`) | None today - external default wallets must be EVM addresses |
 
 Use [`/listusersettlementdestinations`](#post-listusersettlementdestinations) to check where a user can be paid before you pick a network.
@@ -626,12 +628,14 @@ Use [`/listusersettlementdestinations`](#post-listusersettlementdestinations) to
 </Info>
 
 <Warning>
-  If a user has no address on the resolved network, a permanent virtual account deposit is **held** rather than paid on another network, and Strails is alerted. A `/cngnonramp` request that names such a network in `settlementNetwork` is refused when you make it. For a `/cngnonramp` payment where the network comes from a stored setting instead, the cNGN is delivered on Base.
+  Permanent virtual account deposits always settle to a registered wallet, so a user's settlement network other than Base needs an external default wallet on that network - `/setusersettlementnetwork` refuses it otherwise. If a user has no address on the resolved network, a permanent virtual account deposit is **held** rather than paid on another network, and Strails is alerted.
+
+  A `/cngnonramp` request that names such a network in `settlementNetwork` without a `settlementAddress` is refused when you make it. For a `/cngnonramp` payment where the network comes from a stored setting instead, the cNGN is delivered on Base.
 </Warning>
 
 #### Network values
 
-`base`, `bsc`, `eth`, `pol`, `trx`, `sol`, `xbn`, `atc`, `lisk`, `monad`, `arc`. Common names such as `ethereum`, `polygon`, and `bnb` are also accepted and normalised to these codes.
+`base`, `bsc`, `eth`, `pol`, `trx`, `sol`, `xbn`, `atc`, `lisk`, `monad`, `arc`, `celo`. Common names such as `ethereum`, `polygon`, `bnb`, and `celo chain` are also accepted and normalised to these codes.
 
 A network other than Base can be stored only while bridged settlement is available on Strails. Otherwise the set endpoints, and `/cngnonramp`, return:
 
