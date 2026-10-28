@@ -492,7 +492,9 @@ curl --request POST \
 </ParamField>
 
 <ParamField body="network" type="string">
-  Target network for the withdrawal. When set, Strails routes the transfer through a bridge. Supported values: `base`, `bsc`, `eth`, `pol`, `trx`, `sol`, `xbn`, `atc`. Defaults to `base` if not provided.
+  Target network for the withdrawal. Any network other than `base` is reached through the bridge. Supported values: `base`, `bsc`, `eth`, `pol`, `sol`, `xbn`, `atc`, `celo`. Defaults to `base` if not provided.
+
+  A network other than `base` must also have bridging enabled for the token. If it doesn't, the request fails with response code `02` and the message `Network not enabled`.
 </ParamField>
 
 ```json Response

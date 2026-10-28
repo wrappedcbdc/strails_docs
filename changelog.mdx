@@ -6,6 +6,14 @@ description: "Notable changes and additions to the Strails API and documentation
 Track new endpoints, breaking changes, and improvements to the Strails API and documentation.
 
 <Update label="2026-10-28" description="API">
+  **Withdrawals to Celo**
+
+  - [`/withdrawasset`](/api-reference/transactions) accepts `celo` as a `network`.
+  - `trx` is no longer accepted for withdrawals.
+  - A withdrawal to a network other than Base fails with `Network not enabled` when bridging isn't enabled for the token on that network.
+</Update>
+
+<Update label="2026-10-28" description="API">
   **Settlement address on onramps, and Celo**
 
   - Added `settlementAddress` to [`/cngnonramp`](/api-reference/transactions). Name the address on `settlementNetwork` to deliver one onramp's cNGN to, such as one of your external wallets or an address the user gives you. The user no longer needs a wallet of their own on that network, and their external default wallet is unchanged.
