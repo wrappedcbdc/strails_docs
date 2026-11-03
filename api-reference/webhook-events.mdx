@@ -654,7 +654,9 @@ Fired when cNGN has been sent from a user's smart wallet to the Strails vault as
 
 Fired when the fiat payout to the user's bank account is confirmed, completing the vault-return offramp flow.
 
-**Key payload fields:** `payoutId`, `vaultReturnId`, `amount`, `recipientAccountNumber`, `recipientBankCode`, `transactionReference`, `completedAt`
+**Key payload fields:** `payoutId`, `vaultReturnId`, `amount`, `recipientAccountNumber`, `recipientBankCode`, `transactionReference`, `sessionId`, `completedAt`
+
+`sessionId` is the NIP session ID of the bank transfer, the number the recipient's bank uses to trace it. Give it to a user who says the money has not arrived. It can be missing when the bank confirmed the payout instantly.
 
 ```json
 {
@@ -672,6 +674,7 @@ Fired when the fiat payout to the user's bank account is confirmed, completing t
     "recipientAccountNumber": "0123456789",
     "recipientBankCode": "044",
     "transactionReference": "...",
+    "sessionId": "000030261103124855430860967474",
     "completedAt": "...",
     "metadata": {}
   }
@@ -829,7 +832,9 @@ Fired when the bank payout is submitted to the payment provider after the on-cha
 
 Fired when the entire offramp flow is complete - the on-chain token burn is confirmed and the fiat payout has settled to the destination bank account.
 
-**Key payload fields:** `amount`, `currency`, `status`, `bankAccount`, `wallet`, `burnDetails.txHash`, `payoutDetails.reference`, `payoutDetails.status`, `completedAt`, `metadata.processingTime`
+**Key payload fields:** `amount`, `currency`, `status`, `bankAccount`, `wallet`, `burnDetails.txHash`, `payoutDetails.reference`, `payoutDetails.status`, `payoutDetails.sessionId`, `completedAt`, `metadata.processingTime`
+
+`payoutDetails.sessionId` is the NIP session ID of the bank transfer, the number the recipient's bank uses to trace it. It can be missing when the bank confirmed the payout instantly.
 
 ```json
 {
@@ -861,7 +866,8 @@ Fired when the entire offramp flow is complete - the on-chain token burn is conf
     "payoutDetails": {
       "reference": "PAYOUT-123456",
       "provider": "novac",
-      "status": "completed"
+      "status": "completed",
+      "sessionId": "000030261103124855430860967474"
     },
     "completedAt": "2025-08-27T10:05:00Z",
     "metadata": {
